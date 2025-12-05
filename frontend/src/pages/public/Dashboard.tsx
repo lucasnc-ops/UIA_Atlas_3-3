@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { dashboardAPI } from '../../services/api/dashboard';
@@ -138,34 +139,36 @@ export default function Dashboard() {
                 url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
               />
 
-              {markers.map((marker) => (
-                <Marker
-                  key={marker.id}
-                  position={[marker.latitude, marker.longitude]}
-                  eventHandlers={{
-                    click: () => handleMarkerClick(marker.id),
-                    mouseover: (e) => e.target.openPopup(),
-                    mouseout: (e) => e.target.closePopup(),
-                  }}
-                >
-                  <Popup className="custom-popup" closeButton={false}>
-                    <div className="p-2 text-gray-900">
-                      <h3 className="font-semibold mb-1">
-                        {marker.project_name}
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {marker.city}, {marker.country}
-                      </p>
-                      <button
-                        onClick={() => handleMarkerClick(marker.id)}
-                        className="mt-2 text-sm font-medium text-primary-600 hover:text-primary-700"
-                      >
-                        View Details →
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+              <MarkerClusterGroup chunkedLoading>
+                {markers.map((marker) => (
+                  <Marker
+                    key={marker.id}
+                    position={[marker.latitude, marker.longitude]}
+                    eventHandlers={{
+                      click: () => handleMarkerClick(marker.id),
+                      mouseover: (e) => e.target.openPopup(),
+                      mouseout: (e) => e.target.closePopup(),
+                    }}
+                  >
+                    <Popup className="custom-popup" closeButton={false}>
+                      <div className="p-2 text-gray-900">
+                        <h3 className="font-semibold mb-1">
+                          {marker.project_name}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          {marker.city}, {marker.country}
+                        </p>
+                        <button
+                          onClick={() => handleMarkerClick(marker.id)}
+                          className="mt-2 text-sm font-medium text-primary-600 hover:text-primary-700"
+                        >
+                          View Details →
+                        </button>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MarkerClusterGroup>
 
               <MapUpdater markers={markers} />
             </MapContainer>

@@ -27,6 +27,14 @@ class ProjectBase(BaseModel):
     other_requirement_text: Optional[str] = None
     sdgs: List[int]  # 1-17
     image_urls: List[str]
+    gdpr_consent: bool
+
+    @field_validator('gdpr_consent')
+    @classmethod
+    def validate_gdpr(cls, v):
+        if not v:
+            raise ValueError('GDPR consent is required to submit a project')
+        return v
 
     @field_validator('latitude')
     @classmethod

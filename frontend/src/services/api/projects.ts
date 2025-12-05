@@ -23,6 +23,7 @@ export interface ProjectCreate {
   sdgs: number[];
   image_urls: string[];
   captcha_token?: string;
+  gdpr_consent: boolean;
 }
 
 export const projectsApi = {

@@ -11,6 +11,8 @@ export default function ProjectReview() {
   const [actionLoading, setActionLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [changesMessage, setChangesMessage] = useState('');
+  const [showChangesModal, setShowChangesModal] = useState(false);
 
   useEffect(() => {
     if (projectId) {
@@ -59,6 +61,37 @@ export default function ProjectReview() {
     }
   };
 
+  const handleRequestChanges = async () => {
+    if (!project) return;
+    setActionLoading(true);
+    try {
+      await adminAPI.requestChanges(project.id, changesMessage);
+      navigate('/admin/dashboard');
+    } catch (error) {
+      console.error('Error requesting changes:', error);
+    } finally {
+      setActionLoading(false);
+      setShowChangesModal(false);
+    }
+  };
+
+  const handleUnpublish = async () => {
+    if (!project) return;
+    if (!window.confirm('Are you sure you want to unpublish this project? It will be hidden from the public dashboard.')) return;
+
+    setActionLoading(true);
+    try {
+      // Using updateProject to reset status to submitted (so it can be reviewed again)
+      // Note: casting to any because workflowStatus isn't in ProjectSubmission but is accepted by backend update
+      await adminAPI.updateProject(project.id, { workflow_status: 'submitted' } as any);
+      navigate('/admin/dashboard');
+    } catch (error) {
+      console.error('Error unpublishing project:', error);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-mapbox-black flex items-center justify-center">
@@ -85,20 +118,39 @@ export default function ProjectReview() {
           </span>
         </div>
         <div className="flex space-x-3">
-          <button
-            onClick={() => setShowRejectModal(true)}
-            disabled={actionLoading}
-            className="px-4 py-2 border border-red-900 text-red-400 rounded-md hover:bg-red-900/20 transition-colors disabled:opacity-50"
-          >
-            Reject
-          </button>
-          <button
-            onClick={handleApprove}
-            disabled={actionLoading}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50"
-          >
-            {actionLoading ? 'Processing...' : 'Approve & Publish'}
-          </button>
+          {project.workflowStatus === 'approved' ? (
+            <button
+              onClick={handleUnpublish}
+              disabled={actionLoading}
+              className="px-4 py-2 border border-orange-500 text-orange-400 rounded-md hover:bg-orange-900/20 transition-colors disabled:opacity-50"
+            >
+              Unpublish
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => setShowChangesModal(true)}
+                disabled={actionLoading}
+                className="px-4 py-2 border border-yellow-500 text-yellow-400 rounded-md hover:bg-yellow-900/20 transition-colors disabled:opacity-50"
+              >
+                Request Changes
+              </button>
+              <button
+                onClick={() => setShowRejectModal(true)}
+                disabled={actionLoading}
+                className="px-4 py-2 border border-red-900 text-red-400 rounded-md hover:bg-red-900/20 transition-colors disabled:opacity-50"
+              >
+                Reject
+              </button>
+              <button
+                onClick={handleApprove}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50"
+              >
+                {actionLoading ? 'Processing...' : 'Approve & Publish'}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -277,6 +329,39 @@ export default function ProjectReview() {
                 className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
               >
                 {actionLoading ? 'Rejecting...' : 'Confirm Rejection'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Request Changes Modal */}
+      {showChangesModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-mapbox-card border border-mapbox-border rounded-lg max-w-md w-full p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white mb-4">Request Changes</h3>
+            <p className="text-sm text-mapbox-gray mb-4">
+              Describe the changes required. The submitter will receive an email with a link to edit their submission.
+            </p>
+            <textarea
+              value={changesMessage}
+              onChange={(e) => setChangesMessage(e.target.value)}
+              className="w-full h-32 bg-mapbox-dark border border-mapbox-border rounded-md p-3 text-white focus:ring-2 focus:ring-yellow-500 focus:border-transparent mb-4 resize-none"
+              placeholder="Describe the changes needed..."
+            />
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowChangesModal(false)}
+                className="px-4 py-2 text-sm text-mapbox-gray hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRequestChanges}
+                disabled={!changesMessage.trim() || actionLoading}
+                className="px-4 py-2 bg-yellow-600 text-white text-sm font-medium rounded-md hover:bg-yellow-700 transition-colors disabled:opacity-50"
+              >
+                {actionLoading ? 'Sending...' : 'Send Request'}
               </button>
             </div>
           </div>

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Float, Text, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, String, Integer, Float, Text, DateTime, ForeignKey, Enum, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
@@ -88,6 +88,9 @@ class Project(Base):
     rejection_reason = Column(Text, nullable=True)
     reviewer_notes = Column(Text, nullable=True)
     edit_token = Column(String(255), nullable=True, index=True)
+    
+    # Compliance
+    gdpr_consent = Column(Boolean, default=False, nullable=False)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

@@ -57,6 +57,7 @@ async def submit_project(project_data: ProjectCreate, db: Session = Depends(get_
         detailed_description=project_data.detailed_description,
         success_factors=project_data.success_factors,
         other_requirement_text=project_data.other_requirement_text,
+        gdpr_consent=project_data.gdpr_consent,
     )
 
     # Coordinates are stored as latitude/longitude floats
@@ -163,6 +164,7 @@ async def update_project_by_token(
     project.detailed_description = project_data.detailed_description
     project.success_factors = project_data.success_factors
     project.other_requirement_text = project_data.other_requirement_text
+    project.gdpr_consent = project_data.gdpr_consent
     
     # Reset status to SUBMITTED for re-review
     project.workflow_status = WorkflowStatus.SUBMITTED
@@ -282,6 +284,7 @@ def _format_project_response(project: Project) -> dict:
             r.requirement for r in project.requirements if r.requirement_type == 'other'
         ],
         "other_requirement_text": project.other_requirement_text,
+        "gdpr_consent": project.gdpr_consent,
         "sdgs": [s.sdg_number for s in project.sdgs],
         "image_urls": [img.image_url for img in sorted(project.images, key=lambda x: x.display_order)],
         "rejection_reason": project.rejection_reason,

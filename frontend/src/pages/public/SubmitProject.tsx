@@ -32,6 +32,7 @@ export default function SubmitProject() {
       government_requirements: [],
       other_requirements: [],
       funding_needed: 0,
+      gdpr_consent: false,
     }
   });
 
@@ -72,7 +73,8 @@ export default function SubmitProject() {
         other_requirements: project.other_requirements,
         other_requirement_text: project.other_requirement_text,
         sdgs: project.sdgs,
-        image_urls: project.image_urls
+        image_urls: project.image_urls,
+        gdpr_consent: project.gdpr_consent
       });
     } catch (err: any) {
       console.error('Error loading project:', err);
@@ -526,6 +528,29 @@ export default function SubmitProject() {
             </div>
           </section>
           
+          {/* Data Consent */}
+          <section className="bg-mapbox-dark/50 p-4 rounded-lg border border-mapbox-border">
+            <label className="flex items-start cursor-pointer">
+              <input
+                type="checkbox"
+                {...register('gdpr_consent', { 
+                  required: 'You must consent to data processing to submit this project' 
+                })}
+                className="mt-1 h-4 w-4 rounded border-mapbox-border bg-mapbox-dark text-primary-600 focus:ring-primary-500"
+              />
+              <div className="ml-3">
+                <p className="text-sm font-medium text-white">I consent to the publication of this data.</p>
+                <p className="text-xs text-mapbox-gray mt-1">
+                  By checking this box, I confirm that I have the right to share this information and images, 
+                  and I agree for them to be published on the UIA SDG Atlas website.
+                </p>
+                {errors.gdpr_consent && (
+                  <p className="text-xs text-red-400 mt-1">{errors.gdpr_consent.message}</p>
+                )}
+              </div>
+            </label>
+          </section>
+
           {/* Captcha */}
           {!editToken && (
             <div className="pt-4 flex justify-center">
