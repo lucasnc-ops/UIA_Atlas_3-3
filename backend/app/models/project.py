@@ -113,7 +113,7 @@ class ProjectSDG(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    sdg_number = Column(Integer, nullable=False)  # 1-17
+    sdg_number = Column(Integer, nullable=False, index=True)  # 1-17
 
     project = relationship("Project", back_populates="sdgs")
 
@@ -125,7 +125,7 @@ class ProjectTypology(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    typology = Column(String(255), nullable=False)
+    typology = Column(String(255), nullable=False, index=True)
 
     project = relationship("Project", back_populates="typologies")
 
@@ -137,8 +137,8 @@ class ProjectRequirement(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
-    requirement_type = Column(String(50), nullable=False)  # 'funding', 'government', 'other'
-    requirement = Column(String(500), nullable=False)
+    requirement_type = Column(String(50), nullable=False, index=True)  # 'funding', 'government', 'other'
+    requirement = Column(String(500), nullable=False, index=True)
 
     project = relationship("Project", back_populates="requirements")
 

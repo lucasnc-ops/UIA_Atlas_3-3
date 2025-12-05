@@ -2,6 +2,12 @@ import { apiClient } from './client';
 import type { Project, DashboardKPIs, FilterOptions } from '../../types';
 
 export const dashboardAPI = {
+  // Get available filters (cities, funding sources)
+  getFilters: async () => {
+    const response = await apiClient.get('/api/dashboard/filters');
+    return response.data;
+  },
+
   // Get KPIs
   getKPIs: async (filters?: FilterOptions): Promise<DashboardKPIs> => {
     const params = new URLSearchParams();
@@ -13,6 +19,9 @@ export const dashboardAPI = {
     }
     if (filters?.city && filters.city !== 'All Cities') {
       params.append('city', filters.city);
+    }
+    if (filters?.fundedBy && filters.fundedBy !== 'All') {
+      params.append('funded_by', filters.fundedBy);
     }
     if (filters?.search) {
       params.append('search', filters.search);
@@ -33,6 +42,9 @@ export const dashboardAPI = {
     }
     if (filters?.city && filters.city !== 'All Cities') {
       params.append('city', filters.city);
+    }
+    if (filters?.fundedBy && filters.fundedBy !== 'All') {
+      params.append('funded_by', filters.fundedBy);
     }
     if (filters?.search) {
       params.append('search', filters.search);
@@ -65,6 +77,9 @@ export const dashboardAPI = {
     if (filters?.city && filters.city !== 'All Cities') {
       params.append('city', filters.city);
     }
+    if (filters?.fundedBy && filters.fundedBy !== 'All') {
+      params.append('funded_by', filters.fundedBy);
+    }
     if (filters?.search) {
       params.append('search', filters.search);
     }
@@ -88,6 +103,9 @@ export const dashboardAPI = {
     if (filters?.city && filters.city !== 'All Cities') {
       params.append('city', filters.city);
     }
+    if (filters?.fundedBy && filters.fundedBy !== 'All') {
+      params.append('funded_by', filters.fundedBy);
+    }
     if (filters?.search) {
       params.append('search', filters.search);
     }
@@ -104,6 +122,9 @@ export const dashboardAPI = {
     if (filters?.city && filters.city !== 'All Cities') {
       params.append('city', filters.city);
     }
+    if (filters?.fundedBy && filters.fundedBy !== 'All') {
+      params.append('funded_by', filters.fundedBy);
+    }
     if (filters?.search) {
       params.append('search', filters.search);
     }
@@ -119,6 +140,9 @@ export const dashboardAPI = {
     }
     if (filters?.sdg && filters.sdg !== 'All SDGs') {
       params.append('sdg', filters.sdg.toString());
+    }
+    if (filters?.fundedBy && filters.fundedBy !== 'All') {
+      params.append('funded_by', filters.fundedBy);
     }
     if (filters?.search) {
       params.append('search', filters.search);

@@ -8,6 +8,7 @@ import SubmitProject from './pages/public/SubmitProject';
 import AdminLogin from './pages/admin/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import ProjectReview from './pages/admin/ProjectReview';
+import EditProject from './pages/admin/EditProject';
 
 function App() {
   return (
@@ -31,6 +32,14 @@ function App() {
             element={
               <RequireAuth>
                 <ProjectReview />
+              </RequireAuth>
+            } 
+          />
+          <Route 
+            path="/admin/projects/:projectId/edit" 
+            element={
+              <RequireAuth>
+                <EditProject />
               </RequireAuth>
             } 
           />

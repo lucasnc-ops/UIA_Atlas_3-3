@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { dashboardAPI } from '../../services/api/dashboard';
 import type { FilterOptions, UIARegion, SDG } from '../../types';
 
 interface FilterControlsProps {
@@ -42,9 +44,27 @@ export default function FilterControls({
   onFilterChange,
   onClearFilters,
 }: FilterControlsProps) {
+  const [cities, setCities] = useState<string[]>([]);
+  const [fundingSources, setFundingSources] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchFilters = async () => {
+      try {
+        const data = await dashboardAPI.getFilters();
+        setCities(data.cities);
+        setFundingSources(data.funding_sources);
+      } catch (error) {
+        console.error('Error fetching filters:', error);
+      }
+    };
+    fetchFilters();
+  }, []);
+
   const hasActiveFilters =
     (filters.region && filters.region !== 'All Regions') ||
     (filters.sdg && filters.sdg !== 'All SDGs') ||
+    (filters.city && filters.city !== 'All Cities') ||
+    (filters.fundedBy && filters.fundedBy !== 'All') ||
     (filters.search && filters.search !== '');
 
   return (
@@ -57,7 +77,7 @@ export default function FilterControls({
         <div className="relative">
           <input
             type="text"
-            placeholder="Name, City, or Country..."
+            placeholder="Name or Country..."
             value={filters.search || ''}
             onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
             className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300 pl-9"
@@ -101,6 +121,54 @@ export default function FilterControls({
         </select>
       </div>
 
+      {/* City Filter */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+          City
+        </label>
+        <select
+          value={filters.city || 'All Cities'}
+          onChange={(e) =>
+            onFilterChange({
+              ...filters,
+              city: e.target.value === 'All Cities' ? 'All Cities' : e.target.value,
+            })
+          }
+          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300"
+        >
+          <option value="All Cities">All Cities</option>
+          {cities.map((city) => (
+            <option key={city} value={city}>
+              {city}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Funded By Filter */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+          Funded By
+        </label>
+        <select
+          value={filters.fundedBy || 'All'}
+          onChange={(e) =>
+            onFilterChange({
+              ...filters,
+              fundedBy: e.target.value === 'All' ? 'All' : e.target.value,
+            })
+          }
+          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300"
+        >
+          <option value="All">All Funding Sources</option>
+          {fundingSources.map((source) => (
+            <option key={source} value={source}>
+              {source}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* SDG Filter */}
       <div>
         <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
@@ -137,6 +205,28 @@ export default function FilterControls({
                 {filters.region}
                 <button
                   onClick={() => onFilterChange({ ...filters, region: 'All Regions' })}
+                  className="ml-2 text-primary-400 hover:text-primary-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filters.city && filters.city !== 'All Cities' && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
+                {filters.city}
+                <button
+                  onClick={() => onFilterChange({ ...filters, city: 'All Cities' })}
+                  className="ml-2 text-primary-400 hover:text-primary-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filters.fundedBy && filters.fundedBy !== 'All' && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
+                {filters.fundedBy}
+                <button
+                  onClick={() => onFilterChange({ ...filters, fundedBy: 'All' })}
                   className="ml-2 text-primary-400 hover:text-primary-600"
                 >
                   ×

@@ -118,6 +118,12 @@ export default function ProjectReview() {
           </span>
         </div>
         <div className="flex space-x-3">
+          <Link
+            to={`/admin/projects/${project.id}/edit`}
+            className="px-4 py-2 border border-blue-500 text-blue-400 rounded-md hover:bg-blue-900/20 transition-colors flex items-center"
+          >
+            Edit
+          </Link>
           {project.workflowStatus === 'approved' ? (
             <button
               onClick={handleUnpublish}

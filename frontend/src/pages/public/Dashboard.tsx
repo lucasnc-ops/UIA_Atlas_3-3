@@ -76,31 +76,36 @@ export default function Dashboard() {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'table'>('map');
 
-  // Fetch data
+  // Fetch KPIs whenever filters change
   useEffect(() => {
-    fetchData();
+    const fetchKpis = async () => {
+      try {
+        const data = await dashboardAPI.getKPIs(filters);
+        setKpis(data);
+      } catch (error) {
+        console.error('Error fetching KPIs:', error);
+      }
+    };
+    fetchKpis();
   }, [filters]);
 
-  const fetchData = async () => {
-    // Only show full loading on initial load or map updates
-    // Table handles its own loading state
+  // Fetch Markers only when in map view and filters change (or view switches to map)
+  useEffect(() => {
     if (viewMode === 'map') {
-      setLoading(true);
+      const fetchMarkers = async () => {
+        setLoading(true);
+        try {
+          const data = await dashboardAPI.getMapMarkers(filters);
+          setMarkers(data);
+        } catch (error) {
+          console.error('Error fetching markers:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchMarkers();
     }
-    try {
-      const [kpisData, markersData] = await Promise.all([
-        dashboardAPI.getKPIs(filters),
-        dashboardAPI.getMapMarkers(filters),
-      ]);
-
-      setKpis(kpisData);
-      setMarkers(markersData);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [filters, viewMode]);
 
   const handleMarkerClick = async (projectId: string) => {
     try {
@@ -285,8 +290,8 @@ export default function Dashboard() {
         </button>
       )}
 
-      {/* Loading State Overlay */}
-      {loading && (
+      {/* Loading State Overlay - Only for Map View */}
+      {loading && viewMode === 'map' && (
         <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-50 backdrop-blur-sm">
            <div className="flex flex-col items-center">
              <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
