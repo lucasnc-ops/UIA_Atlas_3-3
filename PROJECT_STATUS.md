@@ -28,21 +28,18 @@
 - [x] Database migrations (Alembic)
 - [x] Configuration management
 - [x] Security middleware (CORS)
+- [x] **Environment Setup**: Dependencies installed, SQLite DB initialized.
 
 ### Frontend
 - [x] React + TypeScript + Vite setup
 - [x] Tailwind CSS configuration
 - [x] TypeScript type definitions
 - [x] Folder structure for components, pages, services
-- [x] Package.json with all required dependencies:
-  - React Router for navigation
-  - Axios for API calls
-  - Leaflet for maps
-  - Recharts for analytics
-  - React Hook Form for forms
+- [x] **Dependencies**: Installed (with legacy-peer-deps adjustment).
+- [x] **Project Submission**: Full multi-section form implemented (`SubmitProject.tsx`).
 
 ### Documentation
-- [x] README.md - Project overview and setup
+- [x] README.md - Project overview and collection setup
 - [x] DEPLOYMENT.md - Production deployment guide
 - [x] QUICKSTART.md - Quick start for local development
 - [x] PROJECT_STATUS.md - This file
@@ -58,20 +55,20 @@
 ## 🔄 Next Steps (Implementation Phase)
 
 ### Phase 1: Core Backend (Week 1)
-1. Install backend dependencies
-2. Set up local database
-3. Run and test migrations
-4. Create admin user
-5. Test API endpoints in FastAPI docs
-6. Implement email service integration
+- [x] Install backend dependencies
+- [x] Set up local database
+- [x] Run and test migrations
+1. Create admin user
+2. Test API endpoints in FastAPI docs
+3. Implement email service integration
 
 ### Phase 2: Core Frontend (Week 1-2)
-1. Install frontend dependencies
-2. Create base layout components (Header, Sidebar, Footer)
-3. Create landing page
-4. Implement routing
-5. Create API service layer
-6. Add authentication context
+- [x] Install frontend dependencies
+1. Create base layout components (Header, Sidebar, Footer)
+2. Create landing page (Verified)
+3. Implement routing
+4. Create API service layer
+5. Add authentication context
 
 ### Phase 3: Dashboard (Week 2-3)
 1. Implement Leaflet map with markers
@@ -83,14 +80,14 @@
 7. Implement CSV/Excel export
 
 ### Phase 4: Project Submission (Week 3)
-1. Create multi-section submission form
-2. Implement form validation
-3. Add image URL inputs
-4. Create SDG selector (1-17)
-5. Add typology checkboxes
-6. Implement requirements selection
-7. Add coordinate validation
-8. Connect to submission API
+- [x] Create multi-section submission form
+- [x] Implement form validation
+- [x] Add image URL inputs
+- [x] Create SDG selector (1-17)
+- [x] Add typology checkboxes
+- [x] Implement requirements selection
+- [x] Add coordinate validation
+- [x] Connect to submission API
 
 ### Phase 5: Admin Panel (Week 4)
 1. Create login page

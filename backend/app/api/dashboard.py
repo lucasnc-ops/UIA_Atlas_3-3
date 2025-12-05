@@ -15,6 +15,7 @@ async def get_dashboard_kpis(
     region: Optional[str] = Query(None),
     sdg: Optional[int] = Query(None),
     city: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """Get dashboard KPIs with optional filters"""
@@ -29,6 +30,13 @@ async def get_dashboard_kpis(
         query = query.filter(Project.city == city)
     if sdg:
         query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (Project.project_name.ilike(search_term)) |
+            (Project.city.ilike(search_term)) |
+            (Project.country.ilike(search_term))
+        )
 
     # Calculate metrics
     total_projects = query.count()
@@ -53,8 +61,9 @@ async def get_dashboard_projects(
     region: Optional[str] = Query(None),
     sdg: Optional[int] = Query(None),
     city: Optional[str] = Query(None),
-    sort_by: str = Query("created_at", regex="^(project_name|created_at|funding_needed)$"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$"),
+    search: Optional[str] = Query(None),
+    sort_by: str = Query("created_at", pattern="^(project_name|created_at|funding_needed)$"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db)
 ):
     """Get paginated list of approved projects with filters"""
@@ -69,6 +78,13 @@ async def get_dashboard_projects(
         query = query.filter(Project.city == city)
     if sdg:
         query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (Project.project_name.ilike(search_term)) |
+            (Project.city.ilike(search_term)) |
+            (Project.country.ilike(search_term))
+        )
 
     # Get total count
     total = query.count()
@@ -96,6 +112,7 @@ async def get_map_markers(
     region: Optional[str] = Query(None),
     sdg: Optional[int] = Query(None),
     city: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """Get project markers for map (lightweight data)"""
@@ -121,6 +138,13 @@ async def get_map_markers(
         query = query.filter(Project.city == city)
     if sdg:
         query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (Project.project_name.ilike(search_term)) |
+            (Project.city.ilike(search_term)) |
+            (Project.country.ilike(search_term))
+        )
 
     markers = query.all()
 
@@ -142,6 +166,7 @@ async def get_map_markers(
 async def get_sdg_distribution(
     region: Optional[str] = Query(None),
     city: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """Get SDG distribution for charts"""
@@ -157,6 +182,13 @@ async def get_sdg_distribution(
         query = query.filter(Project.uia_region == region)
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (Project.project_name.ilike(search_term)) |
+            (Project.city.ilike(search_term)) |
+            (Project.country.ilike(search_term))
+        )
 
     results = query.group_by(ProjectSDG.sdg_number).order_by(ProjectSDG.sdg_number).all()
 
@@ -167,6 +199,7 @@ async def get_sdg_distribution(
 async def get_regional_distribution(
     sdg: Optional[int] = Query(None),
     city: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """Get project count by region"""
@@ -183,6 +216,13 @@ async def get_regional_distribution(
         query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (Project.project_name.ilike(search_term)) |
+            (Project.city.ilike(search_term)) |
+            (Project.country.ilike(search_term))
+        )
 
     results = query.group_by(Project.uia_region).all()
 
@@ -200,6 +240,7 @@ async def get_regional_distribution(
 async def get_typology_distribution(
     region: Optional[str] = Query(None),
     sdg: Optional[int] = Query(None),
+    search: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """Get project typology distribution"""
@@ -215,6 +256,13 @@ async def get_typology_distribution(
         query = query.filter(Project.uia_region == region)
     if sdg:
         query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (Project.project_name.ilike(search_term)) |
+            (Project.city.ilike(search_term)) |
+            (Project.country.ilike(search_term))
+        )
 
     results = query.group_by(ProjectTypology.typology).order_by(func.count(distinct(ProjectTypology.project_id)).desc()).all()
 

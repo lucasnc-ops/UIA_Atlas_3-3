@@ -60,7 +60,7 @@ class ProjectBase(BaseModel):
 
 class ProjectCreate(ProjectBase):
     """Schema for creating a project"""
-    pass
+    captcha_token: Optional[str] = None
 
 
 class ProjectUpdate(BaseModel):

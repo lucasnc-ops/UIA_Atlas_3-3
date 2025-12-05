@@ -120,6 +120,7 @@ export interface FilterOptions {
   sdg?: SDG | 'All SDGs';
   city?: string | 'All Cities';
   fundedBy?: string | 'All';
+  search?: string;
 }
 
 export interface User {

@@ -1,4 +1,4 @@
-import { DashboardKPIs } from '../../types';
+import type { DashboardKPIs } from '../../types';
 
 interface KPICardsProps {
   kpis: DashboardKPIs;

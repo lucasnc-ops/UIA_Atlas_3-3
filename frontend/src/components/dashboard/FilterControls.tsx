@@ -1,4 +1,4 @@
-import { FilterOptions, UIARegion, SDG } from '../../types';
+import type { FilterOptions, UIARegion, SDG } from '../../types';
 
 interface FilterControlsProps {
   filters: FilterOptions;
@@ -44,103 +44,119 @@ export default function FilterControls({
 }: FilterControlsProps) {
   const hasActiveFilters =
     (filters.region && filters.region !== 'All Regions') ||
-    (filters.sdg && filters.sdg !== 'All SDGs');
+    (filters.sdg && filters.sdg !== 'All SDGs') ||
+    (filters.search && filters.search !== '');
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-stone-200 p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-stone-900">Filters</h3>
-        {hasActiveFilters && (
-          <button
-            onClick={onClearFilters}
-            className="text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
+    <div className="space-y-6">
+      {/* Search Input */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+          Search Projects
+        </label>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Name, City, or Country..."
+            value={filters.search || ''}
+            onChange={(e) => onFilterChange({ ...filters, search: e.target.value })}
+            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300 pl-9"
+          />
+          <svg
+            className="absolute left-3 top-3 w-4 h-4 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            Clear All
-          </button>
-        )}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {/* Region Filter */}
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-2">
-            UIA Region
-          </label>
-          <select
-            value={filters.region || 'All Regions'}
-            onChange={(e) =>
-              onFilterChange({
-                ...filters,
-                region: e.target.value as UIARegion | 'All Regions',
-              })
-            }
-            className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-          >
-            {regions.map((region) => (
-              <option key={region} value={region}>
-                {region}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Region Filter */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+          UIA Region
+        </label>
+        <select
+          value={filters.region || 'All Regions'}
+          onChange={(e) =>
+            onFilterChange({
+              ...filters,
+              region: e.target.value as UIARegion | 'All Regions',
+            })
+          }
+          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300"
+        >
+          {regions.map((region) => (
+            <option key={region} value={region} className="bg-white text-gray-900">
+              {region}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        {/* SDG Filter */}
-        <div>
-          <label className="block text-sm font-medium text-stone-700 mb-2">
-            Sustainable Development Goal
-          </label>
-          <select
-            value={filters.sdg || 'All SDGs'}
-            onChange={(e) => {
-              const value = e.target.value;
-              onFilterChange({
-                ...filters,
-                sdg: value === 'All SDGs' ? 'All SDGs' : (parseInt(value) as SDG),
-              });
-            }}
-            className="w-full px-3 py-2 border border-stone-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-          >
-            {sdgs.map((sdg) => (
-              <option key={sdg} value={sdg}>
-                {sdg === 'All SDGs' ? 'All SDGs' : `SDG ${sdg}: ${sdgLabels[sdg as SDG]}`}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* SDG Filter */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+          Sustainable Development Goal
+        </label>
+        <select
+          value={filters.sdg || 'All SDGs'}
+          onChange={(e) => {
+            const value = e.target.value;
+            onFilterChange({
+              ...filters,
+              sdg: value === 'All SDGs' ? 'All SDGs' : (parseInt(value) as SDG),
+            });
+          }}
+          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300"
+        >
+          {sdgs.map((sdg) => (
+            <option key={sdg} value={sdg} className="bg-white text-gray-900">
+              {sdg === 'All SDGs' ? 'All SDGs' : `SDG ${sdg}: ${sdgLabels[sdg as SDG]}`}
+            </option>
+          ))}
+        </select>
+      </div>
 
-        {/* Active Filters Summary */}
-        {hasActiveFilters && (
-          <div className="pt-4 border-t border-stone-200">
-            <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-2">
-              Active Filters
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {filters.region && filters.region !== 'All Regions' && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                  {filters.region}
-                  <button
-                    onClick={() => onFilterChange({ ...filters, region: 'All Regions' })}
-                    className="ml-2 hover:text-primary-900"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-              {filters.sdg && filters.sdg !== 'All SDGs' && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-accent-100 text-accent-700">
-                  SDG {filters.sdg}
-                  <button
-                    onClick={() => onFilterChange({ ...filters, sdg: 'All SDGs' })}
-                    className="ml-2 hover:text-accent-900"
-                  >
-                    ×
-                  </button>
-                </span>
-              )}
-            </div>
+      {/* Active Filters Summary */}
+      {hasActiveFilters && (
+        <div className="pt-4 border-t border-gray-200">
+          <p className="text-xs font-medium text-gray-500 mb-3">
+            Active Filters
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {filters.region && filters.region !== 'All Regions' && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
+                {filters.region}
+                <button
+                  onClick={() => onFilterChange({ ...filters, region: 'All Regions' })}
+                  className="ml-2 text-primary-400 hover:text-primary-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filters.sdg && filters.sdg !== 'All SDGs' && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                SDG {filters.sdg}
+                <button
+                  onClick={() => onFilterChange({ ...filters, sdg: 'All SDGs' })}
+                  className="ml-2 text-green-400 hover:text-green-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

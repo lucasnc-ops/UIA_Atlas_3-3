@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
-import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { dashboardAPI } from '../../services/api/dashboard';
-import { FilterOptions, DashboardKPIs, Project } from '../../types';
+import type { FilterOptions, DashboardKPIs, Project } from '../../types';
 import KPICards from '../../components/dashboard/KPICards';
 import FilterControls from '../../components/dashboard/FilterControls';
 import ProjectDetailPanel from '../../components/dashboard/ProjectDetailPanel';
+import AnalyticsPanel from '../../components/dashboard/AnalyticsPanel';
+import ProjectTable from '../../components/dashboard/ProjectTable';
 
 // Fix Leaflet default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -26,6 +27,19 @@ interface MapMarker {
   longitude: number;
   region: string;
 }
+
+const formatCurrency = (value: number) => {
+  if (value >= 1000000000) {
+    return `$${(value / 1000000000).toFixed(1)}B`;
+  }
+  if (value >= 1000000) {
+    return `$${(value / 1000000).toFixed(1)}M`;
+  }
+  if (value >= 1000) {
+    return `$${(value / 1000).toFixed(0)}k`;
+  }
+  return `$${value.toLocaleString()}`;
+};
 
 function MapUpdater({ markers }: { markers: MapMarker[] }) {
   const map = useMap();
@@ -58,6 +72,8 @@ export default function Dashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(true);
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [viewMode, setViewMode] = useState<'map' | 'table'>('map');
 
   // Fetch data
   useEffect(() => {
@@ -65,7 +81,11 @@ export default function Dashboard() {
   }, [filters]);
 
   const fetchData = async () => {
-    setLoading(true);
+    // Only show full loading on initial load or map updates
+    // Table handles its own loading state
+    if (viewMode === 'map') {
+      setLoading(true);
+    }
     try {
       const [kpisData, markersData] = await Promise.all([
         dashboardAPI.getKPIs(filters),
@@ -98,138 +118,44 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header Bar */}
-      <div className="bg-white border-b border-stone-200 px-4 sm:px-6 lg:px-8 py-4 z-20">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-display font-bold text-stone-900">
-              Global Dashboard
-            </h1>
-            <p className="text-sm text-stone-500 mt-1">
-              Explore sustainable development projects worldwide
-            </p>
-          </div>
-
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="lg:hidden inline-flex items-center px-4 py-2 border border-stone-300 rounded-lg text-sm font-medium text-stone-700 bg-white hover:bg-stone-50"
-          >
-            <svg
-              className="w-5 h-5 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+    <div className="h-screen w-screen flex flex-col bg-gray-50 text-gray-900 overflow-hidden relative">
+      
+      {/* Main Content (Map or Table) */}
+      <div className="absolute inset-0 z-0">
+         {viewMode === 'map' ? (
+           <MapContainer
+              center={[20, 0]}
+              zoom={2}
+              style={{ height: '100%', width: '100%', background: '#e5e5e5' }}
+              zoomSnap={0.5}
+              zoomDelta={0.5}
+              wheelPxPerZoomLevel={120}
+              scrollWheelZoom={true}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+              {/* CartoDB Voyager Tiles (Light, readable, modern) */}
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
               />
-            </svg>
-            Filters
-          </button>
-        </div>
 
-        {/* KPI Cards */}
-        <div className="mt-6">
-          <KPICards kpis={kpis} loading={loading} />
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Filters Sidebar */}
-        <aside
-          className={`${
-            showFilters ? 'block' : 'hidden'
-          } lg:block w-full lg:w-80 bg-stone-50 border-r border-stone-200 overflow-y-auto p-4`}
-        >
-          <FilterControls
-            filters={filters}
-            onFilterChange={setFilters}
-            onClearFilters={handleClearFilters}
-          />
-
-          {/* Quick Stats */}
-          <div className="mt-6 bg-white rounded-lg shadow-sm border border-stone-200 p-4">
-            <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-3">
-              Quick Stats
-            </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-stone-600">Visible Projects</span>
-                <span className="font-semibold text-primary-600">{markers.length}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-stone-600">Active Filters</span>
-                <span className="font-semibold text-stone-900">
-                  {(filters.region && filters.region !== 'All Regions' ? 1 : 0) +
-                    (filters.sdg && filters.sdg !== 'All SDGs' ? 1 : 0)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div className="mt-6 bg-white rounded-lg shadow-sm border border-stone-200 p-4">
-            <h3 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-3">
-              Map Legend
-            </h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-primary-600 rounded-full"></div>
-                <span className="text-stone-600">Project Location</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-primary-400 rounded-full"></div>
-                <span className="text-stone-600">Cluster (Click to zoom)</span>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* Map */}
-        <main className="flex-1 relative">
-          {loading && (
-            <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
-              <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent"></div>
-                <p className="mt-4 text-stone-600 font-medium">Loading projects...</p>
-              </div>
-            </div>
-          )}
-
-          <MapContainer
-            center={[20, 0]}
-            zoom={2}
-            style={{ height: '100%', width: '100%' }}
-            className="z-0"
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-
-            <MarkerClusterGroup chunkedLoading>
               {markers.map((marker) => (
                 <Marker
                   key={marker.id}
                   position={[marker.latitude, marker.longitude]}
                   eventHandlers={{
                     click: () => handleMarkerClick(marker.id),
+                    mouseover: (e) => e.target.openPopup(),
+                    mouseout: (e) => e.target.closePopup(),
                   }}
                 >
-                  <Popup>
-                    <div className="p-2">
-                      <h3 className="font-semibold text-stone-900 mb-1">
+                  <Popup className="custom-popup" closeButton={false}>
+                    <div className="p-2 text-gray-900">
+                      <h3 className="font-semibold mb-1">
                         {marker.project_name}
                       </h3>
-                      <p className="text-sm text-stone-600">
+                      <p className="text-sm text-gray-600">
                         {marker.city}, {marker.country}
                       </p>
-                      <p className="text-xs text-stone-500 mt-1">{marker.region}</p>
                       <button
                         onClick={() => handleMarkerClick(marker.id)}
                         className="mt-2 text-sm font-medium text-primary-600 hover:text-primary-700"
@@ -240,52 +166,140 @@ export default function Dashboard() {
                   </Popup>
                 </Marker>
               ))}
-            </MarkerClusterGroup>
 
-            <MapUpdater markers={markers} />
-          </MapContainer>
-
-          {/* No Results Message */}
-          {!loading && markers.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md">
-                <svg
-                  className="w-16 h-16 text-stone-300 mx-auto mb-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <h3 className="text-lg font-semibold text-stone-900 mb-2">
-                  No Projects Found
-                </h3>
-                <p className="text-stone-600 mb-4">
-                  No projects match your current filters. Try adjusting your search criteria.
-                </p>
-                <button
-                  onClick={handleClearFilters}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 pointer-events-auto"
-                >
-                  Clear Filters
-                </button>
-              </div>
+              <MapUpdater markers={markers} />
+            </MapContainer>
+         ) : (
+            <div className="h-full pt-32 pb-0 bg-gray-50">
+               <ProjectTable filters={filters} onProjectClick={(p) => setSelectedProject(p)} />
             </div>
-          )}
-        </main>
+         )}
       </div>
 
-      {/* Project Detail Panel */}
+      {/* Header Overlay */}
+      <div className="absolute top-0 left-0 right-0 z-10 px-6 py-4 pointer-events-none">
+        <div className="flex justify-between items-start">
+           <div className="pointer-events-auto flex gap-4">
+             <div className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-4 shadow-lg shadow-black/5">
+               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">SDG Atlas</h1>
+               <p className="text-xs text-gray-500 mt-1">Global Sustainable Development Projects</p>
+             </div>
+             
+             {/* View Toggle */}
+             <div className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-1 shadow-lg shadow-black/5 flex items-center h-full self-stretch">
+               <button
+                 onClick={() => setViewMode('map')}
+                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors h-full flex items-center gap-2 ${viewMode === 'map' ? 'bg-primary-100 text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+               >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <span className="hidden sm:inline">Map</span>
+               </button>
+               <button
+                 onClick={() => setViewMode('table')}
+                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors h-full flex items-center gap-2 ${viewMode === 'table' ? 'bg-primary-100 text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+               >
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                 <span className="hidden sm:inline">List</span>
+               </button>
+             </div>
+
+             <button
+               onClick={() => setShowAnalytics(true)}
+               className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg px-4 py-2 shadow-lg shadow-black/5 hover:bg-white transition-colors flex items-center gap-2 h-full self-stretch group text-gray-600 hover:text-primary-600"
+             >
+               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+               </svg>
+               <span className="font-medium text-sm hidden sm:block">Analytics</span>
+             </button>
+           </div>
+           
+           {/* Floating KPI Cards */}
+           <div className="pointer-events-auto bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-2 shadow-lg shadow-black/5 hidden md:flex gap-4">
+              <div className="px-4 py-2 border-r border-gray-200 last:border-0">
+                 <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Projects</div>
+                 <div className="text-xl font-bold text-gray-900">{kpis.totalProjects}</div>
+              </div>
+              <div className="px-4 py-2 border-r border-gray-200 last:border-0">
+                 <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Cities</div>
+                 <div className="text-xl font-bold text-gray-900">{kpis.citiesEngaged}</div>
+              </div>
+               <div className="px-4 py-2 border-r border-gray-200 last:border-0">
+                 <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Countries</div>
+                 <div className="text-xl font-bold text-gray-900">{kpis.countriesRepresented}</div>
+              </div>
+               <div className="px-4 py-2 border-r border-gray-200 last:border-0">
+                 <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Funding Needed</div>
+                 <div className="text-xl font-bold text-gray-900">{formatCurrency(kpis.totalFundingNeeded)}</div>
+              </div>
+               <div className="px-4 py-2">
+                 <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Funding Spent</div>
+                 <div className="text-xl font-bold text-green-600">{formatCurrency(kpis.totalFundingSpent)}</div>
+              </div>
+           </div>
+        </div>
+      </div>
+
+      {/* Analytics Panel Overlay */}
+      {showAnalytics && (
+        <AnalyticsPanel filters={filters} onClose={() => setShowAnalytics(false)} />
+      )}
+
+      {/* Sidebar Overlay */}
+      <div className={`absolute top-24 left-6 bottom-6 w-80 z-10 transition-transform duration-300 transform ${showFilters ? 'translate-x-0' : '-translate-x-[110%]'}`}>
+         <div className="h-full flex flex-col bg-white/95 backdrop-blur-md border border-gray-200/50 rounded-xl shadow-2xl shadow-black/10 overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="font-semibold text-gray-900">Filters</h2>
+              <button onClick={handleClearFilters} className="text-xs text-primary-600 hover:text-primary-700 font-medium">Reset</button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <div className="light-theme-wrapper">
+                   <FilterControls
+                      filters={filters}
+                      onFilterChange={setFilters}
+                      onClearFilters={handleClearFilters}
+                   />
+                </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-200 bg-gray-50/50">
+               <div className="flex items-center justify-between text-xs text-gray-500">
+                 <span>Visible: <span className="text-gray-900 font-medium">{markers.length}</span></span>
+                 <button onClick={() => setShowFilters(false)} className="md:hidden text-gray-900 font-medium">Hide</button>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      {/* Mobile Toggle Button */}
+      {!showFilters && (
+        <button 
+          onClick={() => setShowFilters(true)}
+          className="absolute top-24 left-6 z-10 bg-white text-gray-600 p-3 rounded-lg shadow-lg hover:text-primary-600 transition-colors border border-gray-200"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        </button>
+      )}
+
+      {/* Loading State Overlay */}
+      {loading && (
+        <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-50 backdrop-blur-sm">
+           <div className="flex flex-col items-center">
+             <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+             <p className="mt-4 text-gray-900 font-medium tracking-wide">Loading Atlas Data...</p>
+           </div>
+        </div>
+      )}
+
+      {/* Project Details Panel Overlay */}
       {selectedProject && (
-        <ProjectDetailPanel
-          project={selectedProject}
-          onClose={() => setSelectedProject(null)}
-        />
+         <div className="absolute top-0 right-0 bottom-0 w-full md:w-[480px] z-20 bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300">
+            <ProjectDetailPanel 
+               project={selectedProject} 
+               onClose={() => setSelectedProject(null)} 
+            />
+         </div>
       )}
     </div>
   );

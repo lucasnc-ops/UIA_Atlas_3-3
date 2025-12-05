@@ -54,3 +54,5 @@ build/
 # Misc
 .cache/
 *.pdf
+.gemini/
+.claude/

@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+import uuid
 from uuid import UUID
 from ..core.database import get_db
 from ..core.deps import get_current_admin
+from ..core.config import settings
 from ..models.project import Project, WorkflowStatus
 from ..models.user import User
 from ..schemas.project import ProjectResponse, ProjectUpdate, ProjectListResponse
 from .projects import _format_project_response
+from ..services.email import send_changes_requested_email, send_approval_email, send_rejection_email
 
 router = APIRouter()
 
@@ -138,7 +141,9 @@ async def approve_project(
     db.commit()
     db.refresh(project)
 
-    # TODO: Send email notification to submitter
+    # Send email notification to submitter
+    public_link = f"{settings.FRONTEND_URL}/?project={str(project.id)}"
+    await send_approval_email(project.contact_email, project.project_name, public_link)
 
     return _format_project_response(project)
 
@@ -164,7 +169,8 @@ async def reject_project(
     project.rejection_reason = reason
     db.commit()
 
-    # TODO: Send email notification to submitter
+    # Send email notification to submitter
+    await send_rejection_email(project.contact_email, project.project_name, reason)
 
     return {"message": "Project rejected", "project_id": str(project_id)}
 
@@ -188,9 +194,16 @@ async def request_changes(
 
     project.workflow_status = WorkflowStatus.CHANGES_REQUESTED
     project.reviewer_notes = message
+    
+    # Generate edit token if not exists
+    if not project.edit_token:
+        project.edit_token = str(uuid.uuid4())
+        
     db.commit()
 
-    # TODO: Send email with edit link to submitter
+    # Send email with edit link to submitter
+    edit_link = f"{settings.FRONTEND_URL}/submit?edit_token={project.edit_token}"
+    await send_changes_requested_email(project.contact_email, project.project_name, edit_link, message)
 
     return {"message": "Changes requested", "project_id": str(project_id)}
 

@@ -7,18 +7,28 @@ export default {
   theme: {
     extend: {
       colors: {
-        // UIA-inspired architectural palette
+        // Mapbox-inspired dark theme
+        mapbox: {
+          black: '#0a0a0a',
+          dark: '#141414',
+          card: '#1f1f1f',
+          gray: '#a1a1aa',
+          light: '#f4f4f5',
+          border: '#333333',
+        },
+        // Updated vibrant electric blue for dark mode contrast
         primary: {
-          50: '#f0f7ff',
-          100: '#e0effe',
-          200: '#bae0fd',
-          300: '#7cc5fb',
-          400: '#36a7f6',
-          500: '#0c8ce7',
-          600: '#006fc5',
-          700: '#0158a0',
-          800: '#064b84',
-          900: '#0a406d',
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
+          950: '#172554',
         },
         // Warm accent for SDG-related elements
         accent: {

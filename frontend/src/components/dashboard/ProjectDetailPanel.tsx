@@ -1,4 +1,4 @@
-import { Project } from '../../types';
+import type { Project } from '../../types';
 
 interface ProjectDetailPanelProps {
   project: Project | null;
@@ -32,21 +32,21 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+        className="fixed inset-0 bg-black bg-opacity-30 z-40 lg:hidden backdrop-blur-sm"
         onClick={onClose}
       ></div>
 
       {/* Side Panel */}
-      <div className="fixed right-0 top-0 h-full w-full lg:w-[480px] bg-white shadow-2xl z-50 overflow-y-auto">
+      <div className="fixed right-0 top-0 h-full w-full lg:w-[480px] bg-white shadow-2xl z-50 overflow-y-auto text-gray-900 border-l border-gray-200">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-stone-200 px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="text-lg font-semibold text-stone-900">Project Details</h2>
+        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+          <h2 className="text-lg font-semibold text-gray-900">Project Details</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-stone-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-gray-900"
           >
             <svg
-              className="w-5 h-5 text-stone-500"
+              className="w-5 h-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -62,17 +62,17 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
         </div>
 
         {/* Content */}
-        <div className="px-6 py-6 space-y-6">
+        <div className="px-6 py-6 space-y-8">
           {/* Images Carousel */}
           {project.imageUrls && project.imageUrls.length > 0 && (
             <div className="space-y-2">
               <img
                 src={project.imageUrls[0]}
                 alt={project.projectName}
-                className="w-full h-64 object-cover rounded-lg"
+                className="w-full h-64 object-cover rounded-lg border border-gray-200"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
-                    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f5f5f4" width="400" height="300"/%3E%3Ctext fill="%2378716c" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
+                    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
                 }}
               />
               {project.imageUrls.length > 1 && (
@@ -82,7 +82,7 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
                       key={idx}
                       src={url}
                       alt={`${project.projectName} ${idx + 2}`}
-                      className="w-20 h-20 object-cover rounded"
+                      className="w-20 h-20 object-cover rounded border border-gray-200"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
@@ -95,25 +95,25 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
 
           {/* Title & Status */}
           <div>
-            <h3 className="text-2xl font-bold text-stone-900 mb-2">{project.projectName}</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3 leading-tight">{project.projectName}</h3>
             <div className="flex items-center gap-2 flex-wrap">
               <span
-                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
                   project.projectStatus === 'Implemented'
-                    ? 'bg-green-100 text-green-700'
+                    ? 'bg-green-50 text-green-700 border-green-200'
                     : project.projectStatus === 'In Progress'
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'bg-stone-100 text-stone-700'
+                    ? 'bg-blue-50 text-blue-700 border-blue-200'
+                    : 'bg-gray-100 text-gray-700 border-gray-200'
                 }`}
               >
                 {project.projectStatus}
               </span>
-              <span className="text-sm text-stone-500">{project.uiaRegion}</span>
+              <span className="text-sm text-gray-500 px-2 border-l border-gray-200">{project.uiaRegion}</span>
             </div>
           </div>
 
           {/* Location */}
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
             <svg
               className="w-5 h-5 text-primary-600 mt-0.5 flex-shrink-0"
               fill="none"
@@ -134,11 +134,11 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
               />
             </svg>
             <div>
-              <p className="font-medium text-stone-900">
+              <p className="font-medium text-gray-900">
                 {project.city}, {project.country}
               </p>
               {project.latitude && project.longitude && (
-                <p className="text-sm text-stone-500">
+                <p className="text-sm text-gray-500 mt-1 font-mono">
                   {project.latitude.toFixed(4)}, {project.longitude.toFixed(4)}
                 </p>
               )}
@@ -146,15 +146,15 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
           </div>
 
           {/* Organization */}
-          <div className="bg-stone-50 rounded-lg p-4">
-            <h4 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-2">
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
               Organization
             </h4>
-            <p className="font-medium text-stone-900">{project.organizationName}</p>
-            <p className="text-sm text-stone-600 mt-1">{project.contactPerson}</p>
+            <p className="font-medium text-gray-900">{project.organizationName}</p>
+            <p className="text-sm text-gray-600 mt-1">{project.contactPerson}</p>
             <a
               href={`mailto:${project.contactEmail}`}
-              className="text-sm text-primary-600 hover:text-primary-700"
+              className="text-sm text-primary-600 hover:text-primary-700 mt-2 inline-block transition-colors"
             >
               {project.contactEmail}
             </a>
@@ -162,41 +162,41 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
 
           {/* Brief Description */}
           <div>
-            <h4 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-2">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
               Brief Description
             </h4>
-            <p className="text-stone-700 leading-relaxed">{project.briefDescription}</p>
+            <p className="text-gray-700 leading-relaxed">{project.briefDescription}</p>
           </div>
 
           {/* Detailed Description */}
           <div>
-            <h4 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-2">
+            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
               Detailed Description
             </h4>
-            <p className="text-stone-600 leading-relaxed whitespace-pre-line">
+            <p className="text-gray-600 leading-relaxed whitespace-pre-line text-sm">
               {project.detailedDescription}
             </p>
           </div>
 
           {/* Funding */}
           {(project.fundingNeeded > 0 || project.fundingSpent > 0) && (
-            <div className="bg-primary-50 rounded-lg p-4">
-              <h4 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-3">
+            <div className="bg-primary-50 rounded-lg p-4 border border-primary-100">
+              <h4 className="text-xs font-semibold text-primary-700 uppercase tracking-widest mb-3">
                 Funding
               </h4>
               <div className="space-y-2">
                 {project.fundingNeeded > 0 && (
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-stone-600">Needed:</span>
-                    <span className="font-semibold text-stone-900">
+                    <span className="text-sm text-gray-600">Needed:</span>
+                    <span className="font-mono font-semibold text-gray-900">
                       ${project.fundingNeeded.toLocaleString()}
                     </span>
                   </div>
                 )}
                 {project.fundingSpent > 0 && (
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-stone-600">Spent:</span>
-                    <span className="font-semibold text-green-700">
+                    <span className="text-sm text-gray-600">Spent:</span>
+                    <span className="font-mono font-semibold text-green-600">
                       ${project.fundingSpent.toLocaleString()}
                     </span>
                   </div>
@@ -208,14 +208,14 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
           {/* SDGs */}
           {project.sdgs && project.sdgs.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-3">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
                 Sustainable Development Goals
               </h4>
               <div className="flex flex-wrap gap-2">
                 {project.sdgs.map((sdg) => (
                   <div
                     key={sdg}
-                    className="flex items-center justify-center w-12 h-12 rounded font-bold text-white text-sm shadow-sm"
+                    className="flex items-center justify-center w-12 h-12 rounded font-bold text-white text-sm shadow-sm ring-1 ring-black/5 hover:shadow-md transition-all cursor-help"
                     style={{ backgroundColor: sdgColors[sdg] }}
                     title={`SDG ${sdg}`}
                   >
@@ -229,14 +229,14 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
           {/* Typologies */}
           {project.typologies && project.typologies.length > 0 && (
             <div>
-              <h4 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-2">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
                 Project Typologies
               </h4>
               <div className="flex flex-wrap gap-2">
                 {project.typologies.map((typology, idx) => (
                   <span
                     key={idx}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-stone-100 text-stone-700"
+                    className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200"
                   >
                     {typology}
                   </span>
@@ -248,12 +248,14 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
           {/* Success Factors */}
           {project.successFactors && (
             <div>
-              <h4 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-2">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
                 Success Factors
               </h4>
-              <p className="text-stone-600 leading-relaxed whitespace-pre-line">
-                {project.successFactors}
-              </p>
+              <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line text-sm">
+                  {project.successFactors}
+                </p>
+              </div>
             </div>
           )}
 
@@ -262,19 +264,19 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
             (project.governmentRequirements && project.governmentRequirements.length > 0) ||
             (project.otherRequirements && project.otherRequirements.length > 0)) && (
             <div>
-              <h4 className="text-sm font-semibold text-stone-700 uppercase tracking-wide mb-3">
+              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
                 Key Requirements
               </h4>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {project.fundingRequirements && project.fundingRequirements.length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-2">
+                    <p className="text-xs font-medium text-primary-600 mb-2">
                       Funding
                     </p>
                     <ul className="space-y-1">
                       {project.fundingRequirements.map((req, idx) => (
-                        <li key={idx} className="text-sm text-stone-600 flex items-start gap-2">
-                          <span className="text-primary-600 mt-1">•</span>
+                        <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
+                          <span className="text-primary-500 mt-1.5 w-1.5 h-1.5 rounded-full bg-current flex-shrink-0"></span>
                           {req}
                         </li>
                       ))}
@@ -283,13 +285,13 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
                 )}
                 {project.governmentRequirements && project.governmentRequirements.length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-2">
+                    <p className="text-xs font-medium text-primary-600 mb-2">
                       Government & Regulatory
                     </p>
                     <ul className="space-y-1">
                       {project.governmentRequirements.map((req, idx) => (
-                        <li key={idx} className="text-sm text-stone-600 flex items-start gap-2">
-                          <span className="text-primary-600 mt-1">•</span>
+                        <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
+                          <span className="text-primary-500 mt-1.5 w-1.5 h-1.5 rounded-full bg-current flex-shrink-0"></span>
                           {req}
                         </li>
                       ))}
@@ -298,13 +300,13 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
                 )}
                 {project.otherRequirements && project.otherRequirements.length > 0 && (
                   <div>
-                    <p className="text-xs font-medium text-stone-500 uppercase tracking-wide mb-2">
+                    <p className="text-xs font-medium text-primary-600 mb-2">
                       Other
                     </p>
                     <ul className="space-y-1">
                       {project.otherRequirements.map((req, idx) => (
-                        <li key={idx} className="text-sm text-stone-600 flex items-start gap-2">
-                          <span className="text-primary-600 mt-1">•</span>
+                        <li key={idx} className="text-sm text-gray-600 flex items-start gap-2">
+                          <span className="text-primary-500 mt-1.5 w-1.5 h-1.5 rounded-full bg-current flex-shrink-0"></span>
                           {req}
                         </li>
                       ))}

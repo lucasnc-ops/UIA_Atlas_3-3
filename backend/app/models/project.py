@@ -87,6 +87,7 @@ class Project(Base):
     # Review/moderation
     rejection_reason = Column(Text, nullable=True)
     reviewer_notes = Column(Text, nullable=True)
+    edit_token = Column(String(255), nullable=True, index=True)
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)

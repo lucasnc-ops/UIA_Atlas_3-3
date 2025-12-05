@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { Project, DashboardKPIs, FilterOptions } from '../../types';
+import type { Project, DashboardKPIs, FilterOptions } from '../../types';
 
 export const dashboardAPI = {
   // Get KPIs
@@ -13,6 +13,9 @@ export const dashboardAPI = {
     }
     if (filters?.city && filters.city !== 'All Cities') {
       params.append('city', filters.city);
+    }
+    if (filters?.search) {
+      params.append('search', filters.search);
     }
 
     const response = await apiClient.get(`/api/dashboard/kpis?${params.toString()}`);
@@ -30,6 +33,9 @@ export const dashboardAPI = {
     }
     if (filters?.city && filters.city !== 'All Cities') {
       params.append('city', filters.city);
+    }
+    if (filters?.search) {
+      params.append('search', filters.search);
     }
 
     const response = await apiClient.get(`/api/dashboard/map-markers?${params.toString()}`);
@@ -59,6 +65,9 @@ export const dashboardAPI = {
     if (filters?.city && filters.city !== 'All Cities') {
       params.append('city', filters.city);
     }
+    if (filters?.search) {
+      params.append('search', filters.search);
+    }
 
     const response = await apiClient.get(`/api/dashboard/projects?${params.toString()}`);
     return response.data;
@@ -79,6 +88,9 @@ export const dashboardAPI = {
     if (filters?.city && filters.city !== 'All Cities') {
       params.append('city', filters.city);
     }
+    if (filters?.search) {
+      params.append('search', filters.search);
+    }
 
     const response = await apiClient.get(`/api/dashboard/analytics/sdg-distribution?${params.toString()}`);
     return response.data;
@@ -92,6 +104,9 @@ export const dashboardAPI = {
     if (filters?.city && filters.city !== 'All Cities') {
       params.append('city', filters.city);
     }
+    if (filters?.search) {
+      params.append('search', filters.search);
+    }
 
     const response = await apiClient.get(`/api/dashboard/analytics/regional-distribution?${params.toString()}`);
     return response.data;
@@ -104,6 +119,9 @@ export const dashboardAPI = {
     }
     if (filters?.sdg && filters.sdg !== 'All SDGs') {
       params.append('sdg', filters.sdg.toString());
+    }
+    if (filters?.search) {
+      params.append('search', filters.search);
     }
 
     const response = await apiClient.get(`/api/dashboard/analytics/typology-distribution?${params.toString()}`);
