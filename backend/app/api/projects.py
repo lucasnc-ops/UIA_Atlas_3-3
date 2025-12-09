@@ -261,11 +261,11 @@ def _format_project_response(project: Project) -> dict:
         "organization_name": project.organization_name,
         "contact_person": project.contact_person,
         "contact_email": project.contact_email,
-        "project_status": project.project_status.value,
-        "workflow_status": project.workflow_status.value,
+        "project_status": project.project_status.value if project.project_status else None,
+        "workflow_status": project.workflow_status.value if project.workflow_status else None,
         "funding_needed": project.funding_needed,
         "funding_spent": project.funding_spent,
-        "uia_region": project.uia_region.value,
+        "uia_region": project.uia_region.value if project.uia_region else None,
         "city": project.city,
         "country": project.country,
         "latitude": project.latitude,
@@ -273,20 +273,20 @@ def _format_project_response(project: Project) -> dict:
         "brief_description": project.brief_description,
         "detailed_description": project.detailed_description,
         "success_factors": project.success_factors,
-        "typologies": [t.typology for t in project.typologies],
+        "typologies": [t.typology for t in project.typologies] if project.typologies else [],
         "funding_requirements": [
             r.requirement for r in project.requirements if r.requirement_type == 'funding'
-        ],
+        ] if project.requirements else [],
         "government_requirements": [
             r.requirement for r in project.requirements if r.requirement_type == 'government'
-        ],
+        ] if project.requirements else [],
         "other_requirements": [
             r.requirement for r in project.requirements if r.requirement_type == 'other'
-        ],
+        ] if project.requirements else [],
         "other_requirement_text": project.other_requirement_text,
         "gdpr_consent": project.gdpr_consent,
-        "sdgs": [s.sdg_number for s in project.sdgs],
-        "image_urls": [img.image_url for img in sorted(project.images, key=lambda x: x.display_order)],
+        "sdgs": [s.sdg_number for s in project.sdgs] if project.sdgs else [],
+        "image_urls": [img.image_url for img in sorted(project.images, key=lambda x: x.display_order)] if project.images else [],
         "rejection_reason": project.rejection_reason,
         "reviewer_notes": project.reviewer_notes,
         "created_at": project.created_at,

@@ -1,5 +1,4 @@
 import { adminAPI } from '../services/api/admin';
-import type { Project } from '../types';
 
 export const downloadProjectsCSV = async () => {
   try {

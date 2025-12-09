@@ -84,7 +84,7 @@ export default function SubmitProject() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-mapbox-black flex items-center justify-center text-white">
+      <div className="min-h-screen bg-mapbox-black flex items-center justify-center text-mapbox-light">
         Loading project data...
       </div>
     );
@@ -99,7 +99,7 @@ export default function SubmitProject() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">
+          <h2 className="text-2xl font-bold text-mapbox-light mb-2">
             {editToken ? 'Update Received' : 'Submission Received'}
           </h2>
           <p className="text-mapbox-gray mb-8">
@@ -111,14 +111,14 @@ export default function SubmitProject() {
           <div className="flex flex-col space-y-3">
             <Link
               to="/dashboard"
-              className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-mapbox-light bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
             >
               View Atlas
             </Link>
             {!editToken && (
               <button
                 onClick={handleReset}
-                className="w-full inline-flex justify-center items-center px-4 py-2 border border-mapbox-border rounded-md shadow-sm text-sm font-medium text-mapbox-gray bg-transparent hover:text-white hover:border-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                className="w-full inline-flex justify-center items-center px-4 py-2 border border-mapbox-border rounded-md shadow-sm text-sm font-medium text-mapbox-gray bg-transparent hover:text-primary-600 hover:border-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
               >
                 Submit Another Project
               </button>
@@ -133,7 +133,7 @@ export default function SubmitProject() {
     <div className="min-h-screen bg-mapbox-black text-mapbox-light py-12 font-sans">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-white">
+          <h1 className="text-3xl font-display font-bold text-mapbox-light">
             {editToken ? 'Update Project' : 'Submit a Project'}
           </h1>
           <p className="mt-2 text-mapbox-gray">

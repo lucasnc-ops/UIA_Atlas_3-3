@@ -42,7 +42,6 @@ const sdgLabels: Record<SDG, string> = {
 export default function FilterControls({
   filters,
   onFilterChange,
-  onClearFilters,
 }: FilterControlsProps) {
   const [cities, setCities] = useState<string[]>([]);
   const [fundingSources, setFundingSources] = useState<string[]>([]);
@@ -52,7 +51,7 @@ export default function FilterControls({
       try {
         const data = await dashboardAPI.getFilters();
         setCities(data.cities);
-        setFundingSources(data.funding_sources);
+        setFundingSources(data.fundingSources);
       } catch (error) {
         console.error('Error fetching filters:', error);
       }

@@ -6,18 +6,16 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Title */}
-          <Link to="/" className="flex items-center space-x-3">
-            <div className="flex items-center">
-              <div className="w-10 h-10 bg-primary-500 rounded flex items-center justify-center">
-                <span className="text-white font-bold text-xl">A</span>
-              </div>
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-primary-500/25 transition-all duration-300">
+              <span className="text-white font-bold text-xl">A</span>
             </div>
-            <div className="hidden sm:block">
-              <h1 className="text-xl font-display font-semibold text-white tracking-tight">
+            <div>
+              <h1 className="text-xl font-display font-semibold text-mapbox-light tracking-tight">
                 Atlas 3+3
               </h1>
               <p className="text-xs text-mapbox-gray tracking-wide">
-                UIA Sustainable Development
+                Union of International Architects
               </p>
             </div>
           </Link>

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, distinct
 from typing import Optional, List
 from ..core.database import get_db
-from ..models.project import Project, ProjectSDG, ProjectTypology, ProjectRequirement, WorkflowStatus
+from ..models.project import Project, ProjectSDG, ProjectTypology, ProjectRequirement, WorkflowStatus, ProjectImage
 from ..schemas.project import ProjectListResponse, DashboardKPIs, ProjectResponse
 from .projects import _format_project_response
 
@@ -163,7 +163,11 @@ async def get_map_markers(
         Project.country,
         Project.latitude,
         Project.longitude,
-        Project.uia_region
+        Project.uia_region,
+        Project.project_status,
+        ProjectImage.image_url
+    ).outerjoin(
+        ProjectImage, (ProjectImage.project_id == Project.id) & (ProjectImage.display_order == 0)
     ).filter(
         Project.workflow_status == WorkflowStatus.APPROVED,
         Project.latitude.isnot(None),
@@ -200,7 +204,9 @@ async def get_map_markers(
             "country": m.country,
             "latitude": m.latitude,
             "longitude": m.longitude,
-            "region": m.uia_region.value,
+            "region": m.uia_region.value if m.uia_region else None,
+            "status": m.project_status.value if m.project_status else None,
+            "image_url": m.image_url
         }
         for m in markers
     ]

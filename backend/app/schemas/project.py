@@ -29,13 +29,6 @@ class ProjectBase(BaseModel):
     image_urls: List[str]
     gdpr_consent: bool
 
-    @field_validator('gdpr_consent')
-    @classmethod
-    def validate_gdpr(cls, v):
-        if not v:
-            raise ValueError('GDPR consent is required to submit a project')
-        return v
-
     @field_validator('latitude')
     @classmethod
     def validate_latitude(cls, v):
@@ -69,6 +62,13 @@ class ProjectBase(BaseModel):
 class ProjectCreate(ProjectBase):
     """Schema for creating a project"""
     captcha_token: Optional[str] = None
+
+    @field_validator('gdpr_consent')
+    @classmethod
+    def validate_gdpr(cls, v):
+        if not v:
+            raise ValueError('GDPR consent is required to submit a project')
+        return v
 
 
 class ProjectUpdate(BaseModel):
