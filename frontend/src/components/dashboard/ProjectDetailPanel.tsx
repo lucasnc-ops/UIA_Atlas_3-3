@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { Project } from '../../types';
+import Lightbox from '../../components/common/Lightbox';
 
 interface ProjectDetailPanelProps {
   project: Project | null;
@@ -26,7 +28,21 @@ const sdgColors: Record<number, string> = {
 };
 
 export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPanelProps) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   if (!project) return null;
+
+  const handleImageClick = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    // Could use a toast notification here
+    alert('Project link copied to clipboard!');
+  };
 
   return (
     <>
@@ -41,48 +57,62 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
         {/* Header */}
         <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
           <h2 className="text-lg font-semibold text-gray-900">Project Details</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-gray-900"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-primary-600"
+              title="Share Project"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+              </svg>
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-gray-900"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Content */}
         <div className="px-6 py-6 space-y-8">
           {/* Images Carousel */}
-          {project.imageUrls && project.imageUrls.length > 0 && (
+          {project.imageUrls && project.imageUrls.length > 0 ? (
             <div className="space-y-2">
               <img
                 src={project.imageUrls[0]}
                 alt={project.projectName}
-                className="w-full h-64 object-cover rounded-lg border border-gray-200"
+                className="w-full h-64 object-cover rounded-lg border border-gray-200 cursor-zoom-in hover:opacity-95 transition-opacity"
+                onClick={() => handleImageClick(0)}
                 onError={(e) => {
+                  console.error("Failed to load image:", project.imageUrls[0]);
                   (e.target as HTMLImageElement).src =
                     'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
                 }}
               />
               {project.imageUrls.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto">
-                  {project.imageUrls.slice(1, 4).map((url, idx) => (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {project.imageUrls.slice(1).map((url, idx) => (
                     <img
                       key={idx}
                       src={url}
                       alt={`${project.projectName} ${idx + 2}`}
-                      className="w-20 h-20 object-cover rounded border border-gray-200"
+                      className="w-20 h-20 object-cover rounded border border-gray-200 cursor-zoom-in hover:opacity-95 transition-opacity flex-shrink-0"
+                      onClick={() => handleImageClick(idx + 1)}
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
@@ -91,6 +121,10 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
                 </div>
               )}
             </div>
+          ) : (
+             <div className="w-full h-64 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                <span className="text-gray-400 font-medium">No Images Available</span>
+             </div>
           )}
 
           {/* Title & Status */}
@@ -318,6 +352,16 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
           )}
         </div>
       </div>
+
+      <Lightbox
+        images={project.imageUrls}
+        initialIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        onPrev={() => setLightboxIndex((i) => (i > 0 ? i - 1 : project.imageUrls.length - 1))}
+        onNext={() => setLightboxIndex((i) => (i < project.imageUrls.length - 1 ? i + 1 : 0))}
+      />
     </>
   );
 }
+

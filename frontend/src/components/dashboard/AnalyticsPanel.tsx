@@ -120,10 +120,10 @@ export default function AnalyticsPanel({ filters, onClose }: AnalyticsPanelProps
                       innerRadius={60}
                       outerRadius={100}
                       paddingAngle={5}
-                      dataKey="project_count"
+                      dataKey="projectCount"
                       nameKey="region"
                     >
-                      {regionData.map((entry, index) => (
+                      {regionData.map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>

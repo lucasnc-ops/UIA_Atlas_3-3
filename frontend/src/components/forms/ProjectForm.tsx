@@ -21,6 +21,9 @@ interface ProjectFormProps {
   submitLabel?: string;
 }
 
+// Fallback to test key if env var is missing or empty
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+
 export default function ProjectForm({
   initialValues,
   onSubmit,
@@ -115,7 +118,7 @@ export default function ProjectForm({
         
         {/* Contact Information */}
         <section>
-          <h2 className="text-xl font-semibold text-white mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
             Contact Information
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -124,7 +127,7 @@ export default function ProjectForm({
               <input
                 type="text"
                 {...register('organization_name', { required: 'Organization name is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               />
               {errors.organization_name && <p className="mt-1 text-sm text-red-400">{errors.organization_name.message}</p>}
             </div>
@@ -134,7 +137,7 @@ export default function ProjectForm({
               <input
                 type="text"
                 {...register('contact_person', { required: 'Contact person is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               />
               {errors.contact_person && <p className="mt-1 text-sm text-red-400">{errors.contact_person.message}</p>}
             </div>
@@ -144,7 +147,7 @@ export default function ProjectForm({
               <input
                 type="email"
                 {...register('contact_email', { required: 'Email is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               />
               {errors.contact_email && <p className="mt-1 text-sm text-red-400">{errors.contact_email.message}</p>}
             </div>
@@ -153,7 +156,7 @@ export default function ProjectForm({
 
         {/* Project Basics */}
         <section>
-          <h2 className="text-xl font-semibold text-white mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
             Project Details
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -162,7 +165,7 @@ export default function ProjectForm({
               <input
                 type="text"
                 {...register('project_name', { required: 'Project name is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               />
               {errors.project_name && <p className="mt-1 text-sm text-red-400">{errors.project_name.message}</p>}
             </div>
@@ -171,7 +174,7 @@ export default function ProjectForm({
               <label className="block text-sm font-medium text-mapbox-gray mb-1">Project Status</label>
               <select
                 {...register('project_status', { required: 'Status is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               >
                 <option value="">Select Status</option>
                 {PROJECT_STATUSES.map(status => (
@@ -186,7 +189,7 @@ export default function ProjectForm({
               <input
                 type="number"
                 {...register('funding_needed', { min: 0 })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               />
             </div>
           </div>
@@ -194,7 +197,7 @@ export default function ProjectForm({
 
         {/* Location */}
         <section>
-          <h2 className="text-xl font-semibold text-white mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
             Location
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -202,7 +205,7 @@ export default function ProjectForm({
               <label className="block text-sm font-medium text-mapbox-gray mb-1">UIA Region</label>
               <select
                 {...register('uia_region', { required: 'Region is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               >
                 <option value="">Select Region</option>
                 {UIA_REGIONS.map(region => (
@@ -217,7 +220,7 @@ export default function ProjectForm({
               <input
                 type="text"
                 {...register('city', { required: 'City is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               />
             </div>
 
@@ -226,7 +229,7 @@ export default function ProjectForm({
               <input
                 type="text"
                 {...register('country', { required: 'Country is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               />
             </div>
 
@@ -236,7 +239,7 @@ export default function ProjectForm({
                 type="number"
                 step="any"
                 {...register('latitude', { min: -90, max: 90 })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               />
             </div>
 
@@ -246,7 +249,7 @@ export default function ProjectForm({
                 type="number"
                 step="any"
                 {...register('longitude', { min: -180, max: 180 })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               />
             </div>
           </div>
@@ -254,7 +257,7 @@ export default function ProjectForm({
 
         {/* Description */}
         <section>
-          <h2 className="text-xl font-semibold text-white mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
             Description
           </h2>
           <div className="space-y-6">
@@ -263,7 +266,7 @@ export default function ProjectForm({
               <textarea
                 rows={3}
                 {...register('brief_description', { required: 'Brief description is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               />
               {errors.brief_description && <p className="mt-1 text-sm text-red-400">{errors.brief_description.message}</p>}
             </div>
@@ -273,7 +276,7 @@ export default function ProjectForm({
               <textarea
                 rows={6}
                 {...register('detailed_description', { required: 'Detailed description is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
               />
             </div>
 
@@ -282,7 +285,7 @@ export default function ProjectForm({
               <textarea
                 rows={4}
                 {...register('success_factors', { required: 'Success factors are required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
                 placeholder="What makes this project successful? (e.g. Community involvement, innovative technology...)"
               />
             </div>
@@ -291,7 +294,7 @@ export default function ProjectForm({
 
         {/* SDGs */}
         <section>
-          <h2 className="text-xl font-semibold text-white mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
             Sustainable Development Goals
           </h2>
           <p className="text-sm text-mapbox-gray mb-4">Select all that apply.</p>
@@ -321,13 +324,13 @@ export default function ProjectForm({
 
         {/* Typologies & Requirements */}
         <section>
-          <h2 className="text-xl font-semibold text-white mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
             Categorization & Requirements
           </h2>
           
           <div className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-white mb-3">Project Typologies</label>
+              <label className="block text-sm font-medium text-mapbox-light mb-3">Project Typologies</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {TYPOLOGIES.map(type => (
                   <label key={type} className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer">
@@ -344,7 +347,7 @@ export default function ProjectForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-3">Funding Requirements</label>
+              <label className="block text-sm font-medium text-mapbox-light mb-3">Funding Requirements</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {FUNDING_REQUIREMENTS.map(req => (
                   <label key={req} className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer">
@@ -361,7 +364,7 @@ export default function ProjectForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-3">Government Requirements</label>
+              <label className="block text-sm font-medium text-mapbox-light mb-3">Government Requirements</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {GOVERNMENT_REQUIREMENTS.map(req => (
                   <label key={req} className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer">
@@ -378,7 +381,7 @@ export default function ProjectForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-white mb-3">Other Requirements</label>
+              <label className="block text-sm font-medium text-mapbox-light mb-3">Other Requirements</label>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {OTHER_REQUIREMENTS.map(req => (
                   <label key={req} className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer">
@@ -399,7 +402,7 @@ export default function ProjectForm({
               <input
                 type="text"
                 {...register('other_requirement_text')}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
                 placeholder="Specify any other requirements..."
               />
             </div>
@@ -408,7 +411,7 @@ export default function ProjectForm({
 
         {/* Media */}
         <section>
-          <h2 className="text-xl font-semibold text-white mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
             Media
           </h2>
           <div>
@@ -418,7 +421,7 @@ export default function ProjectForm({
               rows={4}
               value={imageInput}
               onChange={(e) => setImageInput(e.target.value)}
-              className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-white shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5 font-mono"
+              className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5 font-mono"
               placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
             />
           </div>
@@ -436,7 +439,7 @@ export default function ProjectForm({
                 className="mt-1 h-4 w-4 rounded border-mapbox-border bg-mapbox-dark text-primary-600 focus:ring-primary-500"
               />
               <div className="ml-3">
-                <p className="text-sm font-medium text-white">I consent to the publication of this data.</p>
+                <p className="text-sm font-medium text-mapbox-light">I consent to the publication of this data.</p>
                 <p className="text-xs text-mapbox-gray mt-1">
                   By checking this box, I confirm that I have the right to share this information and images, 
                   and I agree for them to be published on the UIA SDG Atlas website.
@@ -453,7 +456,7 @@ export default function ProjectForm({
         {isPublicSubmission && (
           <div className="pt-4 flex justify-center">
               <ReCAPTCHA
-                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                  sitekey={RECAPTCHA_SITE_KEY}
                   onChange={(token) => setCaptchaToken(token)}
                   theme="dark"
               />
@@ -465,7 +468,7 @@ export default function ProjectForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
+            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-mapbox-light bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
           >
             {isSubmitting ? 'Submitting...' : submitLabel}
           </button>

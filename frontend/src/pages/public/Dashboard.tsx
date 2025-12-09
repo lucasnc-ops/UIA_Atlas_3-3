@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
+import { useSearchParams } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { dashboardAPI } from '../../services/api/dashboard';
 import type { FilterOptions, DashboardKPIs, Project } from '../../types';
-import KPICards from '../../components/dashboard/KPICards';
 import FilterControls from '../../components/dashboard/FilterControls';
 import ProjectDetailPanel from '../../components/dashboard/ProjectDetailPanel';
 import AnalyticsPanel from '../../components/dashboard/AnalyticsPanel';
@@ -21,15 +21,20 @@ L.Icon.Default.mergeOptions({
 
 interface MapMarker {
   id: string;
-  project_name: string;
+  projectName: string;
   city: string;
   country: string;
   latitude: number;
   longitude: number;
   region: string;
+  status?: string;
+  imageUrl?: string;
 }
 
-const formatCurrency = (value: number) => {
+const formatCurrency = (value: number | undefined | null) => {
+  if (value === undefined || value === null) {
+    return '$0';
+  }
   if (value >= 1000000000) {
     return `$${(value / 1000000000).toFixed(1)}B`;
   }
@@ -58,6 +63,7 @@ function MapUpdater({ markers }: { markers: MapMarker[] }) {
 }
 
 export default function Dashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [kpis, setKpis] = useState<DashboardKPIs>({
     totalProjects: 0,
     citiesEngaged: 0,
@@ -75,6 +81,14 @@ export default function Dashboard() {
   const [showFilters, setShowFilters] = useState(true);
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'table'>('map');
+
+  // Check for deep link on mount
+  useEffect(() => {
+    const projectId = searchParams.get('project');
+    if (projectId) {
+      handleProjectSelect(projectId);
+    }
+  }, []);
 
   // Fetch KPIs whenever filters change
   useEffect(() => {
@@ -107,13 +121,25 @@ export default function Dashboard() {
     }
   }, [filters, viewMode]);
 
-  const handleMarkerClick = async (projectId: string) => {
+  const handleProjectSelect = async (projectId: string) => {
     try {
       const project = await dashboardAPI.getProject(projectId);
       setSelectedProject(project);
+      
+      // Update URL
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('project', projectId);
+      setSearchParams(newParams);
     } catch (error) {
       console.error('Error fetching project details:', error);
     }
+  };
+
+  const handleProjectClose = () => {
+    setSelectedProject(null);
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete('project');
+    setSearchParams(newParams);
   };
 
   const handleClearFilters = () => {
@@ -124,7 +150,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-gray-50 text-gray-900 overflow-hidden relative">
+    <div className="h-screen w-screen flex flex-col bg-white text-mapbox-light overflow-hidden relative">
       
       {/* Main Content (Map or Table) */}
       <div className="absolute inset-0 z-0">
@@ -150,25 +176,54 @@ export default function Dashboard() {
                     key={marker.id}
                     position={[marker.latitude, marker.longitude]}
                     eventHandlers={{
-                      click: () => handleMarkerClick(marker.id),
+                      click: () => handleProjectSelect(marker.id),
                       mouseover: (e) => e.target.openPopup(),
                       mouseout: (e) => e.target.closePopup(),
                     }}
                   >
-                    <Popup className="custom-popup" closeButton={false}>
-                      <div className="p-2 text-gray-900">
-                        <h3 className="font-semibold mb-1">
-                          {marker.project_name}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {marker.city}, {marker.country}
-                        </p>
-                        <button
-                          onClick={() => handleMarkerClick(marker.id)}
-                          className="mt-2 text-sm font-medium text-primary-600 hover:text-primary-700"
-                        >
-                          View Details →
-                        </button>
+                    <Popup className="custom-popup p-0 overflow-hidden" closeButton={false} maxWidth={280} minWidth={240}>
+                      <div className="bg-white rounded-lg shadow-sm overflow-hidden text-gray-900">
+                        {marker.imageUrl ? (
+                          <div className="h-32 w-full overflow-hidden">
+                             <img 
+                               src={marker.imageUrl} 
+                               alt={marker.projectName} 
+                               className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500" 
+                             />
+                          </div>
+                        ) : (
+                           <div className="h-24 w-full bg-gray-100 flex items-center justify-center">
+                              <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                           </div>
+                        )}
+                        
+                        <div className="p-3">
+                          <h3 className="font-bold text-sm leading-tight mb-1 text-gray-900">
+                            {marker.projectName}
+                          </h3>
+                          <p className="text-xs text-gray-500 mb-2 flex items-center">
+                             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                             {marker.city}, {marker.country}
+                          </p>
+                          
+                          <div className="flex justify-between items-center mt-3">
+                              {marker.status && (
+                                <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                                    marker.status === 'Implemented' ? 'bg-green-100 text-green-700' :
+                                    marker.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-yellow-100 text-yellow-700'
+                                }`}>
+                                    {marker.status}
+                                </span>
+                              )}
+                              <button
+                                onClick={() => handleProjectSelect(marker.id)}
+                                className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
+                              >
+                                View Details →
+                              </button>
+                          </div>
+                        </div>
                       </div>
                     </Popup>
                   </Marker>
@@ -179,7 +234,7 @@ export default function Dashboard() {
             </MapContainer>
          ) : (
             <div className="h-full pt-32 pb-0 bg-gray-50">
-               <ProjectTable filters={filters} onProjectClick={(p) => setSelectedProject(p)} />
+               <ProjectTable filters={filters} onProjectClick={(p) => handleProjectSelect(p.id)} />
             </div>
          )}
       </div>
@@ -305,7 +360,7 @@ export default function Dashboard() {
          <div className="absolute top-0 right-0 bottom-0 w-full md:w-[480px] z-20 bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300">
             <ProjectDetailPanel 
                project={selectedProject} 
-               onClose={() => setSelectedProject(null)} 
+               onClose={handleProjectClose} 
             />
          </div>
       )}

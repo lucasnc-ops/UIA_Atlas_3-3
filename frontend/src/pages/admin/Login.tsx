@@ -30,10 +30,10 @@ export default function AdminLogin() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
           <div className="w-12 h-12 bg-primary-500 rounded-lg flex items-center justify-center shadow-lg shadow-primary-900/50">
-            <span className="text-white font-bold text-2xl">A</span>
+            <span className="text-mapbox-light font-bold text-2xl">A</span>
           </div>
         </div>
-        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-white">
+        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-mapbox-light">
           Sign in to Atlas 3+3
         </h2>
         <p className="mt-2 text-center text-sm text-mapbox-gray">
@@ -57,7 +57,7 @@ export default function AdminLogin() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full rounded-md border border-mapbox-border bg-mapbox-dark px-3 py-2 text-white placeholder-gray-500 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                  className="block w-full rounded-md border border-mapbox-border bg-mapbox-dark px-3 py-2 text-mapbox-light placeholder-gray-500 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -75,7 +75,7 @@ export default function AdminLogin() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full rounded-md border border-mapbox-border bg-mapbox-dark px-3 py-2 text-white placeholder-gray-500 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                  className="block w-full rounded-md border border-mapbox-border bg-mapbox-dark px-3 py-2 text-mapbox-light placeholder-gray-500 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
                 />
               </div>
             </div>
@@ -99,7 +99,7 @@ export default function AdminLogin() {
               <button
                 type="submit"
                 disabled={loading}
-                className="flex w-full justify-center rounded-md border border-transparent bg-primary-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-mapbox-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex w-full justify-center rounded-md border border-transparent bg-primary-600 py-2 px-4 text-sm font-medium text-mapbox-light shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-mapbox-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? 'Signing in...' : 'Sign in'}
               </button>
