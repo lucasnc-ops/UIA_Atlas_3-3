@@ -15,9 +15,9 @@ except:
 
 class ProjectStatus(str, enum.Enum):
     """Project implementation status"""
-    PLANNED = "Planned"
-    IN_PROGRESS = "In Progress"
-    IMPLEMENTED = "Implemented"
+    PLANNED = "planned"
+    IN_PROGRESS = "in_progress"
+    IMPLEMENTED = "implemented"
 
 
 class WorkflowStatus(str, enum.Enum):
@@ -31,11 +31,11 @@ class WorkflowStatus(str, enum.Enum):
 
 class UIARegion(str, enum.Enum):
     """UIA Regional sections"""
-    SECTION_I = "Section I - Western Europe"
-    SECTION_II = "Section II - Eastern Europe & Central Asia"
-    SECTION_III = "Section III - Middle East & Africa"
-    SECTION_IV = "Section IV - Asia & Pacific"
-    SECTION_V = "Section V - Americas"
+    SECTION_I = "SECTION_I"
+    SECTION_II = "SECTION_II"
+    SECTION_III = "SECTION_III"
+    SECTION_IV = "SECTION_IV"
+    SECTION_V = "SECTION_V"
 
 
 class Project(Base):

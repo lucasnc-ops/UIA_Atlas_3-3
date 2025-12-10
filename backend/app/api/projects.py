@@ -255,17 +255,41 @@ async def get_project(project_id: UUID, db: Session = Depends(get_db)):
 
 def _format_project_response(project: Project) -> dict:
     """Helper to format project with related data"""
+    # Map region codes to readable labels
+    region_labels = {
+        "SECTION_I": "Section I - Western Europe",
+        "SECTION_II": "Section II - Eastern Europe & Central Asia",
+        "SECTION_III": "Section III - Middle East & Africa",
+        "SECTION_IV": "Section IV - Asia & Pacific",
+        "SECTION_V": "Section V - Americas"
+    }
+    
+    region_value = project.uia_region.value if project.uia_region else None
+    if region_value in region_labels:
+        region_value = region_labels[region_value]
+
+    # Map status codes to readable labels
+    status_labels = {
+        "planned": "Planned",
+        "in_progress": "In Progress",
+        "implemented": "Implemented"
+    }
+    
+    status_value = project.project_status.value if project.project_status else None
+    if status_value in status_labels:
+        status_value = status_labels[status_value]
+
     return {
         "id": project.id,
         "project_name": project.project_name,
         "organization_name": project.organization_name,
         "contact_person": project.contact_person,
         "contact_email": project.contact_email,
-        "project_status": project.project_status.value if project.project_status else None,
+        "project_status": status_value,
         "workflow_status": project.workflow_status.value if project.workflow_status else None,
         "funding_needed": project.funding_needed,
         "funding_spent": project.funding_spent,
-        "uia_region": project.uia_region.value if project.uia_region else None,
+        "uia_region": region_value,
         "city": project.city,
         "country": project.country,
         "latitude": project.latitude,
