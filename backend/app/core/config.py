@@ -30,7 +30,9 @@ class Settings(BaseSettings):
 
     # CORS
     CORS_ORIGINS: str = "http://localhost:5173"
-    CORS_ORIGIN_REGEX: str | None = None
+    # Optional: Regex pattern for allowed origins (e.g., for Vercel preview deployments)
+    # Example: r"https://.*\.vercel\.app"
+    CORS_ORIGIN_REGEX: str = ""
 
     # Environment
     ENVIRONMENT: str = "development"
@@ -40,7 +42,7 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> List[str]:
         """Parse CORS origins string into list"""
-        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
 
 
 settings = Settings()

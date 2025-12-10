@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from .core.config import settings
-from .api import auth, projects, dashboard, admin
+from .api import auth, projects, dashboard, admin, debug
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -31,12 +31,12 @@ else:
     logger.warning("No CORS_ORIGINS configured! CORS may not work.")
 
 # Add regex pattern if configured (useful for Vercel preview deployments)
-if hasattr(settings, "CORS_ORIGIN_REGEX") and settings.CORS_ORIGIN_REGEX:
+if settings.CORS_ORIGIN_REGEX:
     cors_kwargs["allow_origin_regex"] = settings.CORS_ORIGIN_REGEX
     logger.info(f"CORS origin regex: {settings.CORS_ORIGIN_REGEX}")
 
 # Ensure at least one CORS configuration is set
-if not origins_list and not (hasattr(settings, "CORS_ORIGIN_REGEX") and settings.CORS_ORIGIN_REGEX):
+if not origins_list and not settings.CORS_ORIGIN_REGEX:
     logger.error("WARNING: No CORS configuration set! API will reject all cross-origin requests.")
     # Fallback to localhost for safety
     cors_kwargs["allow_origins"] = ["http://localhost:5173"]
@@ -49,6 +49,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(projects.router, prefix="/api/projects", tags=["Projects"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
+app.include_router(debug.router, prefix="/api/debug", tags=["Debug"])
 
 
 @app.get("/")
@@ -65,3 +66,13 @@ async def root():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
+
+
+@app.get("/debug/cors")
+async def debug_cors():
+    """Debug endpoint to check CORS configuration"""
+    return {
+        "cors_origins": settings.cors_origins_list,
+        "cors_origin_regex": settings.CORS_ORIGIN_REGEX,
+        "environment": settings.ENVIRONMENT,
+    }
