@@ -1,9 +1,10 @@
-import multiprocessing
 import os
 
 # Gunicorn config variables
-workers = multiprocessing.cpu_count() * 2 + 1
-bind = "0.0.0.0:10000"
+# Use fewer workers for Railway's free tier (1GB RAM limit)
+workers = int(os.environ.get("WEB_CONCURRENCY", "2"))
+port = os.environ.get("PORT", "8000")
+bind = f"0.0.0.0:{port}"
 keepalive = 120
 errorlog = "-"
 accesslog = "-"

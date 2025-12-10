@@ -35,7 +35,42 @@ Complete guide for deploying Atlas 3+3 to free-tier services.
 
 ---
 
-## 2. Backend Deployment (Render)
+## 2. Backend Deployment (Render or Railway)
+
+> **Note**: This guide covers both Render and Railway. Railway is recommended for better reliability and faster cold starts.
+
+### Option A: Deploy on Railway (Recommended)
+
+1. Go to [railway.app](https://railway.app) and sign in with GitHub
+2. Click **New Project** → **Deploy from GitHub repo**
+3. Select your repository
+4. Railway will auto-detect the backend in the `backend/` folder
+5. Configure environment variables (see below)
+6. Railway will automatically deploy
+
+**Railway Environment Variables**:
+```
+DATABASE_URL=<your-supabase-connection-string>
+SECRET_KEY=<generate-random-32+-character-string>
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USER=apikey
+SMTP_PASSWORD=<your-sendgrid-api-key>
+SMTP_FROM_EMAIL=noreply@atlas33.org
+SMTP_FROM_NAME=Atlas 3+3
+ADMIN_EMAIL=admin@uia.org
+FRONTEND_URL=<will-add-after-vercel-deployment>
+CORS_ORIGINS=http://localhost:5173
+CORS_ORIGIN_REGEX=https://.*\.vercel\.app
+ENVIRONMENT=production
+RECAPTCHA_SECRET_KEY=<your-recaptcha-secret>
+```
+
+**Important for CORS**: Set `CORS_ORIGIN_REGEX=https://.*\.vercel\.app` to allow all Vercel preview and production URLs.
+
+### Option B: Deploy on Render
 
 ### Prepare Repository
 
@@ -326,8 +361,36 @@ VITE_API_URL=https://atlas33-backend.onrender.com
 
 ### CORS errors
 
-- Verify CORS_ORIGINS includes frontend URL
-- Check no trailing slashes in URLs
+**Symptoms**: Console shows "blocked by CORS policy: No 'Access-Control-Allow-Origin' header"
+
+**Solutions**:
+
+1. **For single production URL**: Set `CORS_ORIGINS` to include your frontend URL
+   ```
+   CORS_ORIGINS=https://atlas33.vercel.app
+   ```
+
+2. **For multiple URLs** (production + preview deployments): Use comma-separated list
+   ```
+   CORS_ORIGINS=https://atlas33.vercel.app,https://atlas33-preview.vercel.app
+   ```
+
+3. **For all Vercel preview URLs**: Use regex pattern (recommended for Vercel)
+   ```
+   CORS_ORIGIN_REGEX=https://.*\.vercel\.app
+   ```
+   This allows all Vercel deployments (production + all preview URLs)
+
+4. **For specific project previews only**:
+   ```
+   CORS_ORIGIN_REGEX=https://atlas-33-.*\.vercel\.app
+   ```
+
+**Important**:
+- No trailing slashes in URLs
+- Must include protocol (https://)
+- Changes require backend redeploy/restart
+- Test with browser DevTools → Network tab
 
 ### Database connection errors
 
