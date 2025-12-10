@@ -1,7 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import logging
 from .core.config import settings
 from .api import auth, projects, dashboard, admin, debug
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Atlas 3+3 API",
@@ -9,7 +14,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# CORS middleware
+# CORS configuration
 cors_kwargs = {
     "allow_credentials": True,
     "allow_methods": ["*"],
