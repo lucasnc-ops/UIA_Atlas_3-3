@@ -152,3 +152,32 @@ async def debug_environment():
         "frontend_url": settings.FRONTEND_URL,
         "cors_origins_count": len(settings.cors_origins_list)
     }
+
+@router.post("/trigger-import")
+async def trigger_import():
+    """
+    Manually trigger data import
+    WARNING: Remove this endpoint in production!
+    """
+    try:
+        # Import the script dynamically to avoid circular imports or issues if script is missing
+        import sys
+        import os
+        
+        # Add backend dir to path if needed
+        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        if backend_dir not in sys.path:
+            sys.path.append(backend_dir)
+            
+        from import_full_dataset import import_projects
+        
+        # Run import
+        import_projects()
+        
+        return {"status": "SUCCESS", "message": "Data import completed"}
+    except Exception as e:
+        return {
+            "status": "FAILED", 
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
