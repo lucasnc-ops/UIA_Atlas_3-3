@@ -30,6 +30,9 @@ class Settings(BaseSettings):
 
     # CORS
     CORS_ORIGINS: str = "http://localhost:5173"
+    # Optional: Regex pattern for allowed origins (e.g., for Vercel preview deployments)
+    # Example: r"https://.*\.vercel\.app"
+    CORS_ORIGIN_REGEX: str = ""
 
     # Environment
     ENVIRONMENT: str = "development"
