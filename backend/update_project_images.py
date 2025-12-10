@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Update existing projects with missing images using representative Unsplash URLs.
+Update project images with local files.
 """
 
 import sys
@@ -12,70 +12,59 @@ sys.path.insert(0, str(Path(__file__).parent))
 from app.core.database import SessionLocal
 from app.models.project import Project, ProjectImage
 
-# Mapping of project names to Unsplash Image URLs
-IMAGE_UPDATES = {
-    "Barcelona Superblocks: Urban Regeneration for Livable Streets": [
-        "https://images.unsplash.com/photo-1583422409516-2895a77efbed?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1523531294919-4bcd7c65e216?q=80&w=800&auto=format&fit=crop"
-    ],
-    "Medellín Urban Acupuncture: Library Parks in Informal Settlements": [
-        "https://images.unsplash.com/photo-1599593252174-2795c64f69e6?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1591604129939-f1efa4d4f7e8?q=80&w=800&auto=format&fit=crop"
-    ],
-    "Copenhagen District Heating: City-Wide Renewable Energy Distribution": [
-        "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1520699049698-acd2fcc51056?q=80&w=800&auto=format&fit=crop"
-    ],
-    "Singapore Vertical Farming: 30x30 Food Security Initiative": [
-        "https://images.unsplash.com/photo-1496568816309-51d7c20e3b21?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1591543620704-3700b6561148?q=80&w=800&auto=format&fit=crop"
-    ],
-    "Kigali Master Plan: Africa's Model Sustainable City": [
-        "https://images.unsplash.com/photo-1620662768165-4d5c1a8d0529?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1489749798305-4fea3ae63d43?q=80&w=800&auto=format&fit=crop"
-    ],
-    "Vienna Social Housing: 100 Years of Inclusive Urban Development": [
-        "https://images.unsplash.com/photo-1516550893923-42d2e8e56034c?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1554515560-6f296c09852f?q=80&w=800&auto=format&fit=crop"
-    ],
-    "Curitiba Bus Rapid Transit: Pioneering Sustainable Urban Mobility": [
-        "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?q=80&w=800&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=800&auto=format&fit=crop"
-    ]
+# Mapping: Project Name -> Image Filename
+IMAGE_MAPPING = {
+    "Barcelona Superblocks: Urban Regeneration for Livable Streets": "barcelona_super_blocks.jpg",
+    "Medellín Urban Acupuncture: Library Parks in Informal Settlements": "medelin_urban_aculpunture.jpg",
+    "Kigali Master Plan: Africa's Model Sustainable City": "city_of_kigali.jpg",
+    "Curitiba Bus Rapid Transit: Pioneering Sustainable Urban Mobility": "curitiba_brazil_BRT.jpg",
+    "Vauban District - Europe's Most Sustainable Urban Community": "Freiburg-green-city-Sonnenschiff-scaled.jpg",
+    "Portland Urban Growth Boundary: 50 Years of Smart Growth": "portland_urban_growth_smart.jpg",
+    "Bogotá Ciclovía: Weekly Car-Free Streets for 2 Million People": "Ciclovia_bogota.jpg",
+    "Tokyo Disaster Preparedness: Resilient Megacity Planning": "Tokyo_resilience_project.jpg",
+    "Vancouver Olympic Village: Carbon-Neutral Neighborhood Development": "Vancouver_Olympic_village.jpg",
+    "Cape Town Day Zero: Water Crisis Management and Conservation": "capetown_dayzero.jpg",
+    "Seoul Digital Media City: Technology Hub and Urban Regeneration": "Seoul_digital_South-Korea-capital.png",
+    "Portland Green Streets - Sustainable Stormwater Management": "portland_green_streets.jpg",
+    "Cape Town New Water Programme - Overcoming Day Zero Crisis": "capetown_system.jpg",
+    "Malmö Western Harbour Bo01 - Climate-Neutral Urban District": "200616_0022_malmo_drone-Vastra-hamnen-Foto-Apeloga-min-scaled.jpg",
+    "Addis Ababa Light Rail Transit - Sub-Saharan Africa First LRT": "addis_ababa.jpg",
+    "Masdar City - Zero-Carbon Eco-City in the Desert": "masdar-city_1big.jpg",
+    "Mexico City Cosecha de Lluvia - Rainwater Harvesting for Water Security": "mexico_women_water_harvest.png"
 }
 
 def update_images():
     db = SessionLocal()
     try:
-        print("Starting image update...")
-        updated_count = 0
-
-        for project_name, urls in IMAGE_UPDATES.items():
+        print("Updating project images...")
+        
+        for project_name, filename in IMAGE_MAPPING.items():
             project = db.query(Project).filter(Project.project_name == project_name).first()
             
             if not project:
-                print(f"Skipping: '{project_name}' not found.")
+                print(f"Project not found: {project_name}")
                 continue
-
-            # Check if project already has images
-            if project.images:
-                print(f"Skipping: '{project_name}' already has images.")
-                continue
-
-            print(f"Updating: '{project_name}'")
+                
+            print(f"Updating images for: {project_name}")
             
-            for idx, url in enumerate(urls):
-                img = ProjectImage(
-                    project_id=project.id,
-                    image_url=url,
-                    display_order=idx
-                )
-                db.add(img)
+            # Remove existing images
+            # Note: relying on cascade delete would be better if we were deleting the project, 
+            # but here we just want to clear images.
+            db.query(ProjectImage).filter(ProjectImage.project_id == project.id).delete()
             
-            updated_count += 1
-
+            # Add new image
+            # The URL path assumes the frontend serves 'public' at root
+            image_url = f"/project_images/{filename}"
+            
+            new_image = ProjectImage(
+                project_id=project.id,
+                image_url=image_url,
+                display_order=0
+            )
+            db.add(new_image)
+            
         db.commit()
-        print(f"\nSuccessfully updated images for {updated_count} projects!")
+        print("Images updated successfully.")
 
     except Exception as e:
         db.rollback()

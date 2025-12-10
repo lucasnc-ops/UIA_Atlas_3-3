@@ -102,6 +102,11 @@ class Project(Base):
     requirements = relationship("ProjectRequirement", back_populates="project", cascade="all, delete-orphan")
     images = relationship("ProjectImage", back_populates="project", cascade="all, delete-orphan")
 
+    @property
+    def image_urls(self):
+        """Return list of image URLs sorted by display order"""
+        return [img.image_url for img in sorted(self.images, key=lambda x: x.display_order)]
+
     def __repr__(self):
         return f"<Project {self.project_name}>"
 
