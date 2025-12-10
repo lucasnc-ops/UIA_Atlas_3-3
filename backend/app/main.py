@@ -14,15 +14,35 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# CORS middleware
-logger.info(f"CORS allowed origins: {settings.cors_origins_list}")
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS configuration
+cors_kwargs = {
+    "allow_credentials": True,
+    "allow_methods": ["*"],
+    "allow_headers": ["*"],
+    "expose_headers": ["*"],
+}
+
+# Add explicit origins if configured
+origins_list = settings.cors_origins_list
+if origins_list:
+    cors_kwargs["allow_origins"] = origins_list
+    logger.info(f"CORS allowed origins: {origins_list}")
+else:
+    logger.warning("No CORS_ORIGINS configured! CORS may not work.")
+
+# Add regex pattern if configured (useful for Vercel preview deployments)
+if hasattr(settings, "CORS_ORIGIN_REGEX") and settings.CORS_ORIGIN_REGEX:
+    cors_kwargs["allow_origin_regex"] = settings.CORS_ORIGIN_REGEX
+    logger.info(f"CORS origin regex: {settings.CORS_ORIGIN_REGEX}")
+
+# Ensure at least one CORS configuration is set
+if not origins_list and not (hasattr(settings, "CORS_ORIGIN_REGEX") and settings.CORS_ORIGIN_REGEX):
+    logger.error("WARNING: No CORS configuration set! API will reject all cross-origin requests.")
+    # Fallback to localhost for safety
+    cors_kwargs["allow_origins"] = ["http://localhost:5173"]
+
+logger.info(f"Final CORS configuration: {cors_kwargs}")
+app.add_middleware(CORSMiddleware, **cors_kwargs)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])

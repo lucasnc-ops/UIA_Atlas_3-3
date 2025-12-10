@@ -30,6 +30,7 @@ class Settings(BaseSettings):
 
     # CORS
     CORS_ORIGINS: str = "http://localhost:5173"
+    CORS_ORIGIN_REGEX: str | None = None
 
     # Environment
     ENVIRONMENT: str = "development"
