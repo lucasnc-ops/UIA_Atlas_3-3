@@ -1,19 +1,18 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.pool import NullPool
 from .config import settings
 
 # Create database engine
 connect_args = {}
-engine_args = {
-    "pool_pre_ping": True,
-}
+engine_args = {}
 
 if "sqlite" in settings.DATABASE_URL:
     connect_args = {"check_same_thread": False}
-    # SQLite doesn't support pool_size/max_overflow with the default pool
 else:
-    engine_args["pool_size"] = 10
-    engine_args["max_overflow"] = 20
+    # Use NullPool for PostgreSQL with Supabase Transaction/Session pooler
+    # This prevents SQLAlchemy from holding idle connections
+    engine_args["poolclass"] = NullPool
 
 engine = create_engine(
     settings.DATABASE_URL,
