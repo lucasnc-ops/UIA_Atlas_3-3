@@ -12,7 +12,10 @@ from ..schemas.project import ProjectCreate, ProjectResponse
 from ..services.email import send_submission_notification
 from ..core.config import settings
 
+import logging
+
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/submit", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
@@ -235,22 +238,39 @@ async def update_project_by_token(
 @router.get("/{project_id}", response_model=ProjectResponse)
 async def get_project(project_id: UUID, db: Session = Depends(get_db)):
     """Get a single project by ID (public if approved)"""
-    project = db.query(Project).filter(Project.id == project_id).first()
+    try:
+        logger.info(f"Fetching project with ID: {project_id}")
+        project = db.query(Project).filter(Project.id == project_id).first()
 
-    if not project:
+        if not project:
+            logger.warning(f"Project {project_id} not found in database")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found"
+            )
+
+        logger.info(f"Found project: {project.project_name}, Status: {project.workflow_status}")
+
+        # Only return approved projects to public
+        if project.workflow_status != WorkflowStatus.APPROVED:
+            logger.warning(f"Project {project_id} is not APPROVED (status: {project.workflow_status})")
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Project not found"
+            )
+
+        response = _format_project_response(project)
+        logger.info(f"Successfully formatted response for project {project_id}")
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error fetching project {project_id}: {str(e)}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
         )
-
-    # Only return approved projects to public
-    if project.workflow_status != WorkflowStatus.APPROVED:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found"
-        )
-
-    return _format_project_response(project)
 
 
 def _format_project_response(project: Project) -> dict:
