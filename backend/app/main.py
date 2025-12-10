@@ -19,6 +19,7 @@ cors_kwargs = {
     "allow_credentials": True,
     "allow_methods": ["*"],
     "allow_headers": ["*"],
+    "expose_headers": ["*"],
 }
 
 # Add explicit origins if configured
