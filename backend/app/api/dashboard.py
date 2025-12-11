@@ -165,6 +165,7 @@ async def get_map_markers(
         Project.longitude,
         Project.uia_region,
         Project.project_status,
+        Project.funding_needed,
         ProjectImage.image_url
     ).outerjoin(
         ProjectImage, (ProjectImage.project_id == Project.id) & (ProjectImage.display_order == 0)
@@ -196,8 +197,15 @@ async def get_map_markers(
 
     markers = query.all()
 
-    return [
-        {
+    # Get primary SDG for each project
+    result = []
+    for m in markers:
+        # Get the first (primary) SDG for this project
+        primary_sdg = db.query(ProjectSDG.sdg_number).filter(
+            ProjectSDG.project_id == m.id
+        ).order_by(ProjectSDG.sdg_number).first()
+
+        result.append({
             "id": str(m.id),
             "project_name": m.project_name,
             "city": m.city,
@@ -206,10 +214,12 @@ async def get_map_markers(
             "longitude": m.longitude,
             "region": m.uia_region.value if m.uia_region else None,
             "status": m.project_status.value if m.project_status else None,
+            "funding_needed": float(m.funding_needed or 0),
+            "primary_sdg": primary_sdg[0] if primary_sdg else None,
             "image_url": m.image_url
-        }
-        for m in markers
-    ]
+        })
+
+    return result
 
 
 @router.get("/analytics/sdg-distribution")

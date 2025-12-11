@@ -44,6 +44,29 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
     alert('Project link copied to clipboard!');
   };
 
+  // Helper function to get the correct image URL
+  const getImageUrl = (url: string): string => {
+    if (!url) return '';
+
+    // If it's already a full URL (http/https), return as is
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+
+    // If it starts with /, it's already a root-relative path
+    if (url.startsWith('/')) {
+      return url;
+    }
+
+    // If it's just a filename, assume it's in /project_images/
+    if (!url.includes('/')) {
+      return `/project_images/${url}`;
+    }
+
+    // Otherwise, return as is
+    return url;
+  };
+
   return (
     <>
       {/* Backdrop */}
@@ -94,12 +117,12 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
           {project.imageUrls && project.imageUrls.length > 0 ? (
             <div className="space-y-2">
               <img
-                src={project.imageUrls[0]}
+                src={getImageUrl(project.imageUrls[0])}
                 alt={project.projectName}
                 className="w-full h-64 object-cover rounded-lg border border-gray-200 cursor-zoom-in hover:opacity-95 transition-opacity"
                 onClick={() => handleImageClick(0)}
                 onError={(e) => {
-                  console.error("Failed to load image:", project.imageUrls[0]);
+                  console.error("Failed to load image:", project.imageUrls[0], "-> tried:", getImageUrl(project.imageUrls[0]));
                   (e.target as HTMLImageElement).src =
                     'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23f3f4f6" width="400" height="300"/%3E%3Ctext fill="%239ca3af" font-family="sans-serif" font-size="18" dy="10.5" font-weight="bold" x="50%25" y="50%25" text-anchor="middle"%3ENo Image%3C/text%3E%3C/svg%3E';
                 }}
@@ -109,7 +132,7 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
                   {project.imageUrls.slice(1).map((url, idx) => (
                     <img
                       key={idx}
-                      src={url}
+                      src={getImageUrl(url)}
                       alt={`${project.projectName} ${idx + 2}`}
                       className="w-20 h-20 object-cover rounded border border-gray-200 cursor-zoom-in hover:opacity-95 transition-opacity flex-shrink-0"
                       onClick={() => handleImageClick(idx + 1)}
@@ -354,7 +377,7 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
       </div>
 
       <Lightbox
-        images={project.imageUrls}
+        images={project.imageUrls.map(getImageUrl)}
         initialIndex={lightboxIndex}
         isOpen={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
