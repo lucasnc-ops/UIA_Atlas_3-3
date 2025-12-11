@@ -56,9 +56,9 @@ export const dashboardAPI = {
 
   // Get projects list
   getProjects: async (
+    filters?: FilterOptions,
     page: number = 1,
     pageSize: number = 20,
-    filters?: FilterOptions,
     sortBy: string = 'created_at',
     sortOrder: 'asc' | 'desc' = 'desc'
   ) => {

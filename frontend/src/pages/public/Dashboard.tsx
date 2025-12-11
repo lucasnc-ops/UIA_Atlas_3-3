@@ -369,7 +369,11 @@ export default function Dashboard() {
             <SmartSearch
               onProjectSelect={handleProjectSelect}
               onFilterChange={(filter) => {
-                setFilters({ ...filters, ...filter });
+                setFilters((prev) => ({
+                  ...prev,
+                  city: filter.city !== undefined ? filter.city : prev.city,
+                  sdg: filter.sdg !== undefined ? (filter.sdg as any) : prev.sdg,
+                }));
               }}
             />
           </div>
