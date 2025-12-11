@@ -11,6 +11,9 @@ import ProjectDetailPanel from '../../components/dashboard/ProjectDetailPanel';
 import AnalyticsPanel from '../../components/dashboard/AnalyticsPanel';
 import ProjectTable from '../../components/dashboard/ProjectTable';
 import { createSDGMarker, getMarkerSizeByFunding, MARKER_STYLES } from '../../components/map/CustomSDGMarker';
+import SDGLegend, { LEGEND_STYLES } from '../../components/map/SDGLegend';
+import EmptyState, { EMPTY_STATE_STYLES } from '../../components/common/EmptyState';
+import SmartSearch from '../../components/dashboard/SmartSearch';
 
 // Fix Leaflet default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -154,8 +157,10 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-white text-mapbox-light overflow-hidden relative">
-      {/* Inject custom marker styles */}
+      {/* Inject custom marker and legend styles */}
       <style>{MARKER_STYLES}</style>
+      <style>{LEGEND_STYLES}</style>
+      <style>{EMPTY_STATE_STYLES}</style>
 
       {/* Main Content (Map or Table) */}
       <div className="absolute inset-0 z-0">
@@ -254,16 +259,56 @@ export default function Dashboard() {
                <ProjectTable filters={filters} onProjectClick={(p) => handleProjectSelect(p.id)} />
             </div>
          )}
+
+         {/* SDG Legend (only show in map view) */}
+         {viewMode === 'map' && !loading && markers.length > 0 && (
+           <SDGLegend
+             onSDGClick={(sdgId) => {
+               setFilters({ ...filters, sdg: sdgId as any });
+             }}
+             activeSdg={typeof filters.sdg === 'number' ? filters.sdg : null}
+           />
+         )}
+
+         {/* Empty State (when no markers found) */}
+         {viewMode === 'map' && !loading && markers.length === 0 && (
+           <EmptyState
+             icon="🌍"
+             title="No Projects Found"
+             description="No projects match your current filters. Try adjusting your criteria or clearing all filters to see the full catalog of sustainable development projects."
+             actionLabel="Clear All Filters"
+             onAction={handleClearFilters}
+             secondaryActionLabel="View All Projects"
+             onSecondaryAction={() => {
+               handleClearFilters();
+               setViewMode('table');
+             }}
+           />
+         )}
+
+         {/* Loading State */}
+         {loading && viewMode === 'map' && (
+           <div className="absolute inset-0 flex items-center justify-center z-20 bg-white/50 backdrop-blur-sm pointer-events-none">
+             <div className="bg-white p-8 rounded-2xl shadow-2xl shadow-black/10 pointer-events-auto">
+               <div className="flex flex-col items-center gap-4">
+                 <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+                 <p className="text-gray-600 font-medium">Loading projects...</p>
+               </div>
+             </div>
+           </div>
+         )}
       </div>
 
       {/* Header Overlay */}
       <div className="absolute top-0 left-0 right-0 z-10 px-6 py-4 pointer-events-none">
-        <div className="flex justify-between items-start">
-           <div className="pointer-events-auto flex gap-4">
-             <div className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-4 shadow-lg shadow-black/5">
-               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">SDG Atlas</h1>
-               <p className="text-xs text-gray-500 mt-1">Global Sustainable Development Projects</p>
-             </div>
+        <div className="flex flex-col gap-4">
+          {/* Top Row: Title + Controls */}
+          <div className="flex justify-between items-start">
+            <div className="pointer-events-auto flex gap-4">
+              <div className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-4 shadow-lg shadow-black/5">
+                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">SDG Atlas</h1>
+                <p className="text-xs text-gray-500 mt-1">Global Sustainable Development Projects</p>
+              </div>
              
              {/* View Toggle */}
              <div className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-1 shadow-lg shadow-black/5 flex items-center h-full self-stretch">
@@ -316,7 +361,18 @@ export default function Dashboard() {
                  <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Funding Spent</div>
                  <div className="text-xl font-bold text-green-600">{formatCurrency(kpis.totalFundingSpent)}</div>
               </div>
-           </div>
+            </div>
+          </div>
+
+          {/* Search Bar Row */}
+          <div className="pointer-events-auto flex justify-center">
+            <SmartSearch
+              onProjectSelect={handleProjectSelect}
+              onFilterChange={(filter) => {
+                setFilters({ ...filters, ...filter });
+              }}
+            />
+          </div>
         </div>
       </div>
 
