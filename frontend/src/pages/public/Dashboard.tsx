@@ -10,6 +10,7 @@ import FilterControls from '../../components/dashboard/FilterControls';
 import ProjectDetailPanel from '../../components/dashboard/ProjectDetailPanel';
 import AnalyticsPanel from '../../components/dashboard/AnalyticsPanel';
 import ProjectTable from '../../components/dashboard/ProjectTable';
+import { createSDGMarker, getMarkerSizeByFunding, MARKER_STYLES } from '../../components/map/CustomSDGMarker';
 
 // Fix Leaflet default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -28,6 +29,8 @@ interface MapMarker {
   longitude: number;
   region: string;
   status?: string;
+  fundingNeeded?: number;
+  primarySdg?: number;
   imageUrl?: string;
 }
 
@@ -151,7 +154,9 @@ export default function Dashboard() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-white text-mapbox-light overflow-hidden relative">
-      
+      {/* Inject custom marker styles */}
+      <style>{MARKER_STYLES}</style>
+
       {/* Main Content (Map or Table) */}
       <div className="absolute inset-0 z-0">
          {viewMode === 'map' ? (
@@ -171,10 +176,21 @@ export default function Dashboard() {
               />
 
               <MarkerClusterGroup chunkedLoading>
-                {markers.map((marker) => (
+                {markers.map((marker) => {
+                  // Create custom SDG marker if primary SDG is available
+                  const markerIcon = marker.primarySdg
+                    ? createSDGMarker({
+                        sdgNumber: marker.primarySdg,
+                        projectName: marker.projectName,
+                        size: getMarkerSizeByFunding(marker.fundingNeeded || 0),
+                      })
+                    : undefined;
+
+                  return (
                   <Marker
                     key={marker.id}
                     position={[marker.latitude, marker.longitude]}
+                    icon={markerIcon}
                     eventHandlers={{
                       click: () => handleProjectSelect(marker.id),
                       mouseover: (e) => e.target.openPopup(),
@@ -227,7 +243,8 @@ export default function Dashboard() {
                       </div>
                     </Popup>
                   </Marker>
-                ))}
+                  );
+                })}
               </MarkerClusterGroup>
 
               <MapUpdater markers={markers} />
