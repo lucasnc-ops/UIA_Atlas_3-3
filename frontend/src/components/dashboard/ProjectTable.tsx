@@ -27,8 +27,8 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
   const fetchProjects = async () => {
     setLoading(true);
     try {
-      // API expects filters and pagination
-      const data = await dashboardAPI.getProjects(page, pageSize, filters);
+      // API expects filters, then page and pageSize
+      const data = await dashboardAPI.getProjects(filters, page, pageSize);
       setProjects(data.projects);
       setTotal(data.total);
     } catch (error) {
@@ -42,7 +42,7 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
     setExporting(true);
     try {
       // Fetch all (up to 1000) for export based on current filters
-      const data = await dashboardAPI.getProjects(1, 1000, filters);
+      const data = await dashboardAPI.getProjects(filters, 1, 1000);
       const exportProjects = data.projects;
 
       if (exportProjects.length === 0) {
