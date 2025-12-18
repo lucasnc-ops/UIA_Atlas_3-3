@@ -23,7 +23,8 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nAdd elegant UIA-styled layout and WebGIS dashboard\n\n- Created UIA-inspired color palette (architectural blues, warm accents)\n- Built minimalistic header, footer, and layout components\n- Designed professional landing page with Vision, Mission, and CTA sections\n- Implemented WebGIS-focused dashboard with Leaflet map integration\n- Added KPI cards, filter controls, and project detail side panel\n- Set up API service layer for backend communication\n- Configured React Router for navigation\n- Added marker clustering and interactive map features\n- Implemented responsive design for mobile and desktop\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push:*)",
       "Bash(git commit:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []
