@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { dashboardAPI } from '../../services/api/dashboard';
@@ -301,14 +301,19 @@ export default function Dashboard() {
 
       {/* Header Overlay */}
       <div className="absolute top-0 left-0 right-0 z-10 px-6 py-4 pointer-events-none">
-        <div className="flex flex-col gap-4">
-          {/* Top Row: Title + Controls */}
-          <div className="flex justify-between items-start">
-            <div className="pointer-events-auto flex gap-4">
-              <div className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-4 shadow-lg shadow-black/5">
-                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">SDG Atlas</h1>
-                <p className="text-xs text-gray-500 mt-1">Global Sustainable Development Projects</p>
-              </div>
+        <div className="flex justify-between items-start">
+           <div className="pointer-events-auto flex gap-4">
+             <Link 
+               to="/"
+               className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg px-4 shadow-lg shadow-black/5 hover:bg-white transition-colors flex items-center justify-center text-gray-600 hover:text-primary-600"
+               title="Return to Home"
+             >
+               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+             </Link>
+             <div className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-4 shadow-lg shadow-black/5">
+               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">SDG Atlas</h1>
+               <p className="text-xs text-gray-500 mt-1">Global Sustainable Development Projects</p>
+             </div>
              
              {/* View Toggle */}
              <div className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-1 shadow-lg shadow-black/5 flex items-center h-full self-stretch">
