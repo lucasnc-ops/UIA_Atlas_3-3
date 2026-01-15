@@ -32,7 +32,7 @@ export default function SDGLegend({ onSDGClick, activeSdg }: SDGLegendProps) {
 
   if (isCollapsed) {
     return (
-      <div className="absolute bottom-6 right-6 z-20 pointer-events-auto">
+      <div className="absolute bottom-6 right-20 z-20 pointer-events-auto">
         <button
           onClick={() => setIsCollapsed(false)}
           className="bg-white/95 backdrop-blur-md border border-gray-200/50 rounded-lg px-4 py-3 shadow-lg hover:shadow-xl transition-all flex items-center gap-2 group"
@@ -69,7 +69,7 @@ export default function SDGLegend({ onSDGClick, activeSdg }: SDGLegendProps) {
   }
 
   return (
-    <div className="absolute bottom-6 right-6 z-20 pointer-events-auto">
+    <div className="absolute bottom-6 right-20 z-20 pointer-events-auto">
       <div className="bg-white/95 backdrop-blur-md border border-gray-200/50 rounded-xl shadow-2xl shadow-black/10 overflow-hidden max-w-sm">
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-primary-50 to-white">
