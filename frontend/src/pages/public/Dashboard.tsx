@@ -388,7 +388,7 @@ export default function Dashboard() {
       </div>
 
       {/* Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-10 px-6 py-4 pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 z-30 px-6 py-4 pointer-events-none">
         <div className="flex justify-between items-start">
            <div className="pointer-events-auto flex gap-4">
              <Link 
@@ -488,7 +488,7 @@ export default function Dashboard() {
       )}
 
       {/* Sidebar Overlay */}
-      <div className={`absolute top-24 left-6 bottom-6 w-80 z-10 transition-transform duration-300 transform ${showFilters ? 'translate-x-0' : '-translate-x-[110%]'}`}>
+      <div className={`absolute top-32 left-6 bottom-6 w-80 z-20 transition-transform duration-300 transform ${showFilters ? 'translate-x-0' : '-translate-x-[110%]'}`}>
          <div className="h-full flex flex-col bg-white/95 backdrop-blur-md border border-gray-200/50 rounded-xl shadow-2xl shadow-black/10 overflow-hidden">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h2 className="font-semibold text-gray-900">Filters</h2>
@@ -518,7 +518,7 @@ export default function Dashboard() {
       {!showFilters && (
         <button 
           onClick={() => setShowFilters(true)}
-          className="absolute top-24 left-6 z-10 bg-white text-gray-600 p-3 rounded-lg shadow-lg hover:text-primary-600 transition-colors border border-gray-200"
+          className="absolute top-32 left-6 z-20 bg-white text-gray-600 p-3 rounded-lg shadow-lg hover:text-primary-600 transition-colors border border-gray-200"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
         </button>
