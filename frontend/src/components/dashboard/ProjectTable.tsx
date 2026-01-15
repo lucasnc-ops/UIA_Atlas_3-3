@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { dashboardAPI } from '../../services/api/dashboard';
 import type { Project, FilterOptions } from '../../types';
+import { TableSkeleton } from '../common/Skeleton';
 
 interface ProjectTableProps {
   filters: FilterOptions;
@@ -123,9 +124,7 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
-              <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">Loading...</td>
-              </tr>
+              <TableSkeleton />
             ) : projects.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">No projects found matching filters.</td>
