@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { useSearchParams, Link } from 'react-router-dom';
 import L from 'leaflet';
@@ -246,8 +246,10 @@ export default function Dashboard() {
                          zoomDelta={0.5}
                          wheelPxPerZoomLevel={120}
                          scrollWheelZoom={true}
+                         zoomControl={false}
                        >
-                         <LayersControl position="topright">
+                         <ZoomControl position="bottomright" />
+                         <LayersControl position="bottomright">
                            {Object.entries(BASEMAPS).map(([key, config]) => (
                              <LayersControl.BaseLayer
                                key={key}
