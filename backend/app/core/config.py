@@ -29,10 +29,10 @@ class Settings(BaseSettings):
     FRONTEND_URL: str
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:5173"
+    CORS_ORIGINS: str = "http://localhost:5173,https://atlas-33.vercel.app"
     # Optional: Regex pattern for allowed origins (e.g., for Vercel preview deployments)
     # Example: r"https://.*\.vercel\.app"
-    CORS_ORIGIN_REGEX: str = ""
+    CORS_ORIGIN_REGEX: str = r"https://.*\.vercel\.app"
 
     # Environment
     ENVIRONMENT: str = "development"
