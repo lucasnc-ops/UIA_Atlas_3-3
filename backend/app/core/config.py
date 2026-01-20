@@ -12,21 +12,21 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    RECAPTCHA_SECRET_KEY: str
+    RECAPTCHA_SECRET_KEY: str = "placeholder-recaptcha-key"
 
-    # Email
-    SMTP_HOST: str
+    # Email (optional - will log errors if not configured)
+    SMTP_HOST: str = "smtp.sendgrid.net"
     SMTP_PORT: int = 587
-    SMTP_USER: str
-    SMTP_PASSWORD: str
-    SMTP_FROM_EMAIL: str
+    SMTP_USER: str = "apikey"
+    SMTP_PASSWORD: str = "placeholder-password"
+    SMTP_FROM_EMAIL: str = "noreply@atlas33.org"
     SMTP_FROM_NAME: str = "Atlas 3+3"
 
     # Admin
-    ADMIN_EMAIL: str
+    ADMIN_EMAIL: str = "admin@uia.org"
 
     # Frontend
-    FRONTEND_URL: str
+    FRONTEND_URL: str = "http://localhost:5173"
 
     # CORS
     CORS_ORIGINS: str = "http://localhost:5173,https://atlas-33.vercel.app"
