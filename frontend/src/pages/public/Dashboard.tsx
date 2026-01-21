@@ -4,7 +4,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import { useSearchParams, Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { dashboardAPI } from '../../services/api/dashboard';
+import { mockDashboardAPI as dashboardAPI } from '../../services/api/mockDashboardAPI';
 import type { FilterOptions, DashboardKPIs, Project } from '../../types';
 import FilterControls from '../../components/dashboard/FilterControls';
 import ProjectDetailPanel from '../../components/dashboard/ProjectDetailPanel';
