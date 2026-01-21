@@ -1,15 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
 
 export default function LandingPage() {
-  const [scrollY, setScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
   return (
     <div className="bg-gradient-to-b from-white via-slate-50 to-white text-slate-900 font-sans selection:bg-primary-100 selection:text-primary-900">
 
