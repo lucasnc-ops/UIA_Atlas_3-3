@@ -3,6 +3,10 @@
 .env.local
 .env.*.local
 
+# Deployment guides with credentials (use templates instead)
+*_DEPLOYMENT_GUIDE.md
+SUPABASE_SETUP_GUIDE.md
+
 # Python
 __pycache__/
 *.py[cod]
