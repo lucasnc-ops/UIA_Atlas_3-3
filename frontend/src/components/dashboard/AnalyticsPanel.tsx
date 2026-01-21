@@ -12,7 +12,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { dashboardAPI } from '../../services/api/dashboard';
+import { mockDashboardAPI as dashboardAPI } from '../../services/api/mockDashboardAPI';
 import type { FilterOptions } from '../../types';
 
 interface AnalyticsPanelProps {

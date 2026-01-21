@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { dashboardAPI } from '../../services/api/dashboard';
+import { mockDashboardAPI as dashboardAPI } from '../../services/api/mockDashboardAPI';
 import type { Project, FilterOptions } from '../../types';
 import { TableSkeleton } from '../common/Skeleton';
 
