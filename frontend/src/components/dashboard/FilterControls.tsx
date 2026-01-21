@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { dashboardAPI } from '../../services/api/dashboard';
+import { mockDashboardAPI as dashboardAPI } from '../../services/api/mockDashboardAPI';
 import type { FilterOptions, UIARegion, SDG } from '../../types';
 
 interface FilterControlsProps {
