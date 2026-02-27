@@ -1,0 +1,15 @@
+# Railway configuration for Atlas 3+3 Backend
+# https://docs.railway.com/reference/config-as-code
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Health check — FastAPI /health endpoint
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+
+# Restart on failure with exponential backoff
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
