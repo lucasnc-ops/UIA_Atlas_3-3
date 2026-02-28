@@ -4,7 +4,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import { useSearchParams, Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { mockDashboardAPI as dashboardAPI } from '../../services/api/mockDashboardAPI';
+import { dashboardAPI } from '../../services/api/dashboardAPI';
 import type { FilterOptions, DashboardKPIs, Project } from '../../types';
 import FilterControls from '../../components/dashboard/FilterControls';
 import ProjectDetailPanel from '../../components/dashboard/ProjectDetailPanel';
@@ -393,30 +393,30 @@ export default function Dashboard() {
       <div className="absolute top-0 left-0 right-0 z-30 px-6 py-4 pointer-events-none">
         <div className="flex justify-between items-start">
            <div className="pointer-events-auto flex gap-4">
-             <Link 
+             <Link
                to="/"
-               className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg px-4 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center text-gray-600 hover:text-primary-600"
+               className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center text-uia-dark hover:text-uia-red"
                title="Return to Home"
              >
                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
              </Link>
-             <div className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-4 shadow-lg shadow-black/5 hover:shadow-xl transition-shadow duration-300">
-               <h1 className="text-2xl font-bold text-gray-900 tracking-tight">SDG Atlas</h1>
-               <p className="text-xs text-gray-500 mt-1">Global Sustainable Development Projects</p>
+             <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-4 shadow-lg shadow-black/5 hover:shadow-xl transition-shadow duration-300">
+               <h1 className="text-2xl font-display font-bold text-black tracking-uia-normal">SDG Atlas</h1>
+               <p className="text-xs font-display text-uia-dark mt-1 uppercase tracking-uia-wide">Global Sustainable Development Projects</p>
              </div>
              
              {/* View Toggle */}
-             <div className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-1 shadow-lg shadow-black/5 flex items-center h-full self-stretch">
+             <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-1 shadow-lg shadow-black/5 flex items-center h-full self-stretch">
                <button
                  onClick={() => setViewMode('map')}
-                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 h-full flex items-center gap-2 ${viewMode === 'map' ? 'bg-primary-100 text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}
+                 className={`px-3 py-1.5 rounded-sm text-sm font-display font-medium transition-all duration-200 h-full flex items-center gap-2 ${viewMode === 'map' ? 'bg-uia-blue/10 text-uia-blue shadow-sm' : 'text-uia-dark hover:text-black hover:bg-uia-gray-light'}`}
                >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   <span className="hidden sm:inline">Map</span>
                </button>
                <button
                  onClick={() => setViewMode('table')}
-                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 h-full flex items-center gap-2 ${viewMode === 'table' ? 'bg-primary-100 text-primary-700 shadow-sm' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}
+                 className={`px-3 py-1.5 rounded-sm text-sm font-display font-medium transition-all duration-200 h-full flex items-center gap-2 ${viewMode === 'table' ? 'bg-uia-blue/10 text-uia-blue shadow-sm' : 'text-uia-dark hover:text-black hover:bg-uia-gray-light'}`}
                >
                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                  <span className="hidden sm:inline">List</span>
@@ -425,44 +425,44 @@ export default function Dashboard() {
 
              <button
                onClick={() => setShowAnalytics(true)}
-               className="bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg px-4 py-2 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 flex items-center gap-2 h-full self-stretch group text-gray-600 hover:text-primary-600"
+               className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 py-2 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 flex items-center gap-2 h-full self-stretch group text-uia-dark hover:text-uia-blue"
              >
                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                </svg>
-               <span className="font-medium text-sm hidden sm:block">Analytics</span>
+               <span className="font-display font-medium text-sm hidden sm:block">Analytics</span>
              </button>
            </div>
            
-           {/* Floating KPI Cards */}
-           <div className="pointer-events-auto bg-white/90 backdrop-blur-md border border-gray-200/50 rounded-lg p-2 shadow-lg shadow-black/5 hidden md:flex gap-4">
-              <div className="px-4 py-2 border-r border-gray-200 last:border-0">
-                 <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Projects</div>
-                 <div className="text-xl font-bold text-gray-900">
+           {/* Floating KPI Cards - UIA Style */}
+           <div className="pointer-events-auto bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-2 shadow-lg shadow-black/5 hidden md:flex gap-4">
+              <div className="px-4 py-2 border-r border-uia-dark last:border-0">
+                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Projects</div>
+                 <div className="text-xl font-display font-bold text-uia-blue">
                     <AnimatedCounter value={kpis.totalProjects} />
                  </div>
               </div>
-              <div className="px-4 py-2 border-r border-gray-200 last:border-0">
-                 <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Cities</div>
-                 <div className="text-xl font-bold text-gray-900">
+              <div className="px-4 py-2 border-r border-uia-dark last:border-0">
+                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Cities</div>
+                 <div className="text-xl font-display font-bold text-uia-violet">
                     <AnimatedCounter value={kpis.citiesEngaged} />
                  </div>
               </div>
-               <div className="px-4 py-2 border-r border-gray-200 last:border-0">
-                 <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Countries</div>
-                 <div className="text-xl font-bold text-gray-900">
+               <div className="px-4 py-2 border-r border-uia-dark last:border-0">
+                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Countries</div>
+                 <div className="text-xl font-display font-bold text-uia-blue">
                     <AnimatedCounter value={kpis.countriesRepresented} />
                  </div>
               </div>
-               <div className="px-4 py-2 border-r border-gray-200 last:border-0">
-                 <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Funding Needed</div>
-                 <div className="text-xl font-bold text-gray-900">
+               <div className="px-4 py-2 border-r border-uia-dark last:border-0">
+                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Funding Needed</div>
+                 <div className="text-xl font-display font-bold text-uia-red">
                     <AnimatedCounter value={kpis.totalFundingNeeded} formatter={formatCurrency} />
                  </div>
               </div>
                <div className="px-4 py-2">
-                 <div className="text-xs text-gray-500 uppercase font-medium tracking-wide">Funding Spent</div>
-                 <div className="text-xl font-bold text-green-600">
+                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Funding Spent</div>
+                 <div className="text-xl font-display font-bold text-uia-blue">
                     <AnimatedCounter value={kpis.totalFundingSpent} formatter={formatCurrency} />
                  </div>
               </div>
@@ -491,10 +491,10 @@ export default function Dashboard() {
 
       {/* Sidebar Overlay */}
       <div className={`absolute top-32 left-6 bottom-6 w-80 z-20 transition-transform duration-300 transform ${showFilters ? 'translate-x-0' : '-translate-x-[110%]'}`}>
-         <div className="h-full flex flex-col bg-white/95 backdrop-blur-md border border-gray-200/50 rounded-xl shadow-2xl shadow-black/10 overflow-hidden">
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="font-semibold text-gray-900">Filters</h2>
-              <button onClick={handleClearFilters} className="text-xs text-primary-600 hover:text-primary-700 font-medium">Reset</button>
+         <div className="h-full flex flex-col bg-white/95 backdrop-blur-md border border-uia-dark rounded-md shadow-2xl shadow-black/10 overflow-hidden">
+            <div className="p-4 border-b border-uia-dark flex justify-between items-center">
+              <h2 className="font-display font-semibold text-black">Filters</h2>
+              <button onClick={handleClearFilters} className="text-xs text-uia-blue hover:text-uia-red font-display font-medium">Reset</button>
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
