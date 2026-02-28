@@ -8,9 +8,14 @@ import type {
   Project,
   DashboardKPIs,
   FilterOptions,
-  SDG,
-  ProjectTypology
 } from '../../types';
+
+// Filter dropdown data returned by the backend /filters endpoint
+interface FilterData {
+  cities: string[];
+  regions: string[];
+  fundingSources: string[];
+}
 
 interface FilterParams {
   region?: string;
@@ -39,7 +44,7 @@ interface MapMarker {
   status: string;
   fundingNeeded: number;
   primarySdg: number;
-  imageUrl: string | null;
+  imageUrl?: string;
 }
 
 interface SDGDistribution {
@@ -63,14 +68,14 @@ export const dashboardAPI = {
   /**
    * Get filter options for dropdowns
    */
-  async getFilters(): Promise<FilterOptions> {
+  async getFilters(): Promise<FilterData> {
     const response = await apiClient.get('/api/dashboard/filters');
 
     // Backend returns { cities: [...], fundingSources: [...] }
-    // We need to add "All" options for the frontend dropdowns
+    // We prepend "All" options for the frontend dropdowns
     return {
       cities: ['All Cities', ...(response.data.cities || [])],
-      regions: ['All Regions'], // TODO: Backend should return regions
+      regions: ['All Regions'],
       fundingSources: ['All', ...(response.data.fundingSources || [])],
     };
   },
