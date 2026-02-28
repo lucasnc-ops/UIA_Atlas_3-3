@@ -9,7 +9,19 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply font-sans text-black bg-white antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-semibold tracking-uia-normal;
+  }
+
+  label {
+    @apply font-display font-bold text-uia-label uppercase text-uia-dark tracking-uia-wide;
+  }
+
+  img {
+    @apply rounded-none;  /* UIA design: no rounded images */
   }
 }
 
@@ -39,7 +51,7 @@
 }
 
 @layer components {
-  /* Custom component styles */
+  /* Original component styles (kept for compatibility) */
   .btn-primary {
     @apply px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
   }
@@ -55,4 +67,72 @@
   .card {
     @apply bg-white rounded-lg shadow-sm border border-gray-200;
   }
+
+  /* UIA Primary Button */
+  .btn-uia-primary {
+    @apply inline-flex items-center justify-center px-6 py-2.5 bg-uia-blue text-white
+           border-2 border-uia-blue rounded-none font-display font-semibold uppercase
+           text-uia-button tracking-uia-wide transition-all duration-200
+           hover:bg-uia-violet hover:border-uia-violet;
+  }
+
+  /* UIA Outline Button */
+  .btn-uia-outline {
+    @apply inline-flex items-center justify-center px-6 py-2.5 bg-transparent text-uia-blue
+           border border-uia-dark rounded-none font-display font-semibold uppercase
+           text-uia-button tracking-uia-wide transition-all duration-200
+           hover:text-uia-red hover:border-uia-red;
+  }
+
+  /* UIA Card */
+  .card-uia {
+    @apply bg-uia-gray-light border border-uia-dark rounded-none p-8;
+  }
+
+  /* UIA Section Header */
+  .section-header-uia {
+    @apply font-display font-bold uppercase tracking-uia-wide text-uia-blue;
+  }
+
+  /* UIA Form Input */
+  .input-uia {
+    @apply w-full px-4 py-3.5 border border-gray-300 rounded-none bg-white text-black
+           focus:outline-none focus:border-uia-dark-button focus:ring-2 focus:ring-uia-dark-button/10;
+  }
+
+  /* =========================================================
+     UIA Featured Content Border System
+     Signature 5px accent borders (from UIA website pattern)
+     ========================================================= */
+  .uia-featured-border {
+    @apply border-l-5 border-uia-red transition-all duration-200;
+  }
+
+  .uia-featured-border:hover {
+    @apply border-uia-dark-button shadow-uia-card-hover;
+  }
+
+  /* Category color variants */
+  .uia-featured-border.tools {
+    @apply border-uia-blue;
+  }
+
+  .uia-featured-border.resources {
+    @apply border-uia-violet;
+  }
+
+  .uia-featured-border.priority {
+    @apply border-uia-red;
+  }
+
+  .uia-featured-border.neutral {
+    @apply border-uia-dark-button;
+  }
+}
+
+/* Global focus states for forms */
+input:focus,
+select:focus,
+textarea:focus {
+  @apply outline-none ring-2 ring-uia-dark-button/10 border-uia-dark-button;
 }
