@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { projectsApi, type ProjectCreate } from '../../services/api/projects';
 import ProjectForm from '../../components/forms/ProjectForm';
+import { Button } from '../../components/uia';
 
 export default function SubmitProject() {
   const [searchParams] = useSearchParams();
@@ -84,44 +85,44 @@ export default function SubmitProject() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-mapbox-black flex items-center justify-center text-mapbox-light">
-        Loading project data...
+      <div className="min-h-screen bg-white flex items-center justify-center text-black">
+        <div className="font-sans text-uia-dark">Loading project data...</div>
       </div>
     );
   }
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-mapbox-black flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full bg-mapbox-card border border-mapbox-border rounded-xl p-8 text-center shadow-2xl">
-          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-900/30 border border-green-900/50 mb-6">
-            <svg className="h-8 w-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="min-h-screen bg-uia-gray-light flex items-center justify-center px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full bg-white border border-uia-dark rounded-md p-8 text-center shadow-uia-card">
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-uia-blue/10 border-2 border-uia-blue mb-6">
+            <svg className="h-8 w-8 text-uia-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-mapbox-light mb-2">
+          <h2 className="text-2xl font-display font-bold text-black mb-2">
             {editToken ? 'Update Received' : 'Submission Received'}
           </h2>
-          <p className="text-mapbox-gray mb-8">
-            {editToken 
-              ? 'Your project updates have been submitted for re-review.' 
+          <p className="text-uia-dark font-sans mb-8">
+            {editToken
+              ? 'Your project updates have been submitted for re-review.'
               : 'Thank you for contributing to the Atlas 3+3. Your project has been submitted for review by UIA experts.'}
             {' '}You will be notified once it is published.
           </p>
           <div className="flex flex-col space-y-3">
-            <Link
-              to="/dashboard"
-              className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-mapbox-light bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              View Atlas
+            <Link to="/dashboard">
+              <Button variant="dark" className="w-full">
+                View Atlas
+              </Button>
             </Link>
             {!editToken && (
-              <button
+              <Button
+                variant="dark-outline"
                 onClick={handleReset}
-                className="w-full inline-flex justify-center items-center px-4 py-2 border border-mapbox-border rounded-md shadow-sm text-sm font-medium text-mapbox-gray bg-transparent hover:text-primary-600 hover:border-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                className="w-full"
               >
                 Submit Another Project
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -130,15 +131,15 @@ export default function SubmitProject() {
   }
 
   return (
-    <div className="min-h-screen bg-mapbox-black text-mapbox-light py-12 font-sans">
+    <div className="min-h-screen bg-white text-black py-12 font-sans">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-mapbox-light">
+          <h1 className="text-3xl font-display font-bold text-black tracking-uia-normal">
             {editToken ? 'Update Project' : 'Submit a Project'}
           </h1>
-          <p className="mt-2 text-mapbox-gray">
-            {editToken 
-              ? 'Make necessary changes to your project submission below.' 
+          <p className="mt-2 text-uia-dark font-sans">
+            {editToken
+              ? 'Make necessary changes to your project submission below.'
               : 'Share your sustainable development project with the global community. All submissions are reviewed by UIA experts before publication.'}
           </p>
         </div>
