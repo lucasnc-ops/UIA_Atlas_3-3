@@ -532,3 +532,17 @@ SELECT COUNT(*) AS total_sdgs FROM project_sdgs;
 SELECT COUNT(*) AS total_typologies FROM project_typologies;
 SELECT COUNT(*) AS total_requirements FROM project_requirements;
 SELECT COUNT(*) AS total_images FROM project_images;
+
+-- =====================================================
+-- SCHEMA EXTENSIONS FOR EXCEL IMPORT
+-- Add extra columns captured from the UIA competition
+-- spreadsheet that have no equivalent in the base schema.
+-- All statements are idempotent (IF NOT EXISTS).
+-- =====================================================
+ALTER TABLE projects
+    ADD COLUMN IF NOT EXISTS external_code  VARCHAR(16),   -- Col C: e.g. EFP1, IFF35, LDP15
+    ADD COLUMN IF NOT EXISTS authors        TEXT,           -- Col F: architect / team names
+    ADD COLUMN IF NOT EXISTS size_sqm       FLOAT,          -- Col L: built area in m²
+    ADD COLUMN IF NOT EXISTS year_completed INTEGER;        -- Col M: year of project conclusion
+
+CREATE INDEX IF NOT EXISTS ix_projects_external_code ON projects(external_code);
