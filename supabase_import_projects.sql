@@ -3216,7 +3216,7 @@ INSERT INTO projects (
     gdpr_consent,
     external_code, authors, size_sqm, year_completed
 ) VALUES (
-    'euZen Architecture / Theodora Kyriafini - Fotini Lymperiadou & Co L.P. / Architects: T. KYRIAFINI, F. LYMPERIADOU, K. DESPOTIDIS, A. EFTHIMIADOU / Associates: I. DESPOTIDIS, C. SAXONI, E. MALEZI, A. IOSIFIDOU, P. GALANIS, I. KEFALONITI, A. LYMPERIADOU, M. IOANNIDOU / Environmental Design Consultants: N. PROTOGEROS, X. ZISIS / Acoustics Consultants: G. SCHUBERT, N. TSINIKAS / Plantation &Tree Management Consultants: N. KIKIDOU, T. ZAGAS, T. ZAGA, N. MYSIRLIS', 'Theodora Kyriafini - Fotini Lymperiadou & Co L.P.', 'info@euzenarchitecture.com', 'Innovative Bioclimatic European School in Crete',
+    'euZen Architecture / Theodora Kyriafini - Fotini Lymperiadou & Co L.P. / Architects: T. KYRIAFINI, F. LYMPERIADOU, K. DESPOTIDIS, A. EFTHIMIADOU / Associates: I. DESPOTIDIS, C. SAXONI, E. MALEZI, A. IOSIFIDOU, P. GALANIS, I. KEFALONITI, A. LYMPERIADOU, M.', 'Theodora Kyriafini - Fotini Lymperiadou & Co L.P.', 'info@euzenarchitecture.com', 'Innovative Bioclimatic European School in Crete',
     'IMPLEMENTED', 'SUBMITTED',
     0.0, 0.0,
     'SECTION_II', 'Heraklion, Crete', 'Greece',
