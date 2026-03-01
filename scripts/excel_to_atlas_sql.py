@@ -65,11 +65,14 @@ REGION_MAP = {
 # Helper functions
 # ---------------------------------------------------------------------------
 
-def esc(value) -> str:
-    """Escape a value for SQL single-quoted string. Returns NULL for empty."""
+def esc(value, max_len: int = 0) -> str:
+    """Escape a value for SQL single-quoted string. Returns NULL for empty.
+    If max_len > 0, truncates the string to that many characters."""
     if value is None or str(value).strip() == "":
         return "NULL"
     s = str(value).strip()
+    if max_len > 0 and len(s) > max_len:
+        s = s[:max_len]
     s = s.replace("'", "''")
     return f"'{s}'"
 
@@ -292,26 +295,30 @@ for i, row in enumerate(rows, start=1):
     if country_sql == "NULL":
         country_sql = "'Unknown'"
 
-    # contact_person fallback
-    contact_person_sql = esc(contact_name) if contact_name else "'Unknown'"
+    # contact_person: VARCHAR(255) — truncate if needed
+    contact_person_sql = esc(contact_name, 255) if contact_name else "'Unknown'"
 
-    # contact_email fallback (must be something)
-    contact_email_sql = esc(contact_email) if contact_email else f"'noemail+{ext_code.lower()}@uia.archi'"
+    # contact_email: VARCHAR(255)
+    contact_email_sql = esc(contact_email, 255) if contact_email else f"'noemail+{ext_code.lower()}@uia.archi'"
 
-    # brief_description: required NOT NULL
+    # city / country: VARCHAR(255) — apply truncation
+    city_sql   = city_sql[:257] if len(city_sql) > 257 else city_sql    # 255 + 2 quotes
+    country_sql = country_sql[:257] if len(country_sql) > 257 else country_sql
+
+    # brief_description: TEXT — no limit
     brief_sql = esc(brief_val) if brief_val and str(brief_val).strip() else esc(name)
 
-    # detailed_description: required NOT NULL
+    # detailed_description: TEXT — no limit
     detail_sql = esc(detail_val) if detail_val and str(detail_val).strip() else brief_sql
 
-    # success_factors: required NOT NULL
+    # success_factors: TEXT — no limit
     success_sql = esc(success_val) if success_val and str(success_val).strip() else "'No data'"
 
-    # organization_name: required NOT NULL
-    org_sql = esc(org_val) if org_val and str(org_val).strip() else "'Unknown'"
+    # organization_name: VARCHAR(255) — truncate if needed
+    org_sql = esc(org_val, 255) if org_val and str(org_val).strip() else "'Unknown'"
 
-    # project_name: required NOT NULL
-    name_sql = esc(name) if name and str(name).strip() else esc(ext_code)
+    # project_name: VARCHAR(500) — truncate if needed
+    name_sql = esc(name, 500) if name and str(name).strip() else esc(ext_code, 500)
 
     sdgs = parse_sdgs(sdg_list_val)
     project_info.append((ext_code, sdgs))
