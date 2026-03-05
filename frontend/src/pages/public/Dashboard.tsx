@@ -401,7 +401,7 @@ export default function Dashboard() {
                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
              </Link>
              <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-4 shadow-lg shadow-black/5 hover:shadow-xl transition-shadow duration-300">
-               <h1 className="text-2xl font-display font-bold text-black tracking-uia-normal">SDG Atlas</h1>
+               <h1 className="text-2xl font-display font-bold text-black tracking-uia-normal">SDG Panorama</h1>
                <p className="text-xs font-display text-uia-dark mt-1 uppercase tracking-uia-wide">Global Sustainable Development Projects</p>
              </div>
              
@@ -531,7 +531,7 @@ export default function Dashboard() {
         <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-50 backdrop-blur-sm">
            <div className="flex flex-col items-center">
              <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-             <p className="mt-4 text-gray-900 font-medium tracking-wide">Loading Atlas Data...</p>
+             <p className="mt-4 text-gray-900 font-medium tracking-wide">Loading Panorama Data...</p>
            </div>
         </div>
       )}
