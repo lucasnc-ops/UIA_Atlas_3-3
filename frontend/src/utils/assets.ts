@@ -1,6 +1,6 @@
 // UIA Asset paths
 export const ASSETS = {
-  logo: '/uia-logo.png',
+  logo: '/panorama-logo.png',
   illustrations: {
     sustainableBuilding: '/illustrations/sustainable-building.svg',
     sustainableFuture: '/illustrations/sustainable-future.svg',

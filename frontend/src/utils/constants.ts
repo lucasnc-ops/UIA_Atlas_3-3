@@ -10,6 +10,7 @@ export const PROJECT_STATUSES = [
   "Planned",
   "In Progress",
   "Implemented",
+  "Needed but constrained projects",
 ];
 
 export const TYPOLOGIES = [
