@@ -106,7 +106,7 @@ export default function SubmitProject() {
           <p className="text-uia-dark font-sans mb-8">
             {editToken
               ? 'Your project updates have been submitted for re-review.'
-              : 'Thank you for contributing to the Atlas 3+3. Your project has been submitted for review by UIA experts.'}
+              : 'Thank you for contributing to Panorama SDG. Your project has been submitted for review by UIA experts.'}
             {' '}You will be notified once it is published.
           </p>
           <div className="flex flex-col space-y-3">

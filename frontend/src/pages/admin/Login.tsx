@@ -34,7 +34,7 @@ export default function AdminLogin() {
           </div>
         </div>
         <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-mapbox-light">
-          Sign in to Atlas 3+3
+          Sign in to Panorama SDG
         </h2>
         <p className="mt-2 text-center text-sm text-mapbox-gray">
           Authorized UIA personnel only
