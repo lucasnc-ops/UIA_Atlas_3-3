@@ -282,8 +282,7 @@ export default function Dashboard() {
                     position={[marker.latitude, marker.longitude]}
                     icon={markerIcon}
                     eventHandlers={{
-                      click: () => handleProjectSelect(marker.id),
-                      mouseover: (e) => e.target.openPopup(),
+                      click: (e) => e.target.openPopup(),
                     }}
                   >
                     <Popup 
