@@ -112,7 +112,7 @@ export default function SubmitProject() {
           <div className="flex flex-col space-y-3">
             <Link to="/dashboard">
               <Button variant="dark" className="w-full">
-                View Atlas
+                View Panorama
               </Button>
             </Link>
             {!editToken && (
