@@ -284,7 +284,6 @@ export default function Dashboard() {
                     eventHandlers={{
                       click: () => handleProjectSelect(marker.id),
                       mouseover: (e) => e.target.openPopup(),
-                      mouseout: (e) => e.target.closePopup(),
                     }}
                   >
                     <Popup 
@@ -296,10 +295,12 @@ export default function Dashboard() {
                       <div className="bg-white rounded-lg shadow-sm overflow-hidden text-gray-900">
                         {marker.imageUrl ? (
                           <div className="h-32 w-full overflow-hidden">
-                             <img 
-                               src={marker.imageUrl} 
-                               alt={marker.projectName} 
-                               className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500" 
+                             <img
+                               src={marker.imageUrl}
+                               alt={marker.projectName}
+                               loading="lazy"
+                               decoding="async"
+                               className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
                              />
                           </div>
                         ) : (
