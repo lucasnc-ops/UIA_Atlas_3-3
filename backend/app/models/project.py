@@ -84,6 +84,9 @@ class Project(Base):
     # Other requirement text (for custom "Other" option)
     other_requirement_text = Column(Text, nullable=True)
 
+    # External reference (UIA Guidebook project code, e.g. IFF1, LDP6)
+    external_code = Column(String(16), nullable=True, index=True)
+
     # Review/moderation
     rejection_reason = Column(Text, nullable=True)
     reviewer_notes = Column(Text, nullable=True)

@@ -35,20 +35,17 @@ export default function LandingPage() {
             {/* Main Title - UIA Typography */}
             <h1 className="text-6xl sm:text-7xl lg:text-8xl font-display font-bold tracking-tight mb-6 leading-[0.9] drop-shadow-2xl">
               <span className="text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
-                ATLAS
+                PANORAMA
               </span>
               {' '}
               <span className="text-uia-red drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
-                3+3
+                SDG
               </span>
             </h1>
 
             {/* Subtitle */}
             <p className="text-xl sm:text-2xl font-sans font-light text-white max-w-3xl mx-auto leading-relaxed mb-4 drop-shadow-lg">
-              The definitive global database of architectural projects driving the{' '}
-              <span className="font-semibold text-white">
-                UN 2030 Agenda
-              </span>
+              The UIA Panorama of SDG Implementation Metrics — tracking how architecture drives the UN 2030 Agenda.
             </p>
 
             <p className="text-lg font-sans text-white/90 max-w-2xl mx-auto mb-12 drop-shadow-lg">
@@ -86,7 +83,11 @@ export default function LandingPage() {
       {/* Key Metrics Bar - UIA Style */}
       <section className="relative border-y border-uia-dark bg-white">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-uia-dark">
+          <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-uia-dark">
+            <div className="py-10 px-8 text-center group cursor-pointer hover:bg-uia-gray-light transition-all duration-300">
+              <div className="text-5xl font-display font-bold text-uia-red mb-2 group-hover:scale-110 transition-transform">141</div>
+              <div className="text-xs font-display font-bold text-uia-dark uppercase tracking-uia-wide">Projects</div>
+            </div>
             <div className="py-10 px-8 text-center group cursor-pointer hover:bg-uia-gray-light transition-all duration-300">
               <div className="text-5xl font-display font-bold text-uia-blue mb-2 group-hover:scale-110 transition-transform">17</div>
               <div className="text-xs font-display font-bold text-uia-dark uppercase tracking-uia-wide">SDG Goals</div>
@@ -173,7 +174,7 @@ export default function LandingPage() {
             Ready to Make an Impact?
           </h2>
           <p className="text-xl font-sans font-light text-white/90 mb-12 max-w-2xl mx-auto leading-relaxed">
-            Join architects worldwide in building a sustainable future. Submit your project to Atlas 3+3 today.
+            Join architects worldwide in building a sustainable future. Submit your project to Panorama SDG today.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-5 justify-center">
