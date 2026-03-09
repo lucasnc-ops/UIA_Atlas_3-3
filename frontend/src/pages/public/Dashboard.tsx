@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -79,9 +79,11 @@ const formatCurrency = (value: number | undefined | null) => {
 
 function MapUpdater({ markers }: { markers: MapMarker[] }) {
   const map = useMap();
+  const hasAutoFit = useRef(false);
 
   useEffect(() => {
-    if (markers.length > 0) {
+    if (markers.length > 0 && !hasAutoFit.current) {
+      hasAutoFit.current = true;
       const bounds = L.latLngBounds(
         markers.map((m) => [m.latitude, m.longitude] as [number, number])
       );
@@ -169,35 +171,35 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Fetch KPIs whenever filters change
+  // Fetch KPIs + markers together with 400ms debounce and cancellation
   useEffect(() => {
-    const fetchKpis = async () => {
-      try {
-        const data = await dashboardAPI.getKPIs(filters);
-        setKpis(data);
-      } catch (error) {
-        console.error('Error fetching KPIs:', error);
-      }
-    };
-    fetchKpis();
-  }, [filters]);
+    const controller = new AbortController();
 
-  // Fetch Markers only when in map view and filters change (or view switches to map)
-  useEffect(() => {
-    if (viewMode === 'map') {
-      const fetchMarkers = async () => {
-        setLoading(true);
-        try {
-          const data = await dashboardAPI.getMapMarkers(filters);
-          setMarkers(data);
-        } catch (error) {
-          console.error('Error fetching markers:', error);
-        } finally {
-          setLoading(false);
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        if (viewMode === 'map') {
+          const [kpiData, markerData] = await Promise.all([
+            dashboardAPI.getKPIs(filters, controller.signal),
+            dashboardAPI.getMapMarkers(filters, controller.signal),
+          ]);
+          setKpis(kpiData);
+          setMarkers(markerData);
+        } else {
+          const kpiData = await dashboardAPI.getKPIs(filters, controller.signal);
+          setKpis(kpiData);
         }
-      };
-      fetchMarkers();
-    }
+      } catch (error: any) {
+        if (error?.code !== 'ERR_CANCELED') console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }, 400);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [filters, viewMode]);
 
   const handleProjectSelect = async (projectId: string) => {
@@ -227,6 +229,22 @@ export default function Dashboard() {
       sdg: 'All SDGs',
     });
   };
+
+  // Pre-compute marker icons only when markers array changes
+  const markerElements = useMemo(
+    () =>
+      markers.map((marker) => ({
+        marker,
+        icon: marker.primarySdg
+          ? createSDGMarker({
+              sdgNumber: marker.primarySdg,
+              projectName: marker.projectName,
+              size: getMarkerSizeByFunding(marker.fundingNeeded || 0),
+            })
+          : undefined,
+      })),
+    [markers]
+  );
 
   return (
     <div className="h-screen w-screen flex flex-col bg-white text-mapbox-light overflow-hidden relative">
@@ -266,21 +284,12 @@ export default function Dashboard() {
            
                          <MarkerClusterGroup chunkedLoading>
            
-                {markers.map((marker) => {
-                  // Create custom SDG marker if primary SDG is available
-                  const markerIcon = marker.primarySdg
-                    ? createSDGMarker({
-                        sdgNumber: marker.primarySdg,
-                        projectName: marker.projectName,
-                        size: getMarkerSizeByFunding(marker.fundingNeeded || 0),
-                      })
-                    : undefined;
-
+                {markerElements.map(({ marker, icon }) => {
                   return (
                   <Marker
                     key={marker.id}
                     position={[marker.latitude, marker.longitude]}
-                    icon={markerIcon}
+                    icon={icon}
                     eventHandlers={{
                       click: () => handleProjectSelect(marker.id),
                       mouseover: (e) => e.target.openPopup(),
