@@ -24,7 +24,18 @@
       "Bash(git push:*)",
       "Bash(git commit:*)",
       "Bash(git checkout:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(du:*)",
+      "Bash(gh auth:*)",
+      "Bash(xargs grep:*)",
+      "Bash(gh pr:*)",
+      "Bash(xargs wc:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npx tsc:*)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(node_modules/.bin/vite build:*)",
+      "Bash(where gh:*)",
+      "Bash(winget list:*)"
     ],
     "deny": [],
     "ask": []

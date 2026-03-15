@@ -535,7 +535,7 @@ export default function ProjectForm({
                 <p className="text-sm font-medium text-mapbox-light">I consent to the publication of this data.</p>
                 <p className="text-xs text-mapbox-gray mt-1">
                   By checking this box, I confirm that I have the right to share this information and images, 
-                  and I agree for them to be published on the UIA SDG Panorama website.
+                  and I agree for them to be published on the UIA Panorama website.
                 </p>
                 {errors.gdpr_consent && (
                   <p className="text-xs text-red-400 mt-1">{errors.gdpr_consent.message}</p>
