@@ -166,16 +166,28 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const fetchKpis = async () => {
+    const controller = new AbortController();
+
+    const timer = setTimeout(async () => {
+      setLoading(true);
       try {
-        const data = await dashboardAPI.getKPIs(filters);
-        setKpis(data);
-      } catch (error) {
-        console.error('Error fetching KPIs:', error);
+        if (viewMode === 'map') {
+          const [kpiData, markerData] = await Promise.all([
+            dashboardAPI.getKPIs(filters, controller.signal),
+            dashboardAPI.getMapMarkers(filters, controller.signal),
+          ]);
+          setKpis(kpiData);
+          setMarkers(markerData);
+        } else {
+          const kpiData = await dashboardAPI.getKPIs(filters, controller.signal);
+          setKpis(kpiData);
+        }
+      } catch (error: any) {
+        if (error?.code !== 'ERR_CANCELED') console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
       }
-    };
-    fetchKpis();
-  }, [filters]);
+    }, 400);
 
   useEffect(() => {
     if (viewMode === 'map') {
@@ -273,7 +285,7 @@ export default function Dashboard() {
                   <Marker
                     key={marker.id}
                     position={[marker.latitude, marker.longitude]}
-                    icon={markerIcon}
+                    icon={icon}
                     eventHandlers={{
                       click: () => handleProjectSelect(marker.id),
                       // Hover popups only on desktop (touch devices don't support mouseover reliably)
