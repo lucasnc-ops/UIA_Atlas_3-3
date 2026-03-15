@@ -93,6 +93,8 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
                 <img
                   src={getImageUrl(project.imageUrls[0])}
                   alt={project.projectName}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-44 lg:h-64 object-cover rounded-lg border border-gray-200 cursor-zoom-in hover:opacity-95 transition-opacity"
                   onClick={() => handleImageClick(0)}
                   onError={(e) => {
@@ -107,6 +109,8 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
                         key={idx}
                         src={getImageUrl(url)}
                         alt={`${project.projectName} ${idx + 2}`}
+                        loading="lazy"
+                        decoding="async"
                         className="w-16 h-16 lg:w-20 lg:h-20 object-cover rounded border border-gray-200 cursor-zoom-in hover:opacity-95 transition-opacity flex-shrink-0"
                         onClick={() => handleImageClick(idx + 1)}
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
