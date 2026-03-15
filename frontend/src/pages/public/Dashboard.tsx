@@ -118,7 +118,6 @@ export default function Dashboard() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showInsights, setShowInsights] = useState(false);
   const dashHeaderRef = useRef<HTMLDivElement>(null);
-  const [headerHeight, setHeaderHeight] = useState(0);
   const [mapZoom, setMapZoom] = useState(2);
   const [mapKey, setMapKey] = useState(0);
   const { addToast } = useToast();
@@ -128,15 +127,6 @@ export default function Dashboard() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-
-  useEffect(() => {
-    const measure = () => {
-      if (dashHeaderRef.current) setHeaderHeight(dashHeaderRef.current.offsetHeight);
-    };
-    measure();
-    window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
-  }, [kpis]);
 
   // Desktop: show filters by default
   useEffect(() => {
@@ -241,22 +231,6 @@ export default function Dashboard() {
   const handleClearFilters = () => {
     setFilters({ region: 'All Regions', sdg: 'All SDGs' });
   };
-
-  const handleFilterOpen = () => {
-    setShowFilters(true);
-    // Auto-close project panel on mobile when filters open
-    if (isMobile && selectedProject) handleProjectClose();
-    if (isMobile) setShowMobileSearch(false);
-  };
-
-  // Count active filters for FAB badge
-  const activeFilterCount = [
-    filters.region && filters.region !== 'All Regions',
-    filters.sdg && filters.sdg !== 'All SDGs',
-    filters.city && filters.city !== 'All Cities',
-    filters.fundedBy && filters.fundedBy !== 'All',
-    filters.search && filters.search !== '',
-  ].filter(Boolean).length;
 
   return (
     <div className="h-screen w-screen flex flex-col bg-white text-mapbox-light overflow-hidden relative">
