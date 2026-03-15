@@ -19,6 +19,7 @@ export default function InsightsSection() {
   const [kpis, setKpis] = useState<any>(null);
   const [sdgData, setSdgData] = useState<SDGRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [apiError, setApiError] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -30,7 +31,7 @@ export default function InsightsSection() {
         setKpis(k);
         setSdgData(sdg);
       } catch {
-        // fallback silently
+        setApiError(true);
       } finally {
         setLoading(false);
       }
@@ -54,7 +55,8 @@ export default function InsightsSection() {
             The <span className="text-uia-red">3+3</span> Global Picture
           </h2>
           <p className="text-base font-sans font-light text-uia-dark mt-3 max-w-xl mx-auto">
-            Real-time data from {kpis?.totalProjects ?? 141} projects spanning {kpis?.countriesRepresented ?? 0} countries — mapping momentum against necessity.
+            Real-time data from {loading ? '—' : (kpis?.totalProjects ?? '—')} projects spanning {loading ? '—' : (kpis?.countriesRepresented ?? '—')} countries — mapping momentum against necessity.
+            {apiError && !loading && <span className="block text-[10px] text-gray-400 mt-1">Live data temporarily unavailable.</span>}
           </p>
         </div>
 
