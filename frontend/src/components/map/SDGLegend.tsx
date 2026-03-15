@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { SDG_COLORS } from './CustomSDGMarker';
+import { ASSETS } from '../../utils/assets';
 
 const SDG_INFO = [
   { id: 1,  name: 'No Poverty',              shortName: 'No Poverty' },
@@ -105,16 +106,16 @@ export default function SDGLegend({ onSDGClick, activeSdg }: SDGLegendProps) {
                     key={sdg.id}
                     onClick={() => { onSDGClick?.(sdg.id); setIsCollapsed(true); }}
                     className={`flex items-center gap-2 p-2 rounded-lg transition-all text-left ${
-                      isActive ? 'bg-primary-50 ring-2 ring-primary-300 shadow-sm' : 'hover:bg-gray-50'
+                      isActive ? 'ring-2 ring-primary-400 shadow-sm bg-primary-50' : 'hover:bg-gray-50'
                     } ${onSDGClick ? 'cursor-pointer' : 'cursor-default'}`}
                     disabled={!onSDGClick}
                   >
-                    <div
-                      className="flex items-center justify-center w-8 h-8 rounded-full text-white font-bold text-xs flex-shrink-0"
-                      style={{ backgroundColor: SDG_COLORS[sdg.id], boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}
-                    >
-                      {sdg.id}
-                    </div>
+                    <img
+                      src={ASSETS.sdgIcon(sdg.id)}
+                      alt={`SDG ${sdg.id}`}
+                      loading="lazy"
+                      className="w-8 h-8 rounded object-cover flex-shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
                       <div className={`text-xs font-medium leading-tight ${isActive ? 'text-primary-700' : 'text-gray-700'}`}>
                         {sdg.shortName}
@@ -180,15 +181,13 @@ export default function SDGLegend({ onSDGClick, activeSdg }: SDGLegendProps) {
                   } ${onSDGClick ? 'cursor-pointer' : 'cursor-default'}`}
                   disabled={!onSDGClick}
                 >
-                  <div
-                    className={`flex items-center justify-center w-8 h-8 rounded-full text-white font-bold text-xs flex-shrink-0 transition-transform ${isHovered ? 'scale-110' : ''}`}
-                    style={{
-                      backgroundColor: SDG_COLORS[sdg.id],
-                      boxShadow: isHovered ? `0 4px 12px ${SDG_COLORS[sdg.id]}40` : '0 2px 4px rgba(0,0,0,0.1)',
-                    }}
-                  >
-                    {sdg.id}
-                  </div>
+                  <img
+                    src={ASSETS.sdgIcon(sdg.id)}
+                    alt={`SDG ${sdg.id}`}
+                    loading="lazy"
+                    className={`w-8 h-8 rounded object-cover flex-shrink-0 transition-transform ${isHovered ? 'scale-110' : ''}`}
+                    style={{ boxShadow: isHovered ? `0 4px 12px ${SDG_COLORS[sdg.id]}40` : '0 2px 4px rgba(0,0,0,0.1)' }}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className={`text-xs font-medium leading-tight ${isActive ? 'text-primary-700' : 'text-gray-700'}`}>
                       {sdg.shortName}

@@ -9,6 +9,7 @@ import type { FilterOptions, DashboardKPIs, Project } from '../../types';
 import FilterControls from '../../components/dashboard/FilterControls';
 import ProjectDetailPanel from '../../components/dashboard/ProjectDetailPanel';
 import AnalyticsPanel from '../../components/dashboard/AnalyticsPanel';
+import InsightsDrawer from '../../components/dashboard/InsightsDrawer';
 import ProjectTable from '../../components/dashboard/ProjectTable';
 import { createSDGMarker, getMarkerSizeByFunding, MARKER_STYLES } from '../../components/map/CustomSDGMarker';
 import SDGLegend, { LEGEND_STYLES } from '../../components/map/SDGLegend';
@@ -105,12 +106,24 @@ export default function Dashboard() {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'table'>('map');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showInsights, setShowInsights] = useState(false);
+  const dashHeaderRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    const measure = () => {
+      if (dashHeaderRef.current) setHeaderHeight(dashHeaderRef.current.offsetHeight);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [kpis]);
 
   // Desktop: show filters by default
   useEffect(() => {
@@ -127,6 +140,7 @@ export default function Dashboard() {
       switch (e.key.toLowerCase()) {
         case 'f': setShowFilters(prev => !prev); break;
         case 'a': setShowAnalytics(prev => !prev); break;
+        case 'i': setShowInsights(prev => !prev); break;
         case 'm': setViewMode('map'); break;
         case 'l': setViewMode('table'); break;
         case '/':
@@ -137,13 +151,14 @@ export default function Dashboard() {
         case 'escape':
           if (selectedProject) handleProjectClose();
           else if (showAnalytics) setShowAnalytics(false);
+          else if (showInsights) setShowInsights(false);
           else if (showMobileSearch) setShowMobileSearch(false);
           break;
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedProject, showAnalytics, showFilters, showMobileSearch]);
+  }, [selectedProject, showAnalytics, showInsights, showFilters, showMobileSearch]);
 
   useEffect(() => {
     const projectId = searchParams.get('project');
@@ -291,6 +306,7 @@ export default function Dashboard() {
                                 <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
                                   marker.status === 'Implemented' ? 'bg-green-100 text-green-700' :
                                   marker.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                  marker.status === 'Needed but Constrained' ? 'bg-orange-100 text-orange-700' :
                                   'bg-yellow-100 text-yellow-700'
                                 }`}>{marker.status}</span>
                               )}
@@ -347,7 +363,15 @@ export default function Dashboard() {
       </div>
 
       {/* ── DESKTOP HEADER ── (md+) */}
-      <div className="absolute top-0 left-0 right-0 z-30 px-6 py-4 pointer-events-none hidden md:block">
+      <div ref={dashHeaderRef} className="absolute top-0 left-0 right-0 z-30 px-6 py-4 pointer-events-none hidden md:block">
+        {/* Nav strip */}
+        <div className="pointer-events-auto flex items-center gap-1 text-xs font-display mb-3 w-fit bg-white/80 backdrop-blur-md border border-uia-dark rounded px-3 py-1 shadow-sm">
+          <Link to="/" className="text-uia-dark hover:text-uia-red transition-colors">Home</Link>
+          <span className="text-gray-300 px-1">|</span>
+          <span className="text-black font-bold">Panorama</span>
+          <span className="text-gray-300 px-1">|</span>
+          <Link to="/submit" className="text-uia-dark hover:text-uia-red transition-colors">Submit Project</Link>
+        </div>
         <div className="flex justify-between items-start">
           <div className="pointer-events-auto flex gap-4">
             <Link
@@ -381,8 +405,19 @@ export default function Dashboard() {
             </div>
 
             <button
+              onClick={() => setShowInsights(true)}
+              className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 py-2 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 flex items-center gap-2 h-full self-stretch group text-uia-dark hover:text-uia-violet"
+              title="Insights (I)"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span className="font-display font-medium text-sm">Insights</span>
+            </button>
+            <button
               onClick={() => setShowAnalytics(true)}
               className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 py-2 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 flex items-center gap-2 h-full self-stretch group text-uia-dark hover:text-uia-blue"
+              title="Full Analytics (A)"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -484,8 +519,13 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Mobile KPI strip */}
-        <div className="flex items-center gap-3 px-3 py-1.5 bg-white/90 backdrop-blur-md border-b border-gray-100 overflow-x-auto">
+        {/* Mobile nav + KPI strip */}
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/90 backdrop-blur-md border-b border-gray-100 overflow-x-auto">
+          {/* Nav chips */}
+          <Link to="/" className="text-[10px] font-display text-uia-dark hover:text-uia-red whitespace-nowrap px-1.5 py-0.5 rounded border border-gray-200">Home</Link>
+          <Link to="/submit" className="text-[10px] font-display text-uia-dark hover:text-uia-red whitespace-nowrap px-1.5 py-0.5 rounded border border-gray-200">Submit</Link>
+          <span className="text-gray-200">|</span>
+          {/* KPI stats */}
           <span className="text-xs font-display font-bold text-uia-blue whitespace-nowrap">
             <AnimatedCounter value={kpis.totalProjects} /> Projects
           </span>
@@ -531,6 +571,11 @@ export default function Dashboard() {
       {/* ── ANALYTICS PANEL ── */}
       {showAnalytics && (
         <AnalyticsPanel filters={filters} onClose={() => setShowAnalytics(false)} />
+      )}
+
+      {/* ── INSIGHTS DRAWER ── */}
+      {showInsights && (
+        <InsightsDrawer filters={filters} onClose={() => setShowInsights(false)} />
       )}
 
       {/* ── DESKTOP FILTER SIDEBAR ── (md+) */}
@@ -615,7 +660,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── MOBILE FILTER FAB ── */}
-      {viewMode === 'map' && !showFilters && (
+      {viewMode === 'map' && !showFilters && !showInsights && (
         <button
           onClick={handleFilterOpen}
           className="fixed bottom-6 left-4 z-20 md:hidden flex items-center gap-2 bg-white text-uia-dark border border-uia-dark rounded-full px-4 py-2.5 shadow-lg hover:shadow-xl transition-shadow"
@@ -625,6 +670,20 @@ export default function Dashboard() {
           {activeFilterCount > 0 && (
             <span className="flex items-center justify-center w-5 h-5 rounded-full bg-uia-blue text-white text-[10px] font-bold">{activeFilterCount}</span>
           )}
+        </button>
+      )}
+
+      {/* ── INSIGHTS FAB (mobile) / BUTTON (desktop) ── */}
+      {viewMode === 'map' && !showInsights && !showFilters && (
+        <button
+          onClick={() => setShowInsights(true)}
+          className="fixed bottom-6 right-4 z-20 flex items-center gap-2 bg-uia-violet text-white rounded-full px-4 py-2.5 shadow-lg hover:shadow-xl hover:bg-uia-blue transition-all"
+          title="Quick Insights (I)"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <span className="text-sm font-display font-medium">Insights</span>
         </button>
       )}
 
@@ -640,7 +699,11 @@ export default function Dashboard() {
 
       {/* ── PROJECT DETAIL PANEL ── */}
       {selectedProject && (
-        <ProjectDetailPanel project={selectedProject} onClose={handleProjectClose} />
+        <ProjectDetailPanel
+          project={selectedProject}
+          onClose={handleProjectClose}
+          topOffset={isMobile ? 0 : headerHeight}
+        />
       )}
     </div>
   );

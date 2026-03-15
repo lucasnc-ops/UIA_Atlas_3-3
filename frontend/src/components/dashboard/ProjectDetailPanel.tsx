@@ -1,20 +1,16 @@
 import { useState } from 'react';
 import type { Project } from '../../types';
 import Lightbox from '../../components/common/Lightbox';
+import { ASSETS, SDG_COLORS } from '../../utils/assets';
+import { SDGS } from '../../utils/constants';
 
 interface ProjectDetailPanelProps {
   project: Project | null;
   onClose: () => void;
+  topOffset?: number;
 }
 
-const sdgColors: Record<number, string> = {
-  1: '#E5243B', 2: '#DDA63A', 3: '#4C9F38', 4: '#C5192D', 5: '#FF3A21',
-  6: '#26BDE2', 7: '#FCC30B', 8: '#A21942', 9: '#FD6925', 10: '#DD1367',
-  11: '#FD9D24', 12: '#BF8B2E', 13: '#3F7E44', 14: '#0A97D9', 15: '#56C02B',
-  16: '#00689D', 17: '#19486A',
-};
-
-export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPanelProps) {
+export default function ProjectDetailPanel({ project, onClose, topOffset = 0 }: ProjectDetailPanelProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -48,13 +44,16 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
       />
 
       {/* Panel — desktop: right sidebar; mobile: bottom sheet */}
-      <div className="
-        fixed z-50 bg-white shadow-2xl text-gray-900 border-gray-200 overflow-hidden
-        /* Mobile: bottom sheet */
-        bottom-0 left-0 right-0 rounded-t-2xl max-h-[88vh] flex flex-col
-        /* Desktop: right sidebar */
-        lg:bottom-auto lg:right-0 lg:top-0 lg:left-auto lg:w-[480px] lg:h-full lg:rounded-none lg:border-l
-      ">
+      <div
+        className="
+          fixed z-50 bg-white shadow-2xl text-gray-900 border-gray-200 overflow-hidden
+          /* Mobile: bottom sheet */
+          bottom-0 left-0 right-0 rounded-t-2xl max-h-[88vh] flex flex-col
+          /* Desktop: right sidebar */
+          lg:bottom-auto lg:right-0 lg:left-auto lg:w-[480px] lg:rounded-none lg:border-l
+        "
+        style={{ top: topOffset > 0 ? `${topOffset}px` : undefined }}
+      >
         {/* Mobile drag handle */}
         <div className="flex justify-center pt-3 pb-1 lg:hidden flex-shrink-0">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
@@ -132,6 +131,7 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
                   project.projectStatus === 'Implemented' ? 'bg-green-50 text-green-700 border-green-200' :
                   project.projectStatus === 'In Progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                  project.projectStatus === 'Needed but Constrained' ? 'bg-orange-50 text-orange-700 border-orange-200' :
                   'bg-gray-100 text-gray-700 border-gray-200'
                 }`}>
                   {project.projectStatus}
@@ -202,16 +202,35 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
               <div>
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Sustainable Development Goals</h4>
                 <div className="flex flex-wrap gap-2">
-                  {project.sdgs.map((sdg) => (
-                    <div
-                      key={sdg}
-                      className="flex items-center justify-center w-10 h-10 lg:w-12 lg:h-12 rounded font-bold text-white text-sm shadow-sm ring-1 ring-black/5 hover:shadow-md transition-all cursor-help"
-                      style={{ backgroundColor: sdgColors[sdg] }}
-                      title={`SDG ${sdg}`}
-                    >
-                      {sdg}
-                    </div>
-                  ))}
+                  {project.sdgs.map((sdg) => {
+                    const sdgInfo = SDGS.find((s) => s.id === sdg);
+                    return (
+                      <div
+                        key={sdg}
+                        className="relative group cursor-help"
+                        title={`SDG ${sdg}: ${sdgInfo?.name ?? ''}`}
+                      >
+                        <img
+                          src={ASSETS.sdgIcon(sdg)}
+                          alt={`SDG ${sdg}`}
+                          loading="lazy"
+                          className="w-10 h-10 lg:w-12 lg:h-12 rounded object-cover shadow-sm ring-1 ring-black/10 hover:shadow-md transition-all"
+                          onError={(e) => {
+                            const el = e.target as HTMLImageElement;
+                            el.style.display = 'none';
+                            (el.nextElementSibling as HTMLElement | null)?.classList.remove('hidden');
+                          }}
+                        />
+                        {/* Fallback colored circle */}
+                        <div
+                          className="hidden w-10 h-10 lg:w-12 lg:h-12 rounded flex items-center justify-center text-white font-bold text-sm shadow-sm"
+                          style={{ backgroundColor: SDG_COLORS[sdg] }}
+                        >
+                          {sdg}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -230,12 +249,17 @@ export default function ProjectDetailPanel({ project, onClose }: ProjectDetailPa
               </div>
             )}
 
-            {/* Success Factors */}
+            {/* Project Factors */}
             {project.successFactors && (
-              <div>
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">Success Factors</h4>
-                <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-line text-sm">{project.successFactors}</p>
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Project Factors</h4>
+                </div>
+                <div className="p-4 space-y-3">
+                  <div>
+                    <p className="text-xs font-medium text-green-700 uppercase tracking-wide mb-1">Success Factors</p>
+                    <p className="text-gray-700 leading-relaxed whitespace-pre-line text-sm">{project.successFactors}</p>
+                  </div>
                 </div>
               </div>
             )}

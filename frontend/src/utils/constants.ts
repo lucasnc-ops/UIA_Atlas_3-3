@@ -10,6 +10,7 @@ export const PROJECT_STATUSES = [
   "Planned",
   "In Progress",
   "Implemented",
+  "Needed but Constrained",
 ];
 
 export const TYPOLOGIES = [
@@ -23,6 +24,7 @@ export const TYPOLOGIES = [
   "Transportation Hubs",
   "Heritage Conservation",
   "Disaster Resilience",
+  "Others",
 ];
 
 export const FUNDING_REQUIREMENTS = [
@@ -31,6 +33,7 @@ export const FUNDING_REQUIREMENTS = [
   "Loan",
   "Equity Investment",
   "Crowdfunding",
+  "Others",
 ];
 
 export const GOVERNMENT_REQUIREMENTS = [
@@ -39,6 +42,7 @@ export const GOVERNMENT_REQUIREMENTS = [
   "Permits & Zoning",
   "Tax Incentives",
   "Public-Private Partnership",
+  "Others",
 ];
 
 export const OTHER_REQUIREMENTS = [
@@ -46,6 +50,7 @@ export const OTHER_REQUIREMENTS = [
   "Community Volunteers",
   "Material Donations",
   "Media Coverage",
+  "Others",
 ];
 
 export const SDGS = [
