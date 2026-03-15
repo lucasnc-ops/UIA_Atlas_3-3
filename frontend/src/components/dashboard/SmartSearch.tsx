@@ -12,9 +12,10 @@ interface SearchResult {
 interface SmartSearchProps {
   onProjectSelect: (projectId: string) => void;
   onFilterChange: (filter: { city?: string; country?: string; sdg?: number }) => void;
+  autoFocus?: boolean;
 }
 
-export default function SmartSearch({ onProjectSelect, onFilterChange }: SmartSearchProps) {
+export default function SmartSearch({ onProjectSelect, onFilterChange, autoFocus }: SmartSearchProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -198,6 +199,7 @@ export default function SmartSearch({ onProjectSelect, onFilterChange }: SmartSe
           onKeyDown={handleKeyDown}
           onFocus={() => query.length >= 2 && results.length > 0 && setIsOpen(true)}
           placeholder="Search projects, cities, or SDGs..."
+          autoFocus={autoFocus}
           className="w-full pl-10 pr-10 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all placeholder-gray-400 text-gray-900"
         />
         {query && (
