@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl, ZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { useSearchParams, Link } from 'react-router-dom';
 import L from 'leaflet';
@@ -13,9 +13,12 @@ import InsightsDrawer from '../../components/dashboard/InsightsDrawer';
 import ProjectTable from '../../components/dashboard/ProjectTable';
 import { createSDGMarker, getMarkerSizeByFunding, MARKER_STYLES } from '../../components/map/CustomSDGMarker';
 import SDGLegend, { LEGEND_STYLES } from '../../components/map/SDGLegend';
+import ChoroplethLayer from '../../components/map/ChoroplethLayer';
 import EmptyState, { EMPTY_STATE_STYLES } from '../../components/common/EmptyState';
 import SmartSearch from '../../components/dashboard/SmartSearch';
 import AnimatedCounter from '../../components/common/AnimatedCounter';
+import StatusBadge from '../../components/common/StatusBadge';
+import { useToast } from '../../hooks/useToast';
 
 // Fix Leaflet default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -70,6 +73,13 @@ const formatCurrency = (value: number | undefined | null) => {
   return `$${value.toLocaleString()}`;
 };
 
+function ZoomWatcher({ onZoom }: { onZoom: (zoom: number) => void }) {
+  useMapEvents({
+    zoomend: (e) => onZoom(e.target.getZoom()),
+  });
+  return null;
+}
+
 function MapUpdater({ markers }: { markers: MapMarker[] }) {
   const map = useMap();
   const hasAutoFit = useRef(false);
@@ -109,6 +119,9 @@ export default function Dashboard() {
   const [showInsights, setShowInsights] = useState(false);
   const dashHeaderRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [mapZoom, setMapZoom] = useState(2);
+  const [mapKey, setMapKey] = useState(0);
+  const { addToast } = useToast();
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -165,6 +178,11 @@ export default function Dashboard() {
     if (projectId) handleProjectSelect(projectId);
   }, []);
 
+  // Increment mapKey on filter changes so MapUpdater remounts and resets hasAutoFit
+  useEffect(() => {
+    setMapKey(k => k + 1);
+  }, [filters]);
+
   useEffect(() => {
     const controller = new AbortController();
 
@@ -183,27 +201,19 @@ export default function Dashboard() {
           setKpis(kpiData);
         }
       } catch (error: any) {
-        if (error?.code !== 'ERR_CANCELED') console.error('Error fetching dashboard data:', error);
+        if (error?.code !== 'ERR_CANCELED') {
+          console.error('Error fetching dashboard data:', error);
+          addToast('Could not load dashboard data', 'error');
+        }
       } finally {
         setLoading(false);
       }
     }, 400);
 
-  useEffect(() => {
-    if (viewMode === 'map') {
-      const fetchMarkers = async () => {
-        setLoading(true);
-        try {
-          const data = await dashboardAPI.getMapMarkers(filters);
-          setMarkers(data);
-        } catch (error) {
-          console.error('Error fetching markers:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchMarkers();
-    }
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [filters, viewMode]);
 
   const handleProjectSelect = async (projectId: string) => {
@@ -217,6 +227,7 @@ export default function Dashboard() {
       setSearchParams(newParams);
     } catch (error) {
       console.error('Error fetching project details:', error);
+      addToast('Could not load project details', 'error');
     }
   };
 
@@ -252,127 +263,6 @@ export default function Dashboard() {
       <style>{MARKER_STYLES}</style>
       <style>{LEGEND_STYLES}</style>
       <style>{EMPTY_STATE_STYLES}</style>
-
-      {/* ── MAP / TABLE ── */}
-      <div className="absolute inset-0 z-0">
-        {viewMode === 'map' ? (
-          <MapContainer
-            center={[20, 0]}
-            zoom={2}
-            style={{ height: '100%', width: '100%', background: '#e5e5e5' }}
-            zoomSnap={0.5}
-            zoomDelta={0.5}
-            wheelPxPerZoomLevel={120}
-            scrollWheelZoom={true}
-            zoomControl={false}
-          >
-            <ZoomControl position="bottomright" />
-            <LayersControl position="bottomright">
-              {Object.entries(BASEMAPS).map(([key, config]) => (
-                <LayersControl.BaseLayer key={key} name={config.name} checked={key === 'streets'}>
-                  <TileLayer attribution={config.attribution} url={config.url} />
-                </LayersControl.BaseLayer>
-              ))}
-            </LayersControl>
-
-            <MarkerClusterGroup chunkedLoading>
-              {markers.map((marker) => {
-                const markerIcon = marker.primarySdg
-                  ? createSDGMarker({ sdgNumber: marker.primarySdg, projectName: marker.projectName, size: getMarkerSizeByFunding(marker.fundingNeeded || 0) })
-                  : undefined;
-
-                return (
-                  <Marker
-                    key={marker.id}
-                    position={[marker.latitude, marker.longitude]}
-                    icon={icon}
-                    eventHandlers={{
-                      click: () => handleProjectSelect(marker.id),
-                      // Hover popups only on desktop (touch devices don't support mouseover reliably)
-                      ...(!isMobile && {
-                        mouseover: (e) => e.target.openPopup(),
-                        mouseout: (e) => e.target.closePopup(),
-                      }),
-                    }}
-                  >
-                    {!isMobile && (
-                      <Popup className="custom-popup p-0 overflow-hidden" closeButton={false} maxWidth={280} minWidth={240}>
-                        <div className="bg-white rounded-lg shadow-sm overflow-hidden text-gray-900">
-                          {marker.imageUrl ? (
-                            <div className="h-32 w-full overflow-hidden">
-                              <img src={marker.imageUrl} alt={marker.projectName} className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500" />
-                            </div>
-                          ) : (
-                            <div className="h-24 w-full bg-gray-100 flex items-center justify-center">
-                              <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            </div>
-                          )}
-                          <div className="p-3">
-                            <h3 className="font-bold text-sm leading-tight mb-1 text-gray-900">{marker.projectName}</h3>
-                            <p className="text-xs text-gray-500 mb-2 flex items-center">
-                              <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                              {marker.city}, {marker.country}
-                            </p>
-                            <div className="flex justify-between items-center mt-3">
-                              {marker.status && (
-                                <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
-                                  marker.status === 'Implemented' ? 'bg-green-100 text-green-700' :
-                                  marker.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                  marker.status === 'Needed but Constrained' ? 'bg-orange-100 text-orange-700' :
-                                  'bg-yellow-100 text-yellow-700'
-                                }`}>{marker.status}</span>
-                              )}
-                              <button onClick={() => handleProjectSelect(marker.id)} className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline">
-                                View Details →
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </Popup>
-                    )}
-                  </Marker>
-                );
-              })}
-            </MarkerClusterGroup>
-
-            <MapUpdater markers={markers} />
-          </MapContainer>
-        ) : (
-          <div className="h-full pt-32 pb-0 bg-gray-50">
-            <ProjectTable filters={filters} onProjectClick={(p) => handleProjectSelect(p.id)} />
-          </div>
-        )}
-
-        {viewMode === 'map' && !loading && markers.length > 0 && (
-          <SDGLegend
-            onSDGClick={(sdgId) => setFilters({ ...filters, sdg: sdgId as any })}
-            activeSdg={typeof filters.sdg === 'number' ? filters.sdg : null}
-          />
-        )}
-
-        {viewMode === 'map' && !loading && markers.length === 0 && (
-          <EmptyState
-            icon="🌍"
-            title="No Projects Found"
-            description="No projects match your current filters. Try adjusting your criteria or clearing all filters to see the full catalog of sustainable development projects."
-            actionLabel="Clear All Filters"
-            onAction={handleClearFilters}
-            secondaryActionLabel="View All Projects"
-            onSecondaryAction={() => { handleClearFilters(); setViewMode('table'); }}
-          />
-        )}
-
-        {loading && viewMode === 'map' && (
-          <div className="absolute inset-0 flex items-center justify-center z-20 bg-white/50 backdrop-blur-sm pointer-events-none">
-            <div className="bg-white p-8 rounded-2xl shadow-2xl shadow-black/10 pointer-events-auto">
-              <div className="flex flex-col items-center gap-4">
-                <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-                <p className="text-gray-600 font-medium">Loading projects...</p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* ── DESKTOP HEADER ── (md+) */}
       <div ref={dashHeaderRef} className="absolute top-0 left-0 right-0 z-30 px-6 py-4 pointer-events-none hidden md:block">
@@ -580,7 +470,174 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── ANALYTICS PANEL ── */}
+      {/* ── BODY ROW (flex-1 = fills remaining screen height) ── */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* ── DESKTOP FILTER SIDEBAR (docked left) ── */}
+        <div className={`hidden md:flex flex-col flex-shrink-0 bg-white border-r border-gray-200 overflow-hidden transition-[width] duration-300 ease-in-out ${showFilters ? 'w-72' : 'w-0'}`}>
+          <div className="flex-shrink-0 p-4 border-b border-gray-100 flex justify-between items-center">
+            <h2 className="font-display font-semibold text-gray-900 text-sm">Filters</h2>
+            <div className="flex items-center gap-2">
+              <button onClick={handleClearFilters} className="text-xs text-uia-blue hover:text-uia-red font-display font-medium">Reset</button>
+              <button
+                onClick={() => setShowFilters(false)}
+                className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                title="Hide Filters"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar min-w-[288px]">
+            <FilterControls filters={filters} onFilterChange={setFilters} onClearFilters={handleClearFilters} />
+          </div>
+          <div className="flex-shrink-0 p-3 border-t border-gray-100 bg-gray-50">
+            <span className="text-xs text-gray-500">Showing <span className="font-semibold text-gray-900">{markers.length}</span> projects</span>
+          </div>
+        </div>
+
+        {/* ── MAP / TABLE AREA (flex-1 = fills remaining width) ── */}
+        <div className="flex-1 relative overflow-hidden">
+
+          {/* Filter-refetch loading strip */}
+          {loading && viewMode === 'map' && (
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-uia-blue animate-pulse z-10" />
+          )}
+
+          {viewMode === 'map' ? (
+            <MapContainer
+              center={[20, 0]}
+              zoom={2}
+              style={{ height: '100%', width: '100%', background: '#e5e5e5' }}
+              zoomSnap={0.5}
+              zoomDelta={0.5}
+              wheelPxPerZoomLevel={120}
+              scrollWheelZoom={true}
+              zoomControl={false}
+            >
+              <ZoomControl position="bottomright" />
+              <LayersControl position="bottomright">
+                {Object.entries(BASEMAPS).map(([key, config]) => (
+                  <LayersControl.BaseLayer key={key} name={config.name} checked={key === 'streets'}>
+                    <TileLayer attribution={config.attribution} url={config.url} />
+                  </LayersControl.BaseLayer>
+                ))}
+              </LayersControl>
+
+              {/* Choropleth layer (visible when zoom < 5) */}
+              <ChoroplethLayer markers={markers} visible={mapZoom < 5} />
+
+              {/* Individual markers (visible when zoom >= 5) */}
+              <MarkerClusterGroup chunkedLoading>
+                {markers.map((marker) => {
+                  const markerIcon = marker.primarySdg
+                    ? createSDGMarker({ sdgNumber: marker.primarySdg, projectName: marker.projectName, size: getMarkerSizeByFunding(marker.fundingNeeded || 0) })
+                    : undefined;
+
+                  return (
+                    <Marker
+                      key={marker.id}
+                      position={[marker.latitude, marker.longitude]}
+                      icon={markerIcon}
+                      eventHandlers={{
+                        click: () => handleProjectSelect(marker.id),
+                        ...(!isMobile && {
+                          mouseover: (e) => e.target.openPopup(),
+                          mouseout: (e) => e.target.closePopup(),
+                        }),
+                      }}
+                    >
+                      {!isMobile && (
+                        <Popup className="custom-popup p-0 overflow-hidden" closeButton={false} maxWidth={280} minWidth={240}>
+                          <div className="bg-white rounded-lg shadow-sm overflow-hidden text-gray-900">
+                            {marker.imageUrl ? (
+                              <div className="h-32 w-full overflow-hidden">
+                                <img src={marker.imageUrl} alt={marker.projectName} className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500" />
+                              </div>
+                            ) : (
+                              <div className="h-24 w-full bg-gray-100 flex items-center justify-center">
+                                <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                              </div>
+                            )}
+                            <div className="p-3">
+                              <h3 className="font-bold text-sm leading-tight mb-1 text-gray-900">{marker.projectName}</h3>
+                              <p className="text-xs text-gray-500 mb-2 flex items-center">
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                {marker.city}, {marker.country}
+                              </p>
+                              <div className="flex justify-between items-center mt-3">
+                                {marker.status && (
+                                  <StatusBadge status={marker.status} size="sm" />
+                                )}
+                                <button onClick={() => handleProjectSelect(marker.id)} className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline">
+                                  View Details →
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </Popup>
+                      )}
+                    </Marker>
+                  );
+                })}
+              </MarkerClusterGroup>
+
+              <MapUpdater markers={markers} key={mapKey} />
+              <ZoomWatcher onZoom={setMapZoom} />
+            </MapContainer>
+          ) : (
+            <div className="h-full overflow-auto bg-gray-50">
+              <ProjectTable filters={filters} onProjectClick={(p) => handleProjectSelect(p.id)} />
+            </div>
+          )}
+
+          {/* SDG Legend (inside map area) */}
+          {viewMode === 'map' && !loading && markers.length > 0 && (
+            <SDGLegend
+              onSDGClick={(sdgId) => setFilters({ ...filters, sdg: sdgId as any })}
+              activeSdg={typeof filters.sdg === 'number' ? filters.sdg : null}
+            />
+          )}
+
+          {/* Empty state */}
+          {viewMode === 'map' && !loading && markers.length === 0 && (
+            <EmptyState
+              icon="🌍"
+              title="No Projects Found"
+              description="No projects match your current filters. Try adjusting your criteria or clearing all filters."
+              actionLabel="Clear All Filters"
+              onAction={handleClearFilters}
+              secondaryActionLabel="View All Projects"
+              onSecondaryAction={() => { handleClearFilters(); setViewMode('table'); }}
+            />
+          )}
+
+          {/* Loading overlay */}
+          {loading && viewMode === 'map' && (
+            <div className="absolute inset-0 flex items-center justify-center z-20 bg-white/50 backdrop-blur-sm pointer-events-none">
+              <div className="bg-white p-8 rounded-2xl shadow-2xl shadow-black/10 pointer-events-auto">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
+                  <p className="text-gray-600 font-medium">Loading projects...</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── DESKTOP DETAIL PANEL (docked right) ── */}
+        {selectedProject && !isMobile && (
+          <div className="hidden md:flex flex-col flex-shrink-0 w-[480px] border-l border-gray-200 bg-white overflow-hidden">
+            <ProjectDetailPanel
+              project={selectedProject}
+              onClose={handleProjectClose}
+              docked
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ── ANALYTICS PANEL (full overlay) ── */}
       {showAnalytics && (
         <AnalyticsPanel filters={filters} onClose={() => setShowAnalytics(false)} />
       )}
@@ -590,131 +647,11 @@ export default function Dashboard() {
         <InsightsDrawer filters={filters} onClose={() => setShowInsights(false)} />
       )}
 
-      {/* ── DESKTOP FILTER SIDEBAR ── (md+) */}
-      <div className={`absolute top-36 left-6 bottom-6 w-80 z-20 transition-transform duration-300 transform hidden md:block ${showFilters ? 'translate-x-0' : '-translate-x-[110%]'}`}>
-        <div className="h-full flex flex-col bg-white/95 backdrop-blur-md border border-uia-dark rounded-md shadow-2xl shadow-black/10 overflow-hidden">
-          <div className="p-4 border-b border-uia-dark flex justify-between items-center">
-            <h2 className="font-display font-semibold text-black">Filters</h2>
-            <button onClick={handleClearFilters} className="text-xs text-uia-blue hover:text-uia-red font-display font-medium">Reset</button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-            <div className="light-theme-wrapper">
-              <FilterControls filters={filters} onFilterChange={setFilters} onClearFilters={handleClearFilters} />
-            </div>
-          </div>
-          <div className="p-4 border-t border-gray-200 bg-gray-50/50">
-            <div className="flex items-center justify-between text-xs text-gray-500">
-              <span>Visible: <span className="text-gray-900 font-medium">{markers.length}</span></span>
-              <button onClick={() => setShowFilters(false)} className="text-gray-900 font-medium">Hide</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Desktop Filter Toggle (when hidden) */}
-      {!showFilters && (
-        <button
-          onClick={() => setShowFilters(true)}
-          className="absolute top-36 left-6 z-20 bg-white text-uia-dark p-3 rounded-md shadow-lg hover:text-uia-blue transition-colors border border-uia-dark hidden md:block"
-          title="Show Filters"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-        </button>
-      )}
-
-      {/* ── MOBILE FILTER BOTTOM SHEET ── (< md) */}
-      {/* Backdrop */}
-      {showFilters && isMobile && (
-        <div
-          className="fixed inset-0 bg-black/40 z-30 md:hidden"
-          onClick={() => setShowFilters(false)}
-        />
-      )}
-      {/* Sheet */}
-      <div className={`fixed bottom-0 left-0 right-0 z-40 md:hidden transition-transform duration-300 ${showFilters && isMobile ? 'translate-y-0' : 'translate-y-full'}`}>
-        <div className="bg-white rounded-t-2xl shadow-2xl max-h-[72vh] flex flex-col">
-          {/* Drag handle */}
-          <div className="flex justify-center pt-3 pb-1">
-            <div className="w-10 h-1 bg-gray-300 rounded-full" />
-          </div>
-          {/* Sheet header */}
-          <div className="px-5 py-3 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="font-display font-semibold text-gray-900">
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-uia-blue text-white text-[10px] font-bold">{activeFilterCount}</span>
-              )}
-            </h2>
-            <div className="flex items-center gap-3">
-              <button onClick={handleClearFilters} className="text-xs text-uia-blue hover:text-uia-red font-display font-medium">Reset</button>
-              <button onClick={() => setShowFilters(false)} className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-          </div>
-          {/* Sheet content */}
-          <div className="flex-1 overflow-y-auto p-5 custom-scrollbar">
-            <FilterControls filters={filters} onFilterChange={setFilters} onClearFilters={handleClearFilters} />
-          </div>
-          {/* Sheet footer */}
-          <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-500">Showing <span className="font-semibold text-gray-900">{markers.length}</span> projects</span>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="px-4 py-2 bg-uia-blue text-white text-sm font-display font-medium rounded-full hover:bg-uia-violet transition-colors"
-              >
-                Apply
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── MOBILE FILTER FAB ── */}
-      {viewMode === 'map' && !showFilters && !showInsights && (
-        <button
-          onClick={handleFilterOpen}
-          className="fixed bottom-6 left-4 z-20 md:hidden flex items-center gap-2 bg-white text-uia-dark border border-uia-dark rounded-full px-4 py-2.5 shadow-lg hover:shadow-xl transition-shadow"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-          <span className="text-sm font-display font-medium">Filters</span>
-          {activeFilterCount > 0 && (
-            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-uia-blue text-white text-[10px] font-bold">{activeFilterCount}</span>
-          )}
-        </button>
-      )}
-
-      {/* ── INSIGHTS FAB (mobile) / BUTTON (desktop) ── */}
-      {viewMode === 'map' && !showInsights && !showFilters && (
-        <button
-          onClick={() => setShowInsights(true)}
-          className="fixed bottom-6 right-4 z-20 flex items-center gap-2 bg-uia-violet text-white rounded-full px-4 py-2.5 shadow-lg hover:shadow-xl hover:bg-uia-blue transition-all"
-          title="Quick Insights (I)"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          <span className="text-sm font-display font-medium">Insights</span>
-        </button>
-      )}
-
-      {/* Loading overlay */}
-      {loading && viewMode === 'map' && (
-        <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-900 font-medium tracking-wide">Loading Atlas Data...</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── PROJECT DETAIL PANEL ── */}
-      {selectedProject && (
+      {/* ── MOBILE PROJECT DETAIL PANEL (bottom sheet, < md) ── */}
+      {selectedProject && isMobile && (
         <ProjectDetailPanel
           project={selectedProject}
           onClose={handleProjectClose}
-          topOffset={isMobile ? 0 : headerHeight}
         />
       )}
     </div>

@@ -103,6 +103,9 @@ export interface ProjectSubmission {
   governmentRequirements: GovernmentRequirement[];
   otherRequirements: OtherRequirement[];
   otherRequirementText?: string;
+  other_typology_text?: string;
+  other_funding_text?: string;
+  other_gov_text?: string;
   sdgs: SDG[];
   imageUrls: string[];
 }
