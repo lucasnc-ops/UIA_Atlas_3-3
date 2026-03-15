@@ -1,6 +1,6 @@
 // Core Types for Atlas 3+3
 
-export type ProjectStatus = 'Planned' | 'In Progress' | 'Implemented';
+export type ProjectStatus = 'Planned' | 'In Progress' | 'Implemented' | 'Needed but Constrained';
 
 export type WorkflowStatus = 'submitted' | 'in_review' | 'approved' | 'rejected' | 'changes_requested';
 
