@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { useSearchParams, Link } from 'react-router-dom';
@@ -71,9 +71,13 @@ const formatCurrency = (value: number | undefined | null) => {
 
 function MapUpdater({ markers }: { markers: MapMarker[] }) {
   const map = useMap();
+  const hasAutoFit = useRef(false);
   useEffect(() => {
-    if (markers.length > 0) {
-      const bounds = L.latLngBounds(markers.map((m) => [m.latitude, m.longitude] as [number, number]));
+    if (markers.length > 0 && !hasAutoFit.current) {
+      hasAutoFit.current = true;
+      const bounds = L.latLngBounds(
+        markers.map((m) => [m.latitude, m.longitude] as [number, number])
+      );
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 6 });
     }
   }, [markers, map]);
