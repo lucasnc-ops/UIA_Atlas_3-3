@@ -51,7 +51,7 @@ const BASEMAPS = {
   }
 };
 
-interface MapMarker {
+export interface MapMarker {
   id: string;
   projectName: string;
   city: string;
