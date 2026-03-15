@@ -34,6 +34,14 @@ export default function ProjectForm({
 }: ProjectFormProps) {
   const [imageInput, setImageInput] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [typologyOtherEnabled, setTypologyOtherEnabled] = useState(false);
+  const [typologyOther, setTypologyOther] = useState('');
+  const [fundingOtherEnabled, setFundingOtherEnabled] = useState(false);
+  const [fundingOther, setFundingOther] = useState('');
+  const [governmentOtherEnabled, setGovernmentOtherEnabled] = useState(false);
+  const [governmentOther, setGovernmentOther] = useState('');
+  const [otherReqOtherEnabled, setOtherReqOtherEnabled] = useState(false);
+  const [otherReqOther, setOtherReqOther] = useState('');
 
   const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<ProjectCreate>({
     defaultValues: {
@@ -84,9 +92,25 @@ export default function ProjectForm({
       .map(url => url.trim())
       .filter(url => url.length > 0);
     
+    const typologies = [...(data.typologies || [])];
+    if (typologyOtherEnabled && typologyOther.trim()) typologies.push(typologyOther.trim());
+
+    const funding_requirements = [...(data.funding_requirements || [])];
+    if (fundingOtherEnabled && fundingOther.trim()) funding_requirements.push(fundingOther.trim());
+
+    const government_requirements = [...(data.government_requirements || [])];
+    if (governmentOtherEnabled && governmentOther.trim()) government_requirements.push(governmentOther.trim());
+
+    const other_requirements = [...(data.other_requirements || [])];
+    if (otherReqOtherEnabled && otherReqOther.trim()) other_requirements.push(otherReqOther.trim());
+
     const payload = {
       ...data,
       image_urls: urls,
+      typologies,
+      funding_requirements,
+      government_requirements,
+      other_requirements,
       // Ensure numbers are parsed
       funding_needed: Number(data.funding_needed),
       latitude: data.latitude ? Number(data.latitude) : undefined,
@@ -281,12 +305,12 @@ export default function ProjectForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Success Factors</label>
+              <label className="block text-sm font-medium text-mapbox-gray mb-1">Success/Challenging Factors</label>
               <textarea
                 rows={4}
-                {...register('success_factors', { required: 'Success factors are required' })}
+                {...register('success_factors', { required: 'Success/Challenging factors are required' })}
                 className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
-                placeholder="What makes this project successful? (e.g. Community involvement, innovative technology...)"
+                placeholder="What makes this project successful or challenging? (e.g. Community involvement, innovative technology...)"
               />
             </div>
           </div>
@@ -298,25 +322,22 @@ export default function ProjectForm({
             Sustainable Development Goals
           </h2>
           <p className="text-sm text-mapbox-gray mb-4">Select all that apply.</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
             {SDGS.map(sdg => (
               <div
                 key={sdg.id}
                 onClick={() => toggleSDG(sdg.id)}
-                className={`cursor-pointer p-3 rounded-lg border transition-all ${selectedSDGs?.includes(sdg.id)
-                    ? 'border-transparent ring-2 ring-primary-500 bg-primary-900/20'
-                    : 'border-mapbox-border bg-mapbox-dark hover:border-primary-500/50'
+                className={`cursor-pointer rounded-lg border-2 transition-all overflow-hidden ${
+                  selectedSDGs?.includes(sdg.id)
+                    ? 'border-primary-500 ring-2 ring-primary-500/50'
+                    : 'border-transparent hover:border-primary-500/50'
                 }`}
               >
-                <div className="flex flex-col items-center text-center space-y-2">
-                  <div 
-                    className="w-8 h-8 flex items-center justify-center rounded-full text-white font-bold"
-                    style={{ backgroundColor: sdg.color }}
-                  >
-                    {sdg.id}
-                  </div>
-                  <span className="text-xs font-medium text-white">{sdg.name}</span>
-                </div>
+                <img
+                  src={`/sdg-icons/sdg-${String(sdg.id).padStart(2, '0')}.png`}
+                  alt={`SDG ${sdg.id}: ${sdg.name}`}
+                  className="w-full h-auto"
+                />
               </div>
             ))}
           </div>
@@ -343,6 +364,24 @@ export default function ProjectForm({
                     <span className="ml-2 text-sm text-mapbox-gray">{type}</span>
                   </label>
                 ))}
+                <label className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer col-span-full">
+                  <input
+                    type="checkbox"
+                    checked={typologyOtherEnabled}
+                    onChange={e => setTypologyOtherEnabled(e.target.checked)}
+                    className="rounded border-mapbox-border bg-mapbox-dark text-primary-600 h-4 w-4"
+                  />
+                  <span className="ml-2 text-sm text-mapbox-gray">Other (Specify)</span>
+                </label>
+                {typologyOtherEnabled && (
+                  <input
+                    type="text"
+                    value={typologyOther}
+                    onChange={e => setTypologyOther(e.target.value)}
+                    placeholder="Please specify..."
+                    className="col-span-full block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light p-2.5 text-sm mt-1"
+                  />
+                )}
               </div>
             </div>
 
@@ -360,6 +399,24 @@ export default function ProjectForm({
                     <span className="ml-2 text-sm text-mapbox-gray">{req}</span>
                   </label>
                 ))}
+                <label className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer col-span-full">
+                  <input
+                    type="checkbox"
+                    checked={fundingOtherEnabled}
+                    onChange={e => setFundingOtherEnabled(e.target.checked)}
+                    className="rounded border-mapbox-border bg-mapbox-dark text-primary-600 h-4 w-4"
+                  />
+                  <span className="ml-2 text-sm text-mapbox-gray">Other (Specify)</span>
+                </label>
+                {fundingOtherEnabled && (
+                  <input
+                    type="text"
+                    value={fundingOther}
+                    onChange={e => setFundingOther(e.target.value)}
+                    placeholder="Please specify..."
+                    className="col-span-full block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light p-2.5 text-sm mt-1"
+                  />
+                )}
               </div>
             </div>
 
@@ -377,6 +434,24 @@ export default function ProjectForm({
                     <span className="ml-2 text-sm text-mapbox-gray">{req}</span>
                   </label>
                 ))}
+                <label className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer col-span-full">
+                  <input
+                    type="checkbox"
+                    checked={governmentOtherEnabled}
+                    onChange={e => setGovernmentOtherEnabled(e.target.checked)}
+                    className="rounded border-mapbox-border bg-mapbox-dark text-primary-600 h-4 w-4"
+                  />
+                  <span className="ml-2 text-sm text-mapbox-gray">Other (Specify)</span>
+                </label>
+                {governmentOtherEnabled && (
+                  <input
+                    type="text"
+                    value={governmentOther}
+                    onChange={e => setGovernmentOther(e.target.value)}
+                    placeholder="Please specify..."
+                    className="col-span-full block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light p-2.5 text-sm mt-1"
+                  />
+                )}
               </div>
             </div>
 
@@ -394,6 +469,24 @@ export default function ProjectForm({
                     <span className="ml-2 text-sm text-mapbox-gray">{req}</span>
                   </label>
                 ))}
+                <label className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer col-span-full">
+                  <input
+                    type="checkbox"
+                    checked={otherReqOtherEnabled}
+                    onChange={e => setOtherReqOtherEnabled(e.target.checked)}
+                    className="rounded border-mapbox-border bg-mapbox-dark text-primary-600 h-4 w-4"
+                  />
+                  <span className="ml-2 text-sm text-mapbox-gray">Other (Specify)</span>
+                </label>
+                {otherReqOtherEnabled && (
+                  <input
+                    type="text"
+                    value={otherReqOther}
+                    onChange={e => setOtherReqOther(e.target.value)}
+                    placeholder="Please specify..."
+                    className="col-span-full block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light p-2.5 text-sm mt-1"
+                  />
+                )}
               </div>
             </div>
 

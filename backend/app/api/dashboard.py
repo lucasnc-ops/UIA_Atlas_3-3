@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
-from sqlalchemy import func, distinct
+from sqlalchemy import func, distinct, select
 from typing import Optional, List
 from ..core.database import get_db
 from ..models.project import Project, ProjectSDG, ProjectTypology, ProjectRequirement, WorkflowStatus, ProjectImage
@@ -11,7 +11,8 @@ router = APIRouter()
 
 
 @router.get("/filters")
-async def get_dashboard_filters(db: Session = Depends(get_db)):
+async def get_dashboard_filters(response: Response, db: Session = Depends(get_db)):
+    response.headers["Cache-Control"] = "public, max-age=300"
     """Get available filter options"""
     
     # Cities (only from approved projects)
@@ -36,6 +37,7 @@ async def get_dashboard_filters(db: Session = Depends(get_db)):
 
 @router.get("/kpis", response_model=DashboardKPIs)
 async def get_dashboard_kpis(
+    response: Response,
     region: Optional[str] = Query(None),
     sdg: Optional[int] = Query(None),
     city: Optional[str] = Query(None),
@@ -43,6 +45,7 @@ async def get_dashboard_kpis(
     search: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
+    response.headers["Cache-Control"] = "public, max-age=30"
     """Get dashboard KPIs with optional filters"""
 
     # Base query for approved projects
@@ -84,6 +87,27 @@ async def get_dashboard_kpis(
         "total_funding_needed": float(stats.total_funding_needed or 0.0),
         "total_funding_spent": float(stats.total_funding_spent or 0.0),
     }
+
+
+@router.get("/projects/{project_id}", response_model=ProjectResponse)
+async def get_dashboard_project(project_id: str, db: Session = Depends(get_db)):
+    """Get single approved project by ID"""
+    import uuid
+    from fastapi import HTTPException
+    try:
+        pid = uuid.UUID(project_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    project = db.query(Project).filter(
+        Project.id == pid,
+        Project.workflow_status == WorkflowStatus.APPROVED
+    ).first()
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return _format_project_response(project)
 
 
 @router.get("/projects", response_model=ProjectListResponse)
@@ -195,17 +219,20 @@ async def get_map_markers(
             (Project.country.ilike(search_term))
         )
 
+    # Correlated subquery: min SDG number per project (one DB round trip total)
+    primary_sdg_subq = (
+        select(func.min(ProjectSDG.sdg_number))
+        .where(ProjectSDG.project_id == Project.id)
+        .correlate(Project)
+        .scalar_subquery()
+    )
+
+    query = query.add_columns(primary_sdg_subq.label("primary_sdg"))
+
     markers = query.all()
 
-    # Get primary SDG for each project
-    result = []
-    for m in markers:
-        # Get the first (primary) SDG for this project
-        primary_sdg = db.query(ProjectSDG.sdg_number).filter(
-            ProjectSDG.project_id == m.id
-        ).order_by(ProjectSDG.sdg_number).first()
-
-        result.append({
+    return [
+        {
             "id": str(m.id),
             "project_name": m.project_name,
             "city": m.city,
@@ -215,11 +242,11 @@ async def get_map_markers(
             "region": m.uia_region.value if m.uia_region else None,
             "status": m.project_status.value if m.project_status else None,
             "funding_needed": float(m.funding_needed or 0),
-            "primary_sdg": primary_sdg[0] if primary_sdg else None,
+            "primary_sdg": m.primary_sdg,
             "image_url": m.image_url
-        })
-
-    return result
+        }
+        for m in markers
+    ]
 
 
 @router.get("/analytics/sdg-distribution")
