@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GeoJSON } from 'react-leaflet';
-import type { MapMarker } from '../../pages/public/Dashboard';
+import type { MapMarker } from '../../types';
 
 interface ChoroplethLayerProps {
   markers: MapMarker[];
