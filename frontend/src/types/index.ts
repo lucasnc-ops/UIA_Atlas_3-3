@@ -110,6 +110,20 @@ export interface ProjectSubmission {
   imageUrls: string[];
 }
 
+export interface MapMarker {
+  id: string;
+  projectName: string;
+  city: string;
+  country: string;
+  latitude: number;
+  longitude: number;
+  region: string;
+  status?: string;
+  fundingNeeded?: number;
+  primarySdg?: number;
+  imageUrl?: string;
+}
+
 export interface DashboardKPIs {
   totalProjects: number;
   citiesEngaged: number;
