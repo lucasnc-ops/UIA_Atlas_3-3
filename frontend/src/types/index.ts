@@ -1,6 +1,6 @@
 // Core Types for Atlas 3+3
 
-export type ProjectStatus = 'Planned' | 'In Progress' | 'Implemented';
+export type ProjectStatus = 'Planned' | 'In Progress' | 'Implemented' | 'Needed but Constrained';
 
 export type WorkflowStatus = 'submitted' | 'in_review' | 'approved' | 'rejected' | 'changes_requested';
 
@@ -103,6 +103,9 @@ export interface ProjectSubmission {
   governmentRequirements: GovernmentRequirement[];
   otherRequirements: OtherRequirement[];
   otherRequirementText?: string;
+  other_typology_text?: string;
+  other_funding_text?: string;
+  other_gov_text?: string;
   sdgs: SDG[];
   imageUrls: string[];
 }

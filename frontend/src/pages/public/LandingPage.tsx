@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button, Card } from '../../components/uia';
+import InsightsSection from '../../components/landing/InsightsSection';
 
 export default function LandingPage() {
   return (
@@ -33,23 +34,28 @@ export default function LandingPage() {
             </div>
 
             {/* Main Title - UIA Typography */}
-            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-display font-bold tracking-tight mb-6 leading-[0.9] drop-shadow-2xl">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-display font-bold tracking-tight mb-6 leading-tight drop-shadow-2xl">
               <span className="text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
-                PANORAMA
+                Panorama 3+3:
               </span>
-              {' '}
+              <br />
               <span className="text-uia-red drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
-                SDG
+                A Global Barometer for the SDGs 2030 Agenda
               </span>
             </h1>
 
+            {/* Tagline */}
+            <p className="text-base sm:text-lg font-display font-bold text-uia-red uppercase tracking-uia-wide mb-3 drop-shadow-lg">
+              A Global Barometer for the SDGs 2030 Agenda
+            </p>
+
             {/* Subtitle */}
             <p className="text-xl sm:text-2xl font-sans font-light text-white max-w-3xl mx-auto leading-relaxed mb-4 drop-shadow-lg">
-              The UIA Panorama of SDG Implementation Metrics — tracking how architecture drives the UN 2030 Agenda.
+              In less than five years, we reach the 2030 SDG deadline — yet we still lack a clear global picture of where progress is accelerating and where needs are deepening.
             </p>
 
             <p className="text-lg font-sans text-white/90 max-w-2xl mx-auto mb-12 drop-shadow-lg">
-              Connecting sustainable architecture projects worldwide to inspire, track progress, and accelerate global impact.
+              Panorama 3+3 maps the contrast: developmental momentum versus critical community need. The "3+3" framework isolates the extremes — the Top 3 momentum SDGs and the 3 most urgent gaps.
             </p>
 
             {/* CTA Buttons - UIA Style */}
@@ -57,7 +63,7 @@ export default function LandingPage() {
               <Link to="/dashboard">
                 <Button variant="dark" size="lg" className="min-w-[200px]">
                   <span className="flex items-center justify-center gap-2">
-                    Explore Atlas
+                    Explore Panorama
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
@@ -75,6 +81,53 @@ export default function LandingPage() {
                   </span>
                 </Button>
               </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Philosophy Section */}
+      <section className="py-20 bg-gray-50 border-t border-gray-200">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className="text-3xl font-display font-bold text-uia-dark mb-6">
+            The "3+3" Philosophy: Mapping Momentum Against Necessity
+          </h2>
+          <p className="text-lg text-gray-700 leading-relaxed max-w-3xl mx-auto">
+            To facilitate a strategic global conversation, we must understand both what is achieved
+            and what is really lacking. This framework isolates the extremes of our developmental
+            spectrum.
+          </p>
+        </div>
+      </section>
+
+      {/* 3+3 Impact Profile */}
+      <section className="py-16 bg-white">
+        <div className="max-w-5xl mx-auto px-6">
+          <h3 className="text-2xl font-display font-bold text-uia-dark mb-10 text-center">
+            3+3 Impact Profile
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Top 3 Momentum */}
+            <div className="bg-green-50 border border-green-200 rounded-xl p-8">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">↑</div>
+                <h4 className="text-xl font-semibold text-green-800">3 Top Momentum Projects</h4>
+              </div>
+              <p className="text-green-700 text-sm leading-relaxed">
+                SDGs with high growth and stable developmental momentum — where global architecture
+                is accelerating progress toward the 2030 targets.
+              </p>
+            </div>
+            {/* 3 Urgent Needs */}
+            <div className="bg-red-50 border border-red-200 rounded-xl p-8">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-uia-red rounded-full flex items-center justify-center text-white font-bold text-lg">!</div>
+                <h4 className="text-xl font-semibold text-red-800">3 Urgent Needs</h4>
+              </div>
+              <p className="text-red-700 text-sm leading-relaxed">
+                SDGs requiring critical community action — where the gap between need and delivery
+                is widest and intervention is most urgent.
+              </p>
             </div>
           </div>
         </div>
@@ -103,6 +156,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Live Analytics — 3+3 Barometer */}
+      <InsightsSection />
 
       {/* Mission Section - UIA Cards */}
       <section className="py-24 bg-white">
@@ -191,7 +247,7 @@ export default function LandingPage() {
 
             <Link to="/dashboard">
               <Button variant="dark-outline" size="lg" className="border-2 border-white text-white hover:bg-white hover:text-uia-dark-button min-w-[200px]">
-                Explore the Atlas
+                Explore Panorama
               </Button>
             </Link>
           </div>

@@ -1,20 +1,42 @@
-# Use an official Node runtime as a parent image
-FROM node:20-alpine
+# =============================================
+# Stage 1: Build the Vite app
+# =============================================
+FROM node:20-alpine AS builder
 
-# Set the working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json
+# Copy dependency files first for layer caching
 COPY package*.json ./
 
 # Install dependencies
 RUN npm install --legacy-peer-deps
 
-# Copy the rest of the application code
+# Copy all source files
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 5173
+# Accept VITE_API_URL as a build arg (set in Railway as a build variable)
+ARG VITE_API_URL=http://localhost:8000
+ENV VITE_API_URL=$VITE_API_URL
 
-# Command to run the application
-CMD ["npm", "run", "dev", "--", "--host"]
+# Build the production bundle
+RUN npm run build
+
+# =============================================
+# Stage 2: Serve the static files
+# =============================================
+FROM node:20-alpine
+
+# Install 'serve' for a lightweight static file server
+RUN npm install -g serve
+
+WORKDIR /app
+
+# Copy built files from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Railway injects PORT at runtime; default to 3000
+ENV PORT=3000
+EXPOSE 3000
+
+# serve -s = SPA mode (redirects all paths to index.html)
+CMD sh -c "serve -s dist -l ${PORT}"
