@@ -5,7 +5,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { dashboardAPI } from '../../services/api/dashboardAPI';
-import type { FilterOptions, DashboardKPIs, Project } from '../../types';
+import type { FilterOptions, DashboardKPIs, Project, MapMarker } from '../../types';
 import FilterControls from '../../components/dashboard/FilterControls';
 import ProjectDetailPanel from '../../components/dashboard/ProjectDetailPanel';
 import AnalyticsPanel from '../../components/dashboard/AnalyticsPanel';
@@ -46,20 +46,6 @@ const BASEMAPS = {
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
   }
 };
-
-interface MapMarker {
-  id: string;
-  projectName: string;
-  city: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-  region: string;
-  status?: string;
-  fundingNeeded?: number;
-  primarySdg?: number;
-  imageUrl?: string;
-}
 
 const formatCurrency = (value: number | undefined | null) => {
   if (value === undefined || value === null) {
