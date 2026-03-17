@@ -34,6 +34,7 @@ export default function ProjectForm({
 }: ProjectFormProps) {
   const [imageInput, setImageInput] = useState('');
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaError, setCaptchaError] = useState(false);
   const [typologyOtherEnabled, setTypologyOtherEnabled] = useState(false);
   const [typologyOther, setTypologyOther] = useState('');
   const [fundingOtherEnabled, setFundingOtherEnabled] = useState(false);
@@ -80,11 +81,10 @@ export default function ProjectForm({
   const onFormSubmit: SubmitHandler<ProjectCreate> = async (data) => {
     // Require captcha for public submissions
     if (isPublicSubmission && !captchaToken) {
-      // We can't set error in parent easily without callback, but we can stop here.
-      // Ideally parent handles error state, but for local validation like this:
-      alert("Please verify that you are not a robot.");
+      setCaptchaError(true);
       return;
     }
+    setCaptchaError(false);
 
     // Process image URLs from string input
     const urls = imageInput
@@ -535,7 +535,7 @@ export default function ProjectForm({
                 <p className="text-sm font-medium text-mapbox-light">I consent to the publication of this data.</p>
                 <p className="text-xs text-mapbox-gray mt-1">
                   By checking this box, I confirm that I have the right to share this information and images, 
-                  and I agree for them to be published on the UIA SDG Panorama website.
+                  and I agree for them to be published on the UIA Panorama website.
                 </p>
                 {errors.gdpr_consent && (
                   <p className="text-xs text-red-400 mt-1">{errors.gdpr_consent.message}</p>
@@ -550,9 +550,14 @@ export default function ProjectForm({
           <div className="pt-4 flex justify-center">
               <ReCAPTCHA
                   sitekey={RECAPTCHA_SITE_KEY}
-                  onChange={(token) => setCaptchaToken(token)}
+                  onChange={(token) => { setCaptchaToken(token); setCaptchaError(false); }}
                   theme="dark"
               />
+              {captchaError && (
+                <p className="mt-2 text-xs text-uia-red font-display uppercase tracking-uia-wide text-center">
+                  Please verify you are not a robot.
+                </p>
+              )}
           </div>
         )}
 
