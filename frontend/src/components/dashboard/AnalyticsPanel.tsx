@@ -55,7 +55,7 @@ export default function AnalyticsPanel({ filters, onClose }: AnalyticsPanelProps
   }, [filters]);
 
   return (
-    <div className="absolute inset-0 z-50 bg-white/95 backdrop-blur-sm flex flex-col overflow-hidden animate-fade-in">
+    <div className="absolute inset-0 z-[800] bg-white/95 backdrop-blur-sm flex flex-col overflow-hidden animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white/50">
         <h2 className="text-xl font-bold text-gray-900 tracking-tight">Project Analytics</h2>
