@@ -218,16 +218,24 @@ export default function Dashboard() {
     setFilters({ region: 'All Regions', sdg: 'All SDGs' });
   };
 
+  // Count active (non-default) filters for badge display
+  const activeFilterCount = [
+    filters.region && filters.region !== 'All Regions',
+    filters.sdg && filters.sdg !== 'All SDGs',
+    filters.city && filters.city !== undefined && filters.city !== '',
+    filters.search && filters.search !== '',
+  ].filter(Boolean).length;
+
   return (
-    <div className="h-screen w-screen flex flex-col bg-white text-mapbox-light overflow-hidden relative">
+    <div className="h-screen w-screen flex flex-col bg-white text-mapbox-light overflow-hidden">
       <style>{MARKER_STYLES}</style>
       <style>{LEGEND_STYLES}</style>
       <style>{EMPTY_STATE_STYLES}</style>
 
       {/* ── DESKTOP HEADER ── (md+) */}
-      <div ref={dashHeaderRef} className="absolute top-0 left-0 right-0 z-30 px-6 py-4 pointer-events-none hidden md:block">
+      <div ref={dashHeaderRef} className="hidden md:block flex-shrink-0 bg-white/95 backdrop-blur-md border-b border-uia-dark shadow-sm px-6 py-4">
         {/* Nav strip */}
-        <div className="pointer-events-auto flex items-center gap-1 text-xs font-display mb-3 w-fit bg-white/80 backdrop-blur-md border border-uia-dark rounded px-3 py-1 shadow-sm">
+        <div className="flex items-center gap-1 text-xs font-display mb-3 w-fit bg-white/80 backdrop-blur-md border border-uia-dark rounded px-3 py-1 shadow-sm">
           <Link to="/" className="text-uia-dark hover:text-uia-red transition-colors">Home</Link>
           <span className="text-gray-300 px-1">|</span>
           <span className="text-black font-bold">Panorama</span>
@@ -235,7 +243,7 @@ export default function Dashboard() {
           <Link to="/submit" className="text-uia-dark hover:text-uia-red transition-colors">Submit Project</Link>
         </div>
         <div className="flex justify-between items-start">
-          <div className="pointer-events-auto flex gap-4">
+          <div className="flex gap-4">
             <Link
               to="/"
               className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center text-uia-dark hover:text-uia-red"
@@ -266,6 +274,23 @@ export default function Dashboard() {
               </button>
             </div>
 
+            {/* Filters toggle button */}
+            <button
+              onClick={() => setShowFilters(prev => !prev)}
+              title="Toggle Filters (F)"
+              className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-md font-display font-medium text-sm transition-all h-full self-stretch shadow-sm ${showFilters ? 'bg-uia-blue/10 text-uia-blue border-uia-blue' : 'bg-white/90 text-uia-dark border-uia-dark hover:text-uia-blue hover:border-uia-blue'}`}
+            >
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
+              </svg>
+              <span className="hidden lg:inline">Filters</span>
+              {activeFilterCount > 0 && (
+                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-uia-blue text-white text-[10px] font-bold leading-none">
+                  {activeFilterCount}
+                </span>
+              )}
+            </button>
+
             <button
               onClick={() => setShowInsights(true)}
               className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 py-2 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 flex items-center gap-2 h-full self-stretch group text-uia-dark hover:text-uia-violet"
@@ -289,7 +314,7 @@ export default function Dashboard() {
           </div>
 
           {/* Desktop KPI Cards */}
-          <div className="pointer-events-auto bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-2 shadow-lg shadow-black/5 flex gap-4">
+          <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-2 shadow-lg shadow-black/5 flex gap-4">
             <div className="px-4 py-2 border-r border-uia-dark last:border-0">
               <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Projects</div>
               <div className="text-xl font-display font-bold text-uia-blue"><AnimatedCounter value={kpis.totalProjects} /></div>
@@ -314,7 +339,7 @@ export default function Dashboard() {
         </div>
 
         {/* Desktop Search Bar */}
-        <div className="pointer-events-auto flex justify-center mt-3">
+        <div className="flex justify-center mt-3">
           <SmartSearch
             onProjectSelect={handleProjectSelect}
             onFilterChange={(filter) => {
@@ -329,7 +354,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── MOBILE HEADER ── (< md) */}
-      <div className="absolute top-0 left-0 right-0 z-50 md:hidden">
+      <div className="md:hidden flex-shrink-0 bg-white shadow-sm">
         {/* Top bar */}
         <div className="flex items-center justify-between px-3 py-2 bg-white/95 backdrop-blur-md border-b border-uia-dark shadow-md h-14">
           {/* Left: back button */}
@@ -355,6 +380,22 @@ export default function Dashboard() {
               title="Search"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </button>
+
+            {/* Filters */}
+            <button
+              onClick={() => setShowFilters(true)}
+              className={`relative flex items-center justify-center w-9 h-9 rounded-md border transition-colors ${showFilters ? 'border-uia-blue bg-uia-blue/10 text-uia-blue' : 'border-uia-dark text-uia-dark hover:text-uia-blue hover:bg-gray-50'}`}
+              title="Filters"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
+              </svg>
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-uia-blue text-white text-[10px] font-bold flex items-center justify-center leading-none">
+                  {activeFilterCount}
+                </span>
+              )}
             </button>
 
             {/* Analytics */}
@@ -403,7 +444,7 @@ export default function Dashboard() {
 
         {/* Mobile Search Overlay */}
         {showMobileSearch && (
-          <div className="absolute top-full left-0 right-0 z-50 p-3 bg-white/98 backdrop-blur-md border-b border-uia-dark shadow-xl">
+          <div className="p-3 bg-white border-b border-uia-dark shadow-lg">
             <div className="flex items-center gap-2">
               <div className="flex-1">
                 <SmartSearch
@@ -430,8 +471,8 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ── BODY ROW (flex-1 = fills remaining screen height) ── */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* ── BODY ROW (flex-1 = fills remaining screen height below header) ── */}
+      <div className="flex flex-1 overflow-hidden min-h-0">
 
         {/* ── DESKTOP FILTER SIDEBAR (docked left) ── */}
         <div className={`hidden md:flex flex-col flex-shrink-0 bg-white border-r border-gray-200 overflow-hidden transition-[width] duration-300 ease-in-out ${showFilters ? 'w-72' : 'w-0'}`}>
@@ -456,8 +497,42 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* ── MOBILE FILTER DRAWER (overlay, < md) ── */}
+        {isMobile && showFilters && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/40 z-40"
+              onClick={() => setShowFilters(false)}
+            />
+            {/* Drawer */}
+            <div className="fixed top-0 left-0 bottom-0 w-72 bg-white z-50 flex flex-col shadow-2xl">
+              <div className="flex-shrink-0 p-4 border-b border-uia-dark flex justify-between items-center">
+                <h2 className="font-display font-semibold text-gray-900 text-sm">Filters</h2>
+                <div className="flex items-center gap-2">
+                  <button onClick={handleClearFilters} className="text-xs text-uia-blue hover:text-uia-red font-display font-medium">Reset</button>
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <FilterControls filters={filters} onFilterChange={setFilters} onClearFilters={handleClearFilters} />
+              </div>
+              <div className="flex-shrink-0 p-3 border-t border-gray-100 bg-gray-50">
+                <span className="text-xs text-gray-500">Showing <span className="font-semibold text-gray-900">{markers.length}</span> projects</span>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* ── MAP / TABLE AREA (flex-1 = fills remaining width) ── */}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 relative overflow-hidden min-w-0">
 
           {/* Filter-refetch loading strip */}
           {loading && viewMode === 'map' && (
