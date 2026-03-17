@@ -1,20 +1,15 @@
-# Use an official Node runtime as a parent image
-FROM node:20-alpine
-
-# Set the working directory
+# Stage 1: Build the Vite app
+FROM node:20-alpine AS builder
 WORKDIR /app
-
-# Copy package.json and package-lock.json
 COPY package*.json ./
-
-# Install dependencies
 RUN npm install --legacy-peer-deps
-
-# Copy the rest of the application code
 COPY . .
+RUN npm run build
 
-# Expose the port the app runs on
-EXPOSE 5173
-
-# Command to run the application
-CMD ["npm", "run", "dev", "--", "--host"]
+# Stage 2: Serve static files
+FROM node:20-alpine
+WORKDIR /app
+RUN npm install -g serve
+COPY --from=builder /app/dist ./dist
+EXPOSE 3000
+CMD ["serve", "-s", "dist", "-l", "3000"]
