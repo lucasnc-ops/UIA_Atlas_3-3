@@ -398,6 +398,7 @@ export default function Dashboard() {
              </button>
            </div>
            
+           {!loading && (<>
            {/* Floating KPI Cards - UIA Style */}
            <div className="pointer-events-auto bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-2 shadow-lg shadow-black/5 hidden md:flex gap-4">
               <div className="px-4 py-2 border-r border-uia-dark last:border-0">
@@ -431,7 +432,7 @@ export default function Dashboard() {
                  </div>
               </div>
             </div>
-          )}
+          </>)}
         </div>
 
         {/* ── DESKTOP DETAIL PANEL (docked right) ── */}
