@@ -472,6 +472,7 @@ export default function Dashboard() {
             />
           </div>
         </div>
+      </div>
 
       {/* Analytics Panel Overlay */}
       {showAnalytics && (
