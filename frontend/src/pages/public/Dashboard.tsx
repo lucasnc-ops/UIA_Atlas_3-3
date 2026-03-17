@@ -236,7 +236,7 @@ export default function Dashboard() {
       <style>{EMPTY_STATE_STYLES}</style>
 
       {/* Main Content (Map or Table) */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 isolate">
          {viewMode === 'map' ? (
                        <MapContainer
                          center={[20, 0]}
@@ -376,21 +376,10 @@ export default function Dashboard() {
            />
          )}
 
-         {/* Loading State */}
-         {loading && viewMode === 'map' && (
-           <div className="absolute inset-0 flex items-center justify-center z-20 bg-white/50 backdrop-blur-sm pointer-events-none">
-             <div className="bg-white p-8 rounded-2xl shadow-2xl shadow-black/10 pointer-events-auto">
-               <div className="flex flex-col items-center gap-4">
-                 <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-                 <p className="text-gray-600 font-medium">Loading projects...</p>
-               </div>
-             </div>
-           </div>
-         )}
       </div>
 
       {/* Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-30 px-6 py-4 pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 z-[900] px-6 py-4 pointer-events-none">
         <div className="flex justify-between items-start">
            <div className="pointer-events-auto flex gap-4">
              <Link
@@ -490,10 +479,21 @@ export default function Dashboard() {
       )}
 
       {/* Sidebar Overlay */}
-      <div className={`absolute top-32 left-6 bottom-6 w-80 z-20 transition-transform duration-300 transform ${showFilters ? 'translate-x-0' : '-translate-x-[110%]'}`}>
+      <div className={`absolute top-32 left-6 bottom-6 w-80 z-[100] transition-transform duration-300 transform ${showFilters ? 'translate-x-0' : '-translate-x-[110%]'}`}>
          <div className="h-full flex flex-col bg-white/95 backdrop-blur-md border border-uia-dark rounded-md shadow-2xl shadow-black/10 overflow-hidden">
             <div className="p-4 border-b border-uia-dark flex justify-between items-center">
-              <h2 className="font-display font-semibold text-black">Filters</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="p-1.5 rounded hover:bg-gray-100 text-uia-dark hover:text-uia-blue transition-colors"
+                  title="Collapse filters"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <h2 className="font-display font-semibold text-black">Filters</h2>
+              </div>
               <button onClick={handleClearFilters} className="text-xs text-uia-blue hover:text-uia-red font-display font-medium">Reset</button>
             </div>
             
@@ -508,27 +508,29 @@ export default function Dashboard() {
             </div>
 
             <div className="p-4 border-t border-gray-200 bg-gray-50/50">
-               <div className="flex items-center justify-between text-xs text-gray-500">
+               <div className="flex items-center text-xs text-gray-500">
                  <span>Visible: <span className="text-gray-900 font-medium">{markers.length}</span></span>
-                 <button onClick={() => setShowFilters(false)} className="md:hidden text-gray-900 font-medium">Hide</button>
                </div>
             </div>
          </div>
       </div>
 
-      {/* Mobile Toggle Button */}
+      {/* Sidebar Expand Button */}
       {!showFilters && (
-        <button 
+        <button
           onClick={() => setShowFilters(true)}
-          className="absolute top-32 left-6 z-20 bg-white text-gray-600 p-3 rounded-lg shadow-lg hover:text-primary-600 transition-colors border border-gray-200"
+          className="absolute top-32 left-6 z-[100] bg-white/90 backdrop-blur-md border border-uia-dark text-uia-dark p-2 rounded-md shadow-lg hover:text-uia-blue hover:bg-white transition-all duration-200"
+          title="Expand filters"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M6 5l7 7-7 7" />
+          </svg>
         </button>
       )}
 
       {/* Loading State Overlay - Only for Map View */}
       {loading && viewMode === 'map' && (
-        <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-50 backdrop-blur-sm">
+        <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-[500] backdrop-blur-sm">
            <div className="flex flex-col items-center">
              <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
              <p className="mt-4 text-gray-900 font-medium tracking-wide">Loading Panorama Data...</p>
@@ -538,7 +540,7 @@ export default function Dashboard() {
 
       {/* Project Details Panel Overlay */}
       {selectedProject && (
-         <div className="absolute top-0 right-0 bottom-0 w-full md:w-[480px] z-20 bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300">
+         <div className="absolute top-0 right-0 bottom-0 w-full md:w-[480px] z-[200] bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300">
             <ProjectDetailPanel 
                project={selectedProject} 
                onClose={handleProjectClose} 
