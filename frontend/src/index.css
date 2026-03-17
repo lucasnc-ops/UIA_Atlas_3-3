@@ -59,6 +59,12 @@
   animation-delay: 4s;
 }
 
+/* Leaflet z-index containment — keep Leaflet controls below app overlays (z-40+) */
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 20;
+}
+
 @layer components {
   /* Original component styles (kept for compatibility) */
   .btn-primary {
