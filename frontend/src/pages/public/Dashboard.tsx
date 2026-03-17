@@ -232,338 +232,37 @@ export default function Dashboard() {
       <style>{LEGEND_STYLES}</style>
       <style>{EMPTY_STATE_STYLES}</style>
 
-      {/* ── DESKTOP HEADER ── (md+) */}
-      <div ref={dashHeaderRef} className="hidden md:block flex-shrink-0 bg-white/95 backdrop-blur-md border-b border-uia-dark shadow-sm px-6 py-4">
-        {/* Nav strip */}
-        <div className="flex items-center gap-1 text-xs font-display mb-3 w-fit bg-white/80 backdrop-blur-md border border-uia-dark rounded px-3 py-1 shadow-sm">
-          <Link to="/" className="text-uia-dark hover:text-uia-red transition-colors">Home</Link>
-          <span className="text-gray-300 px-1">|</span>
-          <span className="text-black font-bold">Panorama</span>
-          <span className="text-gray-300 px-1">|</span>
-          <Link to="/submit" className="text-uia-dark hover:text-uia-red transition-colors">Submit Project</Link>
-        </div>
-        <div className="flex justify-between items-start">
-          <div className="flex gap-4">
-            <Link
-              to="/"
-              className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center text-uia-dark hover:text-uia-red"
-              title="Return to Home"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-            </Link>
-            <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-4 shadow-lg shadow-black/5 hover:shadow-xl transition-shadow duration-300">
-              <h1 className="text-2xl font-display font-bold text-black tracking-uia-normal">Panorama</h1>
-              <p className="text-xs font-display text-uia-dark mt-1 uppercase tracking-uia-wide">UIA · SDG Implementation Metrics</p>
-            </div>
-
-            {/* View Toggle */}
-            <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-1 shadow-lg shadow-black/5 flex items-center h-full self-stretch">
-              <button
-                onClick={() => setViewMode('map')}
-                className={`px-3 py-1.5 rounded-sm text-sm font-display font-medium transition-all duration-200 h-full flex items-center gap-2 ${viewMode === 'map' ? 'bg-uia-blue/10 text-uia-blue shadow-sm' : 'text-uia-dark hover:text-black hover:bg-uia-gray-light'}`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                Map
-              </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className={`px-3 py-1.5 rounded-sm text-sm font-display font-medium transition-all duration-200 h-full flex items-center gap-2 ${viewMode === 'table' ? 'bg-uia-blue/10 text-uia-blue shadow-sm' : 'text-uia-dark hover:text-black hover:bg-uia-gray-light'}`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
-                List
-              </button>
-            </div>
-
-            {/* Filters toggle button */}
-            <button
-              onClick={() => setShowFilters(prev => !prev)}
-              title="Toggle Filters (F)"
-              className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-md font-display font-medium text-sm transition-all h-full self-stretch shadow-sm ${showFilters ? 'bg-uia-blue/10 text-uia-blue border-uia-blue' : 'bg-white/90 text-uia-dark border-uia-dark hover:text-uia-blue hover:border-uia-blue'}`}
-            >
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
-              </svg>
-              <span className="hidden lg:inline">Filters</span>
-              {activeFilterCount > 0 && (
-                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-uia-blue text-white text-[10px] font-bold leading-none">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-
-            <button
-              onClick={() => setShowInsights(true)}
-              className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 py-2 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 flex items-center gap-2 h-full self-stretch group text-uia-dark hover:text-uia-violet"
-              title="Insights (I)"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              <span className="font-display font-medium text-sm">Insights</span>
-            </button>
-            <button
-              onClick={() => setShowAnalytics(true)}
-              className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 py-2 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 flex items-center gap-2 h-full self-stretch group text-uia-dark hover:text-uia-blue"
-              title="Full Analytics (A)"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <span className="font-display font-medium text-sm">Analytics</span>
-            </button>
-          </div>
-
-          {/* Desktop KPI Cards */}
-          <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-2 shadow-lg shadow-black/5 flex gap-4">
-            <div className="px-4 py-2 border-r border-uia-dark last:border-0">
-              <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Projects</div>
-              <div className="text-xl font-display font-bold text-uia-blue"><AnimatedCounter value={kpis.totalProjects} /></div>
-            </div>
-            <div className="px-4 py-2 border-r border-uia-dark last:border-0">
-              <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Cities</div>
-              <div className="text-xl font-display font-bold text-uia-violet"><AnimatedCounter value={kpis.citiesEngaged} /></div>
-            </div>
-            <div className="px-4 py-2 border-r border-uia-dark last:border-0">
-              <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Countries</div>
-              <div className="text-xl font-display font-bold text-uia-blue"><AnimatedCounter value={kpis.countriesRepresented} /></div>
-            </div>
-            <div className="px-4 py-2 border-r border-uia-dark last:border-0">
-              <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Funding Needed</div>
-              <div className="text-xl font-display font-bold text-uia-red"><AnimatedCounter value={kpis.totalFundingNeeded} formatter={formatCurrency} /></div>
-            </div>
-            <div className="px-4 py-2">
-              <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Funding Spent</div>
-              <div className="text-xl font-display font-bold text-uia-blue"><AnimatedCounter value={kpis.totalFundingSpent} formatter={formatCurrency} /></div>
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop Search Bar */}
-        <div className="flex justify-center mt-3">
-          <SmartSearch
-            onProjectSelect={handleProjectSelect}
-            onFilterChange={(filter) => {
-              setFilters((prev) => ({
-                ...prev,
-                city: filter.city !== undefined ? filter.city : prev.city,
-                sdg: filter.sdg !== undefined ? (filter.sdg as any) : prev.sdg,
-              }));
-            }}
-          />
-        </div>
-      </div>
-
-      {/* ── MOBILE HEADER ── (< md) */}
-      <div className="md:hidden flex-shrink-0 bg-white shadow-sm">
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-3 py-2 bg-white/95 backdrop-blur-md border-b border-uia-dark shadow-md h-14">
-          {/* Left: back button */}
-          <Link
-            to="/"
-            className="flex items-center justify-center w-9 h-9 rounded-md border border-uia-dark text-uia-dark hover:text-uia-red hover:bg-gray-50 transition-colors flex-shrink-0"
-            title="Return to Home"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          </Link>
-
-          {/* Center: title */}
-          <div className="flex-1 text-center px-2">
-            <span className="font-display font-bold text-lg text-black tracking-uia-normal">Panorama</span>
-          </div>
-
-          {/* Right: action icons */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {/* Search */}
-            <button
-              onClick={() => { setShowMobileSearch(true); setShowFilters(false); }}
-              className="flex items-center justify-center w-9 h-9 rounded-md border border-uia-dark text-uia-dark hover:text-uia-blue hover:bg-gray-50 transition-colors"
-              title="Search"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            </button>
-
-            {/* Filters */}
-            <button
-              onClick={() => setShowFilters(true)}
-              className={`relative flex items-center justify-center w-9 h-9 rounded-md border transition-colors ${showFilters ? 'border-uia-blue bg-uia-blue/10 text-uia-blue' : 'border-uia-dark text-uia-dark hover:text-uia-blue hover:bg-gray-50'}`}
-              title="Filters"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" />
-              </svg>
-              {activeFilterCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-uia-blue text-white text-[10px] font-bold flex items-center justify-center leading-none">
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
-
-            {/* Analytics */}
-            <button
-              onClick={() => setShowAnalytics(true)}
-              className="flex items-center justify-center w-9 h-9 rounded-md border border-uia-dark text-uia-dark hover:text-uia-blue hover:bg-gray-50 transition-colors"
-              title="Analytics"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-            </button>
-
-            {/* Map / List toggle */}
-            <button
-              onClick={() => setViewMode(viewMode === 'map' ? 'table' : 'map')}
-              className="flex items-center justify-center w-9 h-9 rounded-md border border-uia-dark text-uia-dark hover:text-uia-blue hover:bg-gray-50 transition-colors"
-              title={viewMode === 'map' ? 'Switch to List' : 'Switch to Map'}
-            >
-              {viewMode === 'map' ? (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
-              ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile nav + KPI strip */}
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/90 backdrop-blur-md border-b border-gray-100 overflow-x-auto">
-          {/* Nav chips */}
-          <Link to="/" className="text-[10px] font-display text-uia-dark hover:text-uia-red whitespace-nowrap px-1.5 py-0.5 rounded border border-gray-200">Home</Link>
-          <Link to="/submit" className="text-[10px] font-display text-uia-dark hover:text-uia-red whitespace-nowrap px-1.5 py-0.5 rounded border border-gray-200">Submit</Link>
-          <span className="text-gray-200">|</span>
-          {/* KPI stats */}
-          <span className="text-xs font-display font-bold text-uia-blue whitespace-nowrap">
-            <AnimatedCounter value={kpis.totalProjects} /> Projects
-          </span>
-          <span className="text-gray-300">·</span>
-          <span className="text-xs font-display font-bold text-uia-violet whitespace-nowrap">
-            <AnimatedCounter value={kpis.citiesEngaged} /> Cities
-          </span>
-          <span className="text-gray-300">·</span>
-          <span className="text-xs font-display font-bold text-uia-red whitespace-nowrap">
-            <AnimatedCounter value={kpis.totalFundingNeeded} formatter={formatCurrency} /> Needed
-          </span>
-        </div>
-
-        {/* Mobile Search Overlay */}
-        {showMobileSearch && (
-          <div className="p-3 bg-white border-b border-uia-dark shadow-lg">
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
-                <SmartSearch
-                  autoFocus
-                  onProjectSelect={(id) => { handleProjectSelect(id); setShowMobileSearch(false); }}
-                  onFilterChange={(filter) => {
-                    setFilters((prev) => ({
-                      ...prev,
-                      city: filter.city !== undefined ? filter.city : prev.city,
-                      sdg: filter.sdg !== undefined ? (filter.sdg as any) : prev.sdg,
-                    }));
-                    setShowMobileSearch(false);
-                  }}
-                />
-              </div>
-              <button
-                onClick={() => setShowMobileSearch(false)}
-                className="flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-md border border-gray-200 text-gray-500 hover:text-gray-900"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── BODY ROW (flex-1 = fills remaining screen height below header) ── */}
-      <div className="flex flex-1 overflow-hidden min-h-0">
-
-        {/* ── DESKTOP FILTER SIDEBAR (docked left) ── */}
-        <div className={`hidden md:flex flex-col flex-shrink-0 bg-white border-r border-gray-200 overflow-hidden transition-[width] duration-300 ease-in-out ${showFilters ? 'w-72' : 'w-0'}`}>
-          <div className="flex-shrink-0 p-4 border-b border-gray-100 flex justify-between items-center">
-            <h2 className="font-display font-semibold text-gray-900 text-sm">Filters</h2>
-            <div className="flex items-center gap-2">
-              <button onClick={handleClearFilters} className="text-xs text-uia-blue hover:text-uia-red font-display font-medium">Reset</button>
-              <button
-                onClick={() => setShowFilters(false)}
-                className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-                title="Hide Filters"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 custom-scrollbar min-w-[288px]">
-            <FilterControls filters={filters} onFilterChange={setFilters} onClearFilters={handleClearFilters} />
-          </div>
-          <div className="flex-shrink-0 p-3 border-t border-gray-100 bg-gray-50">
-            <span className="text-xs text-gray-500">Showing <span className="font-semibold text-gray-900">{markers.length}</span> projects</span>
-          </div>
-        </div>
-
-        {/* ── MOBILE FILTER DRAWER (overlay, < md) ── */}
-        {isMobile && showFilters && (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 bg-black/40 z-40"
-              onClick={() => setShowFilters(false)}
-            />
-            {/* Drawer */}
-            <div className="fixed top-0 left-0 bottom-0 w-72 bg-white z-50 flex flex-col shadow-2xl">
-              <div className="flex-shrink-0 p-4 border-b border-uia-dark flex justify-between items-center">
-                <h2 className="font-display font-semibold text-gray-900 text-sm">Filters</h2>
-                <div className="flex items-center gap-2">
-                  <button onClick={handleClearFilters} className="text-xs text-uia-blue hover:text-uia-red font-display font-medium">Reset</button>
-                  <button
-                    onClick={() => setShowFilters(false)}
-                    className="flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                <FilterControls filters={filters} onFilterChange={setFilters} onClearFilters={handleClearFilters} />
-              </div>
-              <div className="flex-shrink-0 p-3 border-t border-gray-100 bg-gray-50">
-                <span className="text-xs text-gray-500">Showing <span className="font-semibold text-gray-900">{markers.length}</span> projects</span>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* ── MAP / TABLE AREA (flex-1 = fills remaining width) ── */}
-        <div className="flex-1 relative overflow-hidden min-w-0">
-
-          {/* Filter-refetch loading strip */}
-          {loading && viewMode === 'map' && (
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-uia-blue animate-pulse z-10" />
-          )}
-
-          {viewMode === 'map' ? (
-            <MapContainer
-              center={[20, 0]}
-              zoom={2}
-              style={{ height: '100%', width: '100%', background: '#e5e5e5' }}
-              zoomSnap={0.5}
-              zoomDelta={0.5}
-              wheelPxPerZoomLevel={120}
-              scrollWheelZoom={true}
-              zoomControl={false}
-            >
-              <ZoomControl position="bottomright" />
-              <LayersControl position="bottomright">
-                {Object.entries(BASEMAPS).map(([key, config]) => (
-                  <LayersControl.BaseLayer key={key} name={config.name} checked={key === 'streets'}>
-                    <TileLayer attribution={config.attribution} url={config.url} />
-                  </LayersControl.BaseLayer>
-                ))}
-              </LayersControl>
-
-              {/* Choropleth layer (visible when zoom < 5) */}
-              <ChoroplethLayer markers={markers} visible={mapZoom < 5} />
-
-              {/* Individual markers (visible when zoom >= 5) */}
-              <MarkerClusterGroup chunkedLoading>
+      {/* Main Content (Map or Table) */}
+      <div className="absolute inset-0 z-0 isolate">
+         {viewMode === 'map' ? (
+                       <MapContainer
+                         center={[20, 0]}
+                         zoom={2}
+                         style={{ height: '100%', width: '100%', background: '#e5e5e5' }}
+                         zoomSnap={0.5}
+                         zoomDelta={0.5}
+                         wheelPxPerZoomLevel={120}
+                         scrollWheelZoom={true}
+                         zoomControl={false}
+                       >
+                         <ZoomControl position="bottomright" />
+                         <LayersControl position="bottomright">
+                           {Object.entries(BASEMAPS).map(([key, config]) => (
+                             <LayersControl.BaseLayer
+                               key={key}
+                               name={config.name}
+                               checked={key === 'streets'}
+                             >
+                               <TileLayer
+                                 attribution={config.attribution}
+                                 url={config.url}
+                               />
+                             </LayersControl.BaseLayer>
+                           ))}
+                         </LayersControl>
+           
+                         <MarkerClusterGroup chunkedLoading>
+           
                 {markers.map((marker) => {
                   const markerIcon = marker.primarySdg
                     ? createSDGMarker({ sdgNumber: marker.primarySdg, projectName: marker.projectName, size: getMarkerSizeByFunding(marker.fundingNeeded || 0) })
@@ -624,37 +323,112 @@ export default function Dashboard() {
             <div className="h-full overflow-auto bg-gray-50">
               <ProjectTable filters={filters} onProjectClick={(p) => handleProjectSelect(p.id)} />
             </div>
-          )}
+         )}
 
-          {/* SDG Legend (inside map area) */}
-          {viewMode === 'map' && !loading && markers.length > 0 && (
-            <SDGLegend
-              onSDGClick={(sdgId) => setFilters({ ...filters, sdg: sdgId as any })}
-              activeSdg={typeof filters.sdg === 'number' ? filters.sdg : null}
-            />
-          )}
+         {/* SDG Legend (only show in map view) */}
+         {viewMode === 'map' && !loading && markers.length > 0 && (
+           <SDGLegend
+             onSDGClick={(sdgId) => {
+               setFilters({ ...filters, sdg: sdgId as any });
+             }}
+             activeSdg={typeof filters.sdg === 'number' ? filters.sdg : null}
+           />
+         )}
 
-          {/* Empty state */}
-          {viewMode === 'map' && !loading && markers.length === 0 && (
-            <EmptyState
-              icon="🌍"
-              title="No Projects Found"
-              description="No projects match your current filters. Try adjusting your criteria or clearing all filters."
-              actionLabel="Clear All Filters"
-              onAction={handleClearFilters}
-              secondaryActionLabel="View All Projects"
-              onSecondaryAction={() => { handleClearFilters(); setViewMode('table'); }}
-            />
-          )}
+         {/* Empty State (when no markers found) */}
+         {viewMode === 'map' && !loading && markers.length === 0 && (
+           <EmptyState
+             icon="🌍"
+             title="No Projects Found"
+             description="No projects match your current filters. Try adjusting your criteria or clearing all filters to see the full catalog of sustainable development projects."
+             actionLabel="Clear All Filters"
+             onAction={handleClearFilters}
+             secondaryActionLabel="View All Projects"
+             onSecondaryAction={() => {
+               handleClearFilters();
+               setViewMode('table');
+             }}
+           />
+         )}
 
-          {/* Loading overlay */}
-          {loading && viewMode === 'map' && (
-            <div className="absolute inset-0 flex items-center justify-center z-20 bg-white/50 backdrop-blur-sm pointer-events-none">
-              <div className="bg-white p-8 rounded-2xl shadow-2xl shadow-black/10 pointer-events-auto">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-                  <p className="text-gray-600 font-medium">Loading projects...</p>
-                </div>
+      </div>
+
+      {/* Header Overlay */}
+      <div className="absolute top-0 left-0 right-0 z-[900] px-6 py-4 pointer-events-none">
+        <div className="flex justify-between items-start">
+           <div className="pointer-events-auto flex gap-4">
+             <Link
+               to="/"
+               className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center text-uia-dark hover:text-uia-red"
+               title="Return to Home"
+             >
+               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+             </Link>
+             <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-4 shadow-lg shadow-black/5 hover:shadow-xl transition-shadow duration-300">
+               <h1 className="text-2xl font-display font-bold text-black tracking-uia-normal">SDG Panorama</h1>
+               <p className="text-xs font-display text-uia-dark mt-1 uppercase tracking-uia-wide">Global Sustainable Development Projects</p>
+             </div>
+             
+             {/* View Toggle */}
+             <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-1 shadow-lg shadow-black/5 flex items-center h-full self-stretch">
+               <button
+                 onClick={() => setViewMode('map')}
+                 className={`px-3 py-1.5 rounded-sm text-sm font-display font-medium transition-all duration-200 h-full flex items-center gap-2 ${viewMode === 'map' ? 'bg-uia-blue/10 text-uia-blue shadow-sm' : 'text-uia-dark hover:text-black hover:bg-uia-gray-light'}`}
+               >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  <span className="hidden sm:inline">Map</span>
+               </button>
+               <button
+                 onClick={() => setViewMode('table')}
+                 className={`px-3 py-1.5 rounded-sm text-sm font-display font-medium transition-all duration-200 h-full flex items-center gap-2 ${viewMode === 'table' ? 'bg-uia-blue/10 text-uia-blue shadow-sm' : 'text-uia-dark hover:text-black hover:bg-uia-gray-light'}`}
+               >
+                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
+                 <span className="hidden sm:inline">List</span>
+               </button>
+             </div>
+
+             <button
+               onClick={() => setShowAnalytics(true)}
+               className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 py-2 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 flex items-center gap-2 h-full self-stretch group text-uia-dark hover:text-uia-blue"
+             >
+               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+               </svg>
+               <span className="font-display font-medium text-sm hidden sm:block">Analytics</span>
+             </button>
+           </div>
+           
+           {/* Floating KPI Cards - UIA Style */}
+           <div className="pointer-events-auto bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-2 shadow-lg shadow-black/5 hidden md:flex gap-4">
+              <div className="px-4 py-2 border-r border-uia-dark last:border-0">
+                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Projects</div>
+                 <div className="text-xl font-display font-bold text-uia-blue">
+                    <AnimatedCounter value={kpis.totalProjects} />
+                 </div>
+              </div>
+              <div className="px-4 py-2 border-r border-uia-dark last:border-0">
+                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Cities</div>
+                 <div className="text-xl font-display font-bold text-uia-violet">
+                    <AnimatedCounter value={kpis.citiesEngaged} />
+                 </div>
+              </div>
+               <div className="px-4 py-2 border-r border-uia-dark last:border-0">
+                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Countries</div>
+                 <div className="text-xl font-display font-bold text-uia-blue">
+                    <AnimatedCounter value={kpis.countriesRepresented} />
+                 </div>
+              </div>
+               <div className="px-4 py-2 border-r border-uia-dark last:border-0">
+                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Funding Needed</div>
+                 <div className="text-xl font-display font-bold text-uia-red">
+                    <AnimatedCounter value={kpis.totalFundingNeeded} formatter={formatCurrency} />
+                 </div>
+              </div>
+               <div className="px-4 py-2">
+                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Funding Spent</div>
+                 <div className="text-xl font-display font-bold text-uia-blue">
+                    <AnimatedCounter value={kpis.totalFundingSpent} formatter={formatCurrency} />
+                 </div>
               </div>
             </div>
           )}
@@ -677,17 +451,74 @@ export default function Dashboard() {
         <AnalyticsPanel filters={filters} onClose={() => setShowAnalytics(false)} />
       )}
 
-      {/* ── INSIGHTS DRAWER ── */}
-      {showInsights && (
-        <InsightsDrawer filters={filters} onClose={() => setShowInsights(false)} />
+      {/* Sidebar Overlay */}
+      <div className={`absolute top-32 left-6 bottom-6 w-80 z-[100] transition-transform duration-300 transform ${showFilters ? 'translate-x-0' : '-translate-x-[110%]'}`}>
+         <div className="h-full flex flex-col bg-white/95 backdrop-blur-md border border-uia-dark rounded-md shadow-2xl shadow-black/10 overflow-hidden">
+            <div className="p-4 border-b border-uia-dark flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="p-1.5 rounded hover:bg-gray-100 text-uia-dark hover:text-uia-blue transition-colors"
+                  title="Collapse filters"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <h2 className="font-display font-semibold text-black">Filters</h2>
+              </div>
+              <button onClick={handleClearFilters} className="text-xs text-uia-blue hover:text-uia-red font-display font-medium">Reset</button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                <div className="light-theme-wrapper">
+                   <FilterControls
+                      filters={filters}
+                      onFilterChange={setFilters}
+                      onClearFilters={handleClearFilters}
+                   />
+                </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-200 bg-gray-50/50">
+               <div className="flex items-center text-xs text-gray-500">
+                 <span>Visible: <span className="text-gray-900 font-medium">{markers.length}</span></span>
+               </div>
+            </div>
+         </div>
+      </div>
+
+      {/* Sidebar Expand Button */}
+      {!showFilters && (
+        <button
+          onClick={() => setShowFilters(true)}
+          className="absolute top-32 left-6 z-[100] bg-white/90 backdrop-blur-md border border-uia-dark text-uia-dark p-2 rounded-md shadow-lg hover:text-uia-blue hover:bg-white transition-all duration-200"
+          title="Expand filters"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M6 5l7 7-7 7" />
+          </svg>
+        </button>
       )}
 
-      {/* ── MOBILE PROJECT DETAIL PANEL (bottom sheet, < md) ── */}
-      {selectedProject && isMobile && (
-        <ProjectDetailPanel
-          project={selectedProject}
-          onClose={handleProjectClose}
-        />
+      {/* Loading State Overlay - Only for Map View */}
+      {loading && viewMode === 'map' && (
+        <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-[500] backdrop-blur-sm">
+           <div className="flex flex-col items-center">
+             <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+             <p className="mt-4 text-gray-900 font-medium tracking-wide">Loading Panorama Data...</p>
+           </div>
+        </div>
+      )}
+
+      {/* Project Details Panel Overlay */}
+      {selectedProject && (
+         <div className="absolute top-0 right-0 bottom-0 w-full md:w-[480px] z-[200] bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300">
+            <ProjectDetailPanel 
+               project={selectedProject} 
+               onClose={handleProjectClose} 
+            />
+         </div>
       )}
     </div>
   );
