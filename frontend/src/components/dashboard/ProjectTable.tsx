@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { mockDashboardAPI as dashboardAPI } from '../../services/api/mockDashboardAPI';
+import { dashboardAPI } from '../../services/api/dashboardAPI';
 import type { Project, FilterOptions } from '../../types';
 import { TableSkeleton } from '../common/Skeleton';
+import StatusBadge from '../common/StatusBadge';
+import { useToast } from '../../hooks/useToast';
 
 interface ProjectTableProps {
   filters: FilterOptions;
@@ -11,10 +13,12 @@ interface ProjectTableProps {
 export default function ProjectTable({ filters, onProjectClick }: ProjectTableProps) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
   const pageSize = 10;
+  const { addToast } = useToast();
 
   useEffect(() => {
     fetchProjects();
@@ -27,13 +31,15 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
 
   const fetchProjects = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // API expects filters, then page and pageSize
       const data = await dashboardAPI.getProjects(filters, page, pageSize);
       setProjects(data.projects);
       setTotal(data.total);
-    } catch (error) {
-      console.error('Error fetching projects:', error);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+      setError('Failed to load projects. Please try again.');
+      addToast('Failed to load projects', 'error');
     } finally {
       setLoading(false);
     }
@@ -47,7 +53,7 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
       const exportProjects = data.projects;
 
       if (exportProjects.length === 0) {
-        alert("No projects to export.");
+        addToast('No projects match current filters to export', 'info');
         return;
       }
 
@@ -88,9 +94,9 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (error) {
-      console.error("Export failed", error);
-      alert("Export failed. Please try again.");
+    } catch (err) {
+      console.error("Export failed", err);
+      addToast('Export failed — please try again', 'error');
     } finally {
       setExporting(false);
     }
@@ -125,6 +131,16 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
               <TableSkeleton />
+            ) : error ? (
+              <tr>
+                <td colSpan={5} className="px-6 py-8 text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-2xl">⚠️</span>
+                    <p className="text-sm font-medium text-gray-700">Could not load projects</p>
+                    <button onClick={fetchProjects} className="text-xs text-uia-blue hover:text-uia-red font-display uppercase tracking-wide">Retry</button>
+                  </div>
+                </td>
+              </tr>
             ) : projects.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">No projects found matching filters.</td>
@@ -140,12 +156,7 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{project.uiaRegion}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{project.city}, {project.country}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${project.projectStatus === 'Implemented' ? 'bg-green-100 text-green-800' : 
-                        project.projectStatus === 'In Progress' ? 'bg-blue-100 text-blue-800' : 
-                        'bg-yellow-100 text-yellow-800'}`}>
-                      {project.projectStatus}
-                    </span>
+                    <StatusBadge status={project.projectStatus} size="sm" />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     ${project.fundingNeeded.toLocaleString()}

@@ -1,20 +1,24 @@
-import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl, ZoomControl } from 'react-leaflet';
+import { useState, useEffect, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents, LayersControl, ZoomControl } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { useSearchParams, Link } from 'react-router-dom';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { dashboardAPI } from '../../services/api/dashboardAPI';
-import type { FilterOptions, DashboardKPIs, Project } from '../../types';
+import type { FilterOptions, DashboardKPIs, Project, MapMarker } from '../../types';
 import FilterControls from '../../components/dashboard/FilterControls';
 import ProjectDetailPanel from '../../components/dashboard/ProjectDetailPanel';
 import AnalyticsPanel from '../../components/dashboard/AnalyticsPanel';
+import InsightsDrawer from '../../components/dashboard/InsightsDrawer';
 import ProjectTable from '../../components/dashboard/ProjectTable';
 import { createSDGMarker, getMarkerSizeByFunding, MARKER_STYLES } from '../../components/map/CustomSDGMarker';
 import SDGLegend, { LEGEND_STYLES } from '../../components/map/SDGLegend';
+import ChoroplethLayer from '../../components/map/ChoroplethLayer';
 import EmptyState, { EMPTY_STATE_STYLES } from '../../components/common/EmptyState';
 import SmartSearch from '../../components/dashboard/SmartSearch';
 import AnimatedCounter from '../../components/common/AnimatedCounter';
+import StatusBadge from '../../components/common/StatusBadge';
+import { useToast } from '../../hooks/useToast';
 
 // Fix Leaflet default marker icons
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -47,48 +51,33 @@ const BASEMAPS = {
   }
 };
 
-interface MapMarker {
-  id: string;
-  projectName: string;
-  city: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-  region: string;
-  status?: string;
-  fundingNeeded?: number;
-  primarySdg?: number;
-  imageUrl?: string;
-}
-
 const formatCurrency = (value: number | undefined | null) => {
-  if (value === undefined || value === null) {
-    return '$0';
-  }
-  if (value >= 1000000000) {
-    return `$${(value / 1000000000).toFixed(1)}B`;
-  }
-  if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}M`;
-  }
-  if (value >= 1000) {
-    return `$${(value / 1000).toFixed(0)}k`;
-  }
+  if (value === undefined || value === null) return '$0';
+  if (value >= 1000000000) return `$${(value / 1000000000).toFixed(1)}B`;
+  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`;
   return `$${value.toLocaleString()}`;
 };
 
+function ZoomWatcher({ onZoom }: { onZoom: (zoom: number) => void }) {
+  useMapEvents({
+    zoomend: (e) => onZoom(e.target.getZoom()),
+  });
+  return null;
+}
+
 function MapUpdater({ markers }: { markers: MapMarker[] }) {
   const map = useMap();
-
+  const hasAutoFit = useRef(false);
   useEffect(() => {
-    if (markers.length > 0) {
+    if (markers.length > 0 && !hasAutoFit.current) {
+      hasAutoFit.current = true;
       const bounds = L.latLngBounds(
         markers.map((m) => [m.latitude, m.longitude] as [number, number])
       );
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 6 });
     }
   }, [markers, map]);
-
   return null;
 }
 
@@ -108,42 +97,41 @@ export default function Dashboard() {
     sdg: 'All SDGs',
   });
   const [loading, setLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'table'>('map');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showInsights, setShowInsights] = useState(false);
+  const dashHeaderRef = useRef<HTMLDivElement>(null);
+  const [mapZoom, setMapZoom] = useState(2);
+  const [mapKey, setMapKey] = useState(0);
+  const { addToast } = useToast();
 
-  // Update isMobile on resize
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Keyboard Shortcuts
+  // Desktop: show filters by default
+  useEffect(() => {
+    if (!isMobile) setShowFilters(true);
+  }, [isMobile]);
+
+  // Keyboard Shortcuts (desktop only)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts if user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        if (e.key === 'Escape') {
-          (e.target as HTMLElement).blur();
-        }
+        if (e.key === 'Escape') (e.target as HTMLElement).blur();
         return;
       }
-
       switch (e.key.toLowerCase()) {
-        case 'f':
-          setShowFilters(prev => !prev);
-          break;
-        case 'a':
-          setShowAnalytics(prev => !prev);
-          break;
-        case 'm':
-          setViewMode('map');
-          break;
-        case 'l':
-          setViewMode('table');
-          break;
+        case 'f': setShowFilters(prev => !prev); break;
+        case 'a': setShowAnalytics(prev => !prev); break;
+        case 'i': setShowInsights(prev => !prev); break;
+        case 'm': setViewMode('map'); break;
+        case 'l': setViewMode('table'); break;
         case '/':
           e.preventDefault();
           const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
@@ -152,65 +140,70 @@ export default function Dashboard() {
         case 'escape':
           if (selectedProject) handleProjectClose();
           else if (showAnalytics) setShowAnalytics(false);
-          else if (!showFilters && window.innerWidth < 768) setShowFilters(false);
+          else if (showInsights) setShowInsights(false);
+          else if (showMobileSearch) setShowMobileSearch(false);
           break;
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedProject, showAnalytics, showFilters]);
+  }, [selectedProject, showAnalytics, showInsights, showFilters, showMobileSearch]);
 
-  // Check for deep link on mount
   useEffect(() => {
     const projectId = searchParams.get('project');
-    if (projectId) {
-      handleProjectSelect(projectId);
-    }
+    if (projectId) handleProjectSelect(projectId);
   }, []);
 
-  // Fetch KPIs whenever filters change
+  // Increment mapKey on filter changes so MapUpdater remounts and resets hasAutoFit
   useEffect(() => {
-    const fetchKpis = async () => {
-      try {
-        const data = await dashboardAPI.getKPIs(filters);
-        setKpis(data);
-      } catch (error) {
-        console.error('Error fetching KPIs:', error);
-      }
-    };
-    fetchKpis();
+    setMapKey(k => k + 1);
   }, [filters]);
 
-  // Fetch Markers only when in map view and filters change (or view switches to map)
   useEffect(() => {
-    if (viewMode === 'map') {
-      const fetchMarkers = async () => {
-        setLoading(true);
-        try {
-          const data = await dashboardAPI.getMapMarkers(filters);
-          setMarkers(data);
-        } catch (error) {
-          console.error('Error fetching markers:', error);
-        } finally {
-          setLoading(false);
+    const controller = new AbortController();
+
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      try {
+        if (viewMode === 'map') {
+          const [kpiData, markerData] = await Promise.all([
+            dashboardAPI.getKPIs(filters, controller.signal),
+            dashboardAPI.getMapMarkers(filters, controller.signal),
+          ]);
+          setKpis(kpiData);
+          setMarkers(markerData);
+        } else {
+          const kpiData = await dashboardAPI.getKPIs(filters, controller.signal);
+          setKpis(kpiData);
         }
-      };
-      fetchMarkers();
-    }
+      } catch (error: any) {
+        if (error?.code !== 'ERR_CANCELED') {
+          console.error('Error fetching dashboard data:', error);
+          addToast('Could not load dashboard data', 'error');
+        }
+      } finally {
+        setLoading(false);
+      }
+    }, 400);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [filters, viewMode]);
 
   const handleProjectSelect = async (projectId: string) => {
     try {
       const project = await dashboardAPI.getProject(projectId);
       setSelectedProject(project);
-      
-      // Update URL
+      // Auto-close filter panel on mobile when project opens
+      if (isMobile) setShowFilters(false);
       const newParams = new URLSearchParams(searchParams);
       newParams.set('project', projectId);
       setSearchParams(newParams);
     } catch (error) {
       console.error('Error fetching project details:', error);
+      addToast('Could not load project details', 'error');
     }
   };
 
@@ -222,15 +215,19 @@ export default function Dashboard() {
   };
 
   const handleClearFilters = () => {
-    setFilters({
-      region: 'All Regions',
-      sdg: 'All SDGs',
-    });
+    setFilters({ region: 'All Regions', sdg: 'All SDGs' });
   };
 
+  // Count active (non-default) filters for badge display
+  const activeFilterCount = [
+    filters.region && filters.region !== 'All Regions',
+    filters.sdg && filters.sdg !== 'All SDGs',
+    filters.city && filters.city !== undefined && filters.city !== '',
+    filters.search && filters.search !== '',
+  ].filter(Boolean).length;
+
   return (
-    <div className="h-screen w-screen flex flex-col bg-white text-mapbox-light overflow-hidden relative">
-      {/* Inject custom marker and legend styles */}
+    <div className="h-screen w-screen flex flex-col bg-white text-mapbox-light overflow-hidden">
       <style>{MARKER_STYLES}</style>
       <style>{LEGEND_STYLES}</style>
       <style>{EMPTY_STATE_STYLES}</style>
@@ -267,86 +264,64 @@ export default function Dashboard() {
                          <MarkerClusterGroup chunkedLoading>
            
                 {markers.map((marker) => {
-                  // Create custom SDG marker if primary SDG is available
                   const markerIcon = marker.primarySdg
-                    ? createSDGMarker({
-                        sdgNumber: marker.primarySdg,
-                        projectName: marker.projectName,
-                        size: getMarkerSizeByFunding(marker.fundingNeeded || 0),
-                      })
+                    ? createSDGMarker({ sdgNumber: marker.primarySdg, projectName: marker.projectName, size: getMarkerSizeByFunding(marker.fundingNeeded || 0) })
                     : undefined;
 
                   return (
-                  <Marker
-                    key={marker.id}
-                    position={[marker.latitude, marker.longitude]}
-                    icon={markerIcon}
-                    eventHandlers={{
-                      click: (e) => e.target.openPopup(),
-                    }}
-                  >
-                    <Popup 
-                      className="custom-popup p-0 overflow-hidden" 
-                      closeButton={false} 
-                      maxWidth={isMobile ? 220 : 280} 
-                      minWidth={isMobile ? 200 : 240}
+                    <Marker
+                      key={marker.id}
+                      position={[marker.latitude, marker.longitude]}
+                      icon={markerIcon}
+                      eventHandlers={{
+                        click: () => handleProjectSelect(marker.id),
+                        ...(!isMobile && {
+                          mouseover: (e) => e.target.openPopup(),
+                          mouseout: (e) => e.target.closePopup(),
+                        }),
+                      }}
                     >
-                      <div className="bg-white rounded-lg shadow-sm overflow-hidden text-gray-900">
-                        {marker.imageUrl ? (
-                          <div className="h-32 w-full overflow-hidden">
-                             <img
-                               src={marker.imageUrl}
-                               alt={marker.projectName}
-                               loading="lazy"
-                               decoding="async"
-                               className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
-                             />
+                      {!isMobile && (
+                        <Popup className="custom-popup p-0 overflow-hidden" closeButton={false} maxWidth={280} minWidth={240}>
+                          <div className="bg-white rounded-lg shadow-sm overflow-hidden text-gray-900">
+                            {marker.imageUrl ? (
+                              <div className="h-32 w-full overflow-hidden">
+                                <img src={marker.imageUrl} alt={marker.projectName} className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500" />
+                              </div>
+                            ) : (
+                              <div className="h-24 w-full bg-gray-100 flex items-center justify-center">
+                                <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                              </div>
+                            )}
+                            <div className="p-3">
+                              <h3 className="font-bold text-sm leading-tight mb-1 text-gray-900">{marker.projectName}</h3>
+                              <p className="text-xs text-gray-500 mb-2 flex items-center">
+                                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                {marker.city}, {marker.country}
+                              </p>
+                              <div className="flex justify-between items-center mt-3">
+                                {marker.status && (
+                                  <StatusBadge status={marker.status} size="sm" />
+                                )}
+                                <button onClick={() => handleProjectSelect(marker.id)} className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline">
+                                  View Details →
+                                </button>
+                              </div>
+                            </div>
                           </div>
-                        ) : (
-                           <div className="h-24 w-full bg-gray-100 flex items-center justify-center">
-                              <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                           </div>
-                        )}
-                        
-                        <div className="p-3">
-                          <h3 className="font-bold text-sm leading-tight mb-1 text-gray-900">
-                            {marker.projectName}
-                          </h3>
-                          <p className="text-xs text-gray-500 mb-2 flex items-center">
-                             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                             {marker.city}, {marker.country}
-                          </p>
-                          
-                          <div className="flex justify-between items-center mt-3">
-                              {marker.status && (
-                                <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
-                                    marker.status === 'Implemented' ? 'bg-green-100 text-green-700' :
-                                    marker.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                    'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                    {marker.status}
-                                </span>
-                              )}
-                              <button
-                                onClick={() => handleProjectSelect(marker.id)}
-                                className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
-                              >
-                                View Details →
-                              </button>
-                          </div>
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
+                        </Popup>
+                      )}
+                    </Marker>
                   );
                 })}
               </MarkerClusterGroup>
 
-              <MapUpdater markers={markers} />
+              <MapUpdater markers={markers} key={mapKey} />
+              <ZoomWatcher onZoom={setMapZoom} />
             </MapContainer>
-         ) : (
-            <div className="h-full pt-32 pb-0 bg-gray-50">
-               <ProjectTable filters={filters} onProjectClick={(p) => handleProjectSelect(p.id)} />
+          ) : (
+            <div className="h-full overflow-auto bg-gray-50">
+              <ProjectTable filters={filters} onProjectClick={(p) => handleProjectSelect(p.id)} />
             </div>
          )}
 
@@ -456,24 +431,22 @@ export default function Dashboard() {
                  </div>
               </div>
             </div>
-          </div>
-
-          {/* Search Bar Row */}
-          <div className="pointer-events-auto flex justify-center">
-            <SmartSearch
-              onProjectSelect={handleProjectSelect}
-              onFilterChange={(filter) => {
-                setFilters((prev) => ({
-                  ...prev,
-                  city: filter.city !== undefined ? filter.city : prev.city,
-                  sdg: filter.sdg !== undefined ? (filter.sdg as any) : prev.sdg,
-                }));
-              }}
-            />
-          </div>
+          )}
         </div>
 
-      {/* Analytics Panel Overlay */}
+        {/* ── DESKTOP DETAIL PANEL (docked right) ── */}
+        {selectedProject && !isMobile && (
+          <div className="hidden md:flex flex-col flex-shrink-0 w-[480px] border-l border-gray-200 bg-white overflow-hidden">
+            <ProjectDetailPanel
+              project={selectedProject}
+              onClose={handleProjectClose}
+              docked
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ── ANALYTICS PANEL (full overlay) ── */}
       {showAnalytics && (
         <AnalyticsPanel filters={filters} onClose={() => setShowAnalytics(false)} />
       )}

@@ -36,7 +36,7 @@ export default function Header() {
               to="/dashboard"
               className="text-sm font-medium text-uia-dark hover:text-uia-red transition-colors"
             >
-              SDG Panorama
+              Panorama
             </Link>
             <Link
               to="/submit"
