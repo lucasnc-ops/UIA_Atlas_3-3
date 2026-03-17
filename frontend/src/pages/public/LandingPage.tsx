@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button, Card } from '../../components/uia';
+import InsightsSection from '../../components/landing/InsightsSection';
 
 export default function LandingPage() {
   return (
@@ -43,11 +44,18 @@ export default function LandingPage() {
               </span>
             </h1>
 
+            {/* Tagline */}
+            <p className="text-base sm:text-lg font-display font-bold text-uia-red uppercase tracking-uia-wide mb-3 drop-shadow-lg">
+              A Global Barometer for the SDGs 2030 Agenda
+            </p>
+
             {/* Subtitle */}
-            <p className="text-xl sm:text-2xl font-sans font-light text-white max-w-3xl mx-auto leading-relaxed mb-12 drop-shadow-lg">
-              "In less than five years, we reach the 2030 SDG deadline—yet we still lack a clear global
-              picture of where progress is accelerating and where needs are deepening. Panorama 3+3 is a live
-              barometer that visualizes this contrast: developmental momentum versus critical community need."
+            <p className="text-xl sm:text-2xl font-sans font-light text-white max-w-3xl mx-auto leading-relaxed mb-4 drop-shadow-lg">
+              In less than five years, we reach the 2030 SDG deadline — yet we still lack a clear global picture of where progress is accelerating and where needs are deepening.
+            </p>
+
+            <p className="text-lg font-sans text-white/90 max-w-2xl mx-auto mb-12 drop-shadow-lg">
+              Panorama 3+3 maps the contrast: developmental momentum versus critical community need. The "3+3" framework isolates the extremes — the Top 3 momentum SDGs and the 3 most urgent gaps.
             </p>
 
             {/* CTA Buttons - UIA Style */}
@@ -148,6 +156,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Live Analytics — 3+3 Barometer */}
+      <InsightsSection />
 
       {/* Mission Section - UIA Cards */}
       <section className="py-24 bg-white">

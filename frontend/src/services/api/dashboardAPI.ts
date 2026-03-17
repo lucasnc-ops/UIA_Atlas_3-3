@@ -83,9 +83,9 @@ export const dashboardAPI = {
   /**
    * Get KPI metrics
    */
-  async getKPIs(filters?: FilterOptions): Promise<DashboardKPIs> {
+  async getKPIs(filters?: FilterOptions, signal?: AbortSignal): Promise<DashboardKPIs> {
     const params = this._buildFilterParams(filters);
-    const response = await apiClient.get('/api/dashboard/kpis', { params });
+    const response = await apiClient.get('/api/dashboard/kpis', { params, signal });
 
     // Backend returns snake_case, apiClient converts to camelCase
     return response.data;
@@ -94,9 +94,9 @@ export const dashboardAPI = {
   /**
    * Get map markers for map view
    */
-  async getMapMarkers(filters?: FilterOptions): Promise<MapMarker[]> {
+  async getMapMarkers(filters?: FilterOptions, signal?: AbortSignal): Promise<MapMarker[]> {
     const params = this._buildFilterParams(filters);
-    const response = await apiClient.get('/api/dashboard/map-markers', { params });
+    const response = await apiClient.get('/api/dashboard/map-markers', { params, signal });
 
     return response.data;
   },
