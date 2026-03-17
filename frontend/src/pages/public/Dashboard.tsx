@@ -433,6 +433,7 @@ export default function Dashboard() {
             </div>
           )}
         </div>
+      </div>
 
         {/* ── DESKTOP DETAIL PANEL (docked right) ── */}
         {selectedProject && !isMobile && (
