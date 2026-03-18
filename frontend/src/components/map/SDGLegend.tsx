@@ -29,7 +29,7 @@ interface SDGLegendProps {
 
 export default function SDGLegend({ onSDGClick, activeSdg }: SDGLegendProps) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  // Auto-collapse on mobile
+  // Desktop starts expanded; mobile starts collapsed
   const [isCollapsed, setIsCollapsed] = useState(window.innerWidth < 768);
   const [hoveredSdg, setHoveredSdg] = useState<number | null>(null);
 
@@ -47,7 +47,7 @@ export default function SDGLegend({ onSDGClick, activeSdg }: SDGLegendProps) {
   if (isCollapsed) {
     return (
       // Mobile: fixed above zoom controls (bottom-20); Desktop: absolute bottom-6 right-20
-      <div className={`z-20 pointer-events-auto ${isMobile ? 'fixed bottom-20 right-3' : 'absolute bottom-6 right-20'}`}>
+      <div className={`z-[500] pointer-events-auto ${isMobile ? 'fixed bottom-20 right-3' : 'absolute bottom-6 right-20'}`}>
         <button
           onClick={() => setIsCollapsed(false)}
           className="bg-white/95 backdrop-blur-md border border-gray-200/50 rounded-lg px-3 py-2 shadow-lg hover:shadow-xl transition-all flex items-center gap-2 group"
@@ -143,7 +143,7 @@ export default function SDGLegend({ onSDGClick, activeSdg }: SDGLegendProps) {
 
   // Desktop: floating panel (original layout)
   return (
-    <div className="absolute bottom-6 right-20 z-20 pointer-events-auto">
+    <div className="absolute bottom-6 right-20 z-[500] pointer-events-auto">
       <div className="bg-white/95 backdrop-blur-md border border-gray-200/50 rounded-xl shadow-2xl shadow-black/10 overflow-hidden max-w-sm">
         {/* Header */}
         <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-primary-50 to-white">

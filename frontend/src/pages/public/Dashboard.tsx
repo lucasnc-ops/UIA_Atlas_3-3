@@ -106,6 +106,7 @@ export default function Dashboard() {
   const dashHeaderRef = useRef<HTMLDivElement>(null);
   const [mapZoom, setMapZoom] = useState(2);
   const [mapKey, setMapKey] = useState(0);
+  const [showChoropleth, setShowChoropleth] = useState(true);
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -242,8 +243,8 @@ export default function Dashboard() {
           <span className="text-gray-300 px-1">|</span>
           <Link to="/submit" className="text-uia-dark hover:text-uia-red transition-colors">Submit Project</Link>
         </div>
-        <div className="flex justify-between items-start">
-          <div className="flex gap-4">
+        <div className="flex items-stretch gap-3">
+          <div className="flex gap-3 flex-shrink-0">
             <Link
               to="/"
               className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center text-uia-dark hover:text-uia-red"
@@ -311,10 +312,38 @@ export default function Dashboard() {
               </svg>
               <span className="font-display font-medium text-sm">Analytics</span>
             </button>
+
+            {/* Countries / Choropleth toggle */}
+            {viewMode === 'map' && (
+              <button
+                onClick={() => setShowChoropleth(prev => !prev)}
+                title="Toggle country fill layer"
+                className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-md font-display font-medium text-sm transition-all h-full self-stretch shadow-sm ${showChoropleth ? 'bg-uia-blue/10 text-uia-blue border-uia-blue' : 'bg-white/90 text-uia-dark border-uia-dark hover:text-uia-blue hover:border-uia-blue'}`}
+              >
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="hidden lg:inline">Countries</span>
+              </button>
+            )}
+          </div>
+
+          {/* Search — inline centre */}
+          <div className="flex-1 flex items-center justify-center px-2">
+            <SmartSearch
+              onProjectSelect={handleProjectSelect}
+              onFilterChange={(filter) => {
+                setFilters((prev) => ({
+                  ...prev,
+                  city: filter.city !== undefined ? filter.city : prev.city,
+                  sdg: filter.sdg !== undefined ? (filter.sdg as any) : prev.sdg,
+                }));
+              }}
+            />
           </div>
 
           {/* Desktop KPI Cards */}
-          <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-2 shadow-lg shadow-black/5 flex gap-4">
+          <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-2 shadow-lg shadow-black/5 flex gap-4 flex-shrink-0">
             <div className="px-4 py-2 border-r border-uia-dark last:border-0">
               <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Projects</div>
               <div className="text-xl font-display font-bold text-uia-blue"><AnimatedCounter value={kpis.totalProjects} /></div>
@@ -338,19 +367,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Desktop Search Bar */}
-        <div className="flex justify-center mt-3">
-          <SmartSearch
-            onProjectSelect={handleProjectSelect}
-            onFilterChange={(filter) => {
-              setFilters((prev) => ({
-                ...prev,
-                city: filter.city !== undefined ? filter.city : prev.city,
-                sdg: filter.sdg !== undefined ? (filter.sdg as any) : prev.sdg,
-              }));
-            }}
-          />
-        </div>
       </div>
 
       {/* ── MOBILE HEADER ── (< md) */}
@@ -559,8 +575,12 @@ export default function Dashboard() {
                 ))}
               </LayersControl>
 
-              {/* Choropleth layer (visible when zoom < 5) */}
-              <ChoroplethLayer markers={markers} visible={mapZoom < 5} />
+              {/* Choropleth layer (visible when zoom < 5 AND toggled on) */}
+              <ChoroplethLayer
+                markers={markers}
+                visible={showChoropleth && mapZoom < 5}
+                onError={() => addToast('Could not load country layer', 'error')}
+              />
 
               {/* Individual markers (visible when zoom >= 5) */}
               <MarkerClusterGroup chunkedLoading>
