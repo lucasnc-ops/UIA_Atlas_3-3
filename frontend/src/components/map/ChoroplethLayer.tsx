@@ -5,6 +5,7 @@ import type { MapMarker } from '../../types';
 interface ChoroplethLayerProps {
   markers: MapMarker[];
   visible: boolean;
+  onError?: () => void;
 }
 
 // Module-level cache so we only fetch once per session
@@ -20,7 +21,7 @@ function getCountryFill(count: number, max: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-export default function ChoroplethLayer({ markers, visible }: ChoroplethLayerProps) {
+export default function ChoroplethLayer({ markers, visible, onError }: ChoroplethLayerProps) {
   const [geoJson, setGeoJson] = useState<any>(cachedGeoJson);
 
   useEffect(() => {
@@ -34,8 +35,9 @@ export default function ChoroplethLayer({ markers, visible }: ChoroplethLayerPro
         cachedGeoJson = data;
         setGeoJson(data);
       })
-      .catch(() => {
-        // Silently fail — choropleth is progressive enhancement
+      .catch((err) => {
+        console.error('ChoroplethLayer: failed to load world-countries.geojson', err);
+        onError?.();
       });
   }, []);
 
