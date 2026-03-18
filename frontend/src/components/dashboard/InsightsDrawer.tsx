@@ -80,10 +80,10 @@ export default function InsightsDrawer({ filters, onClose }: InsightsDrawerProps
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-30" onClick={onClose} />
+      <div className="fixed inset-0 z-[1990]" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white rounded-t-2xl shadow-2xl border-t border-gray-200 max-h-[48vh] flex flex-col">
+      <div className="fixed bottom-0 left-0 right-0 z-[2000] bg-white rounded-t-2xl shadow-2xl border-t border-gray-200 max-h-[48vh] flex flex-col">
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
