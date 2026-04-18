@@ -49,7 +49,7 @@ export default function LandingPage() {
             </p>
 
             <p className="text-lg font-sans text-white/90 max-w-2xl mx-auto mb-12 drop-shadow-lg">
-              Connecting sustainable architecture projects worldwide to inspire, track progress, and accelerate global impact.
+              Featuring projects from the UIA Guidebook for the 2030 Agenda — 2023 &amp; 2026 editions — across 5 global regions.
             </p>
 
             {/* CTA Buttons - UIA Style */}
@@ -85,7 +85,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-uia-dark">
             <div className="py-10 px-8 text-center group cursor-pointer hover:bg-uia-gray-light transition-all duration-300">
-              <div className="text-5xl font-display font-bold text-uia-red mb-2 group-hover:scale-110 transition-transform">141</div>
+              <div className="text-5xl font-display font-bold text-uia-red mb-2 group-hover:scale-110 transition-transform">288</div>
               <div className="text-xs font-display font-bold text-uia-dark uppercase tracking-uia-wide">Projects</div>
             </div>
             <div className="py-10 px-8 text-center group cursor-pointer hover:bg-uia-gray-light transition-all duration-300">

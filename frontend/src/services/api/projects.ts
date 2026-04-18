@@ -41,4 +41,15 @@ export const projectsApi = {
     const response = await apiClient.put(`/api/projects/edit/${token}`, data);
     return response.data;
   },
+
+  uploadImage: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/api/projects/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
 };

@@ -10,7 +10,14 @@ import FilterControls from '../../components/dashboard/FilterControls';
 import ProjectDetailPanel from '../../components/dashboard/ProjectDetailPanel';
 import AnalyticsPanel from '../../components/dashboard/AnalyticsPanel';
 import ProjectTable from '../../components/dashboard/ProjectTable';
-import { createSDGMarker, getMarkerSizeByFunding, MARKER_STYLES } from '../../components/map/CustomSDGMarker';
+import {
+  createRegionMarker,
+  createRegionClusterIcon,
+  getMarkerSizeByFunding,
+  MARKER_STYLES,
+  REGION_COLORS,
+  REGION_LABELS,
+} from '../../components/map/CustomSDGMarker';
 import SDGLegend, { LEGEND_STYLES } from '../../components/map/SDGLegend';
 import EmptyState, { EMPTY_STATE_STYLES } from '../../components/common/EmptyState';
 import SmartSearch from '../../components/dashboard/SmartSearch';
@@ -28,23 +35,23 @@ const BASEMAPS = {
   streets: {
     name: 'Streets',
     url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
   },
   satellite: {
     name: 'Satellite',
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
+    attribution: 'Tiles &copy; Esri',
   },
   dark: {
     name: 'Dark',
     url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
   },
   light: {
     name: 'Light',
     url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-  }
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  },
 };
 
 interface MapMarker {
@@ -61,21 +68,6 @@ interface MapMarker {
   imageUrl?: string;
 }
 
-const formatCurrency = (value: number | undefined | null) => {
-  if (value === undefined || value === null) {
-    return '$0';
-  }
-  if (value >= 1000000000) {
-    return `$${(value / 1000000000).toFixed(1)}B`;
-  }
-  if (value >= 1000000) {
-    return `$${(value / 1000000).toFixed(1)}M`;
-  }
-  if (value >= 1000) {
-    return `$${(value / 1000).toFixed(0)}k`;
-  }
-  return `$${value.toLocaleString()}`;
-};
 
 function MapUpdater({ markers }: { markers: MapMarker[] }) {
   const map = useMap();
@@ -84,9 +76,7 @@ function MapUpdater({ markers }: { markers: MapMarker[] }) {
   useEffect(() => {
     if (markers.length > 0 && !hasAutoFit.current) {
       hasAutoFit.current = true;
-      const bounds = L.latLngBounds(
-        markers.map((m) => [m.latitude, m.longitude] as [number, number])
-      );
+      const bounds = L.latLngBounds(markers.map((m) => [m.latitude, m.longitude] as [number, number]));
       map.fitBounds(bounds, { padding: [50, 50], maxZoom: 6 });
     }
   }, [markers, map]);
@@ -105,76 +95,54 @@ export default function Dashboard() {
   });
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [filters, setFilters] = useState<FilterOptions>({
-    region: 'All Regions',
-    sdg: 'All SDGs',
-  });
+  const [filters, setFilters] = useState<FilterOptions>({ region: 'All Regions', sdg: 'All SDGs' });
   const [loading, setLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(true);
-  const [showAnalytics, setShowAnalytics] = useState(false);
-  const [viewMode, setViewMode] = useState<'map' | 'table'>('map');
+  const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<'map' | 'table' | 'analytics'>('map');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-  // Update isMobile on resize
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Keyboard Shortcuts
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts if user is typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        if (e.key === 'Escape') {
-          (e.target as HTMLElement).blur();
-        }
+        if (e.key === 'Escape') (e.target as HTMLElement).blur();
         return;
       }
-
       switch (e.key.toLowerCase()) {
-        case 'f':
-          setShowFilters(prev => !prev);
-          break;
-        case 'a':
-          setShowAnalytics(prev => !prev);
-          break;
-        case 'm':
-          setViewMode('map');
-          break;
-        case 'l':
-          setViewMode('table');
-          break;
+        case 'f': setShowFilters((p) => !p); break;
+        case 'a': setViewMode((m) => m === 'analytics' ? 'map' : 'analytics'); break;
+        case 'm': setViewMode('map'); break;
+        case 'l': setViewMode('table'); break;
         case '/':
           e.preventDefault();
-          const searchInput = document.querySelector('input[placeholder*="Search"]') as HTMLInputElement;
-          searchInput?.focus();
+          (document.querySelector('input[placeholder*="Search"]') as HTMLInputElement)?.focus();
           break;
         case 'escape':
           if (selectedProject) handleProjectClose();
-          else if (showAnalytics) setShowAnalytics(false);
-          else if (!showFilters && window.innerWidth < 768) setShowFilters(false);
+          else if (viewMode === 'analytics') setViewMode('map');
+          else if (showFilters) setShowFilters(false);
           break;
       }
     };
-
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedProject, showAnalytics, showFilters]);
+  }, [selectedProject, viewMode, showFilters]);
 
-  // Check for deep link on mount
+  // Deep link on mount
   useEffect(() => {
     const projectId = searchParams.get('project');
-    if (projectId) {
-      handleProjectSelect(projectId);
-    }
+    if (projectId) handleProjectSelect(projectId);
   }, []);
 
-  // Fetch KPIs + markers together with 400ms debounce and cancellation
+  // Fetch data with 400ms debounce + abort
   useEffect(() => {
     const controller = new AbortController();
-
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
@@ -190,27 +158,22 @@ export default function Dashboard() {
           setKpis(kpiData);
         }
       } catch (error: any) {
-        if (error?.code !== 'ERR_CANCELED') console.error('Error fetching dashboard data:', error);
+        if (error?.code !== 'ERR_CANCELED') console.error('Dashboard fetch error:', error);
       } finally {
         setLoading(false);
       }
     }, 400);
-
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
+    return () => { clearTimeout(timer); controller.abort(); };
   }, [filters, viewMode]);
 
   const handleProjectSelect = async (projectId: string) => {
     try {
       const project = await dashboardAPI.getProject(projectId);
       setSelectedProject(project);
-      
-      // Update URL
-      const newParams = new URLSearchParams(searchParams);
-      newParams.set('project', projectId);
-      setSearchParams(newParams);
+      const p = new URLSearchParams(searchParams);
+      p.set('project', projectId);
+      setSearchParams(p);
+      if (isMobile) setShowFilters(false);
     } catch (error) {
       console.error('Error fetching project details:', error);
     }
@@ -218,74 +181,265 @@ export default function Dashboard() {
 
   const handleProjectClose = () => {
     setSelectedProject(null);
-    const newParams = new URLSearchParams(searchParams);
-    newParams.delete('project');
-    setSearchParams(newParams);
+    const p = new URLSearchParams(searchParams);
+    p.delete('project');
+    setSearchParams(p);
   };
 
-  const handleClearFilters = () => {
-    setFilters({
-      region: 'All Regions',
-      sdg: 'All SDGs',
-    });
-  };
+  const handleClearFilters = () => setFilters({ region: 'All Regions', sdg: 'All SDGs' });
 
-  // Pre-compute marker icons only when markers array changes
   const markerElements = useMemo(
     () =>
       markers.map((marker) => ({
         marker,
-        icon: marker.primarySdg
-          ? createSDGMarker({
-              sdgNumber: marker.primarySdg,
-              projectName: marker.projectName,
-              size: getMarkerSizeByFunding(marker.fundingNeeded || 0),
-            })
-          : undefined,
+        icon: createRegionMarker({
+          sdgNumber: marker.primarySdg ?? undefined,
+          region: marker.region,
+          projectName: marker.projectName,
+          size: getMarkerSizeByFunding(marker.fundingNeeded || 0),
+        }),
       })),
     [markers]
   );
 
+  // ─── Region legend (inside map) ───
+  const RegionLegend = (
+    <div className="absolute bottom-8 left-4 z-[1000] bg-white/95 backdrop-blur-sm shadow-lg rounded-lg p-3 border border-gray-200 min-w-[210px]">
+      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">UIA Sections</p>
+      <div className="space-y-1.5">
+        {Object.entries(REGION_LABELS).map(([region, label]) => (
+          <button
+            key={region}
+            onClick={() => setFilters((f) => ({ ...f, region: region as any }))}
+            className={`flex items-center gap-2 w-full text-left rounded px-1 py-0.5 transition-colors ${
+              filters.region === region ? 'bg-gray-100' : 'hover:bg-gray-50'
+            }`}
+          >
+            <span style={{ background: REGION_COLORS[region] }} className="w-3 h-3 rounded-full flex-shrink-0 border border-white shadow-sm" />
+            <span className="text-[11px] text-gray-700 leading-tight">{label}</span>
+          </button>
+        ))}
+        {filters.region && filters.region !== 'All Regions' && (
+          <button
+            onClick={() => setFilters((f) => ({ ...f, region: 'All Regions' }))}
+            className="text-[10px] text-gray-400 hover:text-gray-600 w-full text-center pt-1 border-t border-gray-100 mt-1"
+          >
+            Clear ×
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="h-screen w-screen flex flex-col bg-white text-mapbox-light overflow-hidden relative">
-      {/* Inject custom marker and legend styles */}
+    <div className="h-screen flex flex-col overflow-hidden bg-white">
       <style>{MARKER_STYLES}</style>
       <style>{LEGEND_STYLES}</style>
       <style>{EMPTY_STATE_STYLES}</style>
 
-      {/* Main Content (Map or Table) */}
-      <div className="absolute inset-0 z-0">
-         {viewMode === 'map' ? (
-                       <MapContainer
-                         center={[20, 0]}
-                         zoom={2}
-                         style={{ height: '100%', width: '100%', background: '#e5e5e5' }}
-                         zoomSnap={0.5}
-                         zoomDelta={0.5}
-                         wheelPxPerZoomLevel={120}
-                         scrollWheelZoom={true}
-                         zoomControl={false}
-                       >
-                         <ZoomControl position="bottomright" />
-                         <LayersControl position="bottomright">
-                           {Object.entries(BASEMAPS).map(([key, config]) => (
-                             <LayersControl.BaseLayer
-                               key={key}
-                               name={config.name}
-                               checked={key === 'streets'}
-                             >
-                               <TileLayer
-                                 attribution={config.attribution}
-                                 url={config.url}
-                               />
-                             </LayersControl.BaseLayer>
-                           ))}
-                         </LayersControl>
-           
-                         <MarkerClusterGroup chunkedLoading>
-           
-                {markerElements.map(({ marker, icon }) => {
-                  return (
+      {/* ══ TOP BAR ══ */}
+      <header className="h-14 flex-shrink-0 flex items-center gap-3 px-4 border-b border-gray-200 bg-white z-40 shadow-sm">
+        {/* Left: logo + mobile filter toggle */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Link
+            to="/"
+            className="p-1.5 text-gray-500 hover:text-uia-red hover:bg-gray-100 rounded-md transition-colors"
+            title="Home"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+          </Link>
+          <div className="hidden sm:flex items-baseline gap-1.5">
+            <span className="font-display font-bold text-base text-black tracking-uia-normal">Panorama</span>
+            <span className="font-display font-bold text-base text-uia-red tracking-uia-normal">SDG</span>
+          </div>
+          {/* Mobile: filter drawer toggle */}
+          <button
+            onClick={() => setShowFilters(true)}
+            className="md:hidden p-1.5 text-gray-500 hover:text-uia-blue hover:bg-gray-100 rounded-md transition-colors"
+            title="Filters (F)"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Center: Search */}
+        <div className="flex-1 min-w-0">
+          <SmartSearch
+            onProjectSelect={handleProjectSelect}
+            onFilterChange={(filter) => {
+              setFilters((prev) => ({
+                ...prev,
+                city: filter.city !== undefined ? filter.city : prev.city,
+                sdg: filter.sdg !== undefined ? (filter.sdg as any) : prev.sdg,
+              }));
+            }}
+          />
+        </div>
+
+        {/* Right: controls */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Map / List / Analytics toggle */}
+          <div className="flex border border-gray-200 rounded-md overflow-hidden text-sm font-display font-medium">
+            <button
+              onClick={() => setViewMode('map')}
+              title="Map view (M)"
+              className={`px-3 py-1.5 flex items-center gap-1.5 transition-colors ${
+                viewMode === 'map' ? 'bg-uia-blue text-white' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="hidden sm:inline">Map</span>
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              title="List view (L)"
+              className={`px-3 py-1.5 flex items-center gap-1.5 border-l border-gray-200 transition-colors ${
+                viewMode === 'table' ? 'bg-uia-blue text-white' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              <span className="hidden sm:inline">List</span>
+            </button>
+            <button
+              onClick={() => setViewMode('analytics')}
+              title="Analytics (A)"
+              className={`px-3 py-1.5 flex items-center gap-1.5 border-l border-gray-200 transition-colors ${
+                viewMode === 'analytics' ? 'bg-uia-blue text-white' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <span className="hidden sm:inline">Analytics</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* ══ BODY ROW ══ */}
+      <div className="flex-1 flex overflow-hidden">
+
+        {/* ── LEFT SIDEBAR ── */}
+        {/* Mobile backdrop */}
+        {showFilters && isMobile && (
+          <div
+            className="fixed inset-0 z-40 bg-black/40 md:hidden"
+            onClick={() => setShowFilters(false)}
+          />
+        )}
+
+        <aside
+          className={[
+            'flex-shrink-0 border-r border-gray-200 bg-white flex flex-col overflow-hidden transition-transform duration-300',
+            isMobile
+              ? `fixed inset-y-0 left-0 z-50 w-80 shadow-2xl ${showFilters ? 'translate-x-0' : '-translate-x-full'}`
+              : 'w-72 relative translate-x-0',
+          ].join(' ')}
+        >
+          {/* KPI compact grid */}
+          <div className="flex-shrink-0 p-4 border-b border-gray-100 grid grid-cols-3 gap-3">
+            <div>
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Projects</div>
+              <div className="text-2xl font-display font-bold text-uia-blue">
+                <AnimatedCounter value={kpis.totalProjects} />
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cities</div>
+              <div className="text-2xl font-display font-bold text-uia-violet">
+                <AnimatedCounter value={kpis.citiesEngaged} />
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Countries</div>
+              <div className="text-2xl font-display font-bold text-uia-blue">
+                <AnimatedCounter value={kpis.countriesRepresented} />
+              </div>
+            </div>
+          </div>
+
+          {/* Filters header */}
+          <div className="flex-shrink-0 px-4 py-2.5 border-b border-gray-100 flex items-center justify-between">
+            <h2 className="text-xs font-display font-bold text-gray-500 uppercase tracking-wider">Filters</h2>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleClearFilters}
+                className="text-xs text-uia-blue hover:text-uia-red transition-colors font-medium"
+              >
+                Reset
+              </button>
+              {isMobile && (
+                <button
+                  onClick={() => setShowFilters(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filters scroll area */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <FilterControls
+              filters={filters}
+              onFilterChange={setFilters}
+              onClearFilters={handleClearFilters}
+            />
+          </div>
+
+          {/* Footer: visible count */}
+          <div className="flex-shrink-0 px-4 py-2.5 border-t border-gray-100 bg-gray-50/80 text-xs text-gray-500">
+            {loading ? 'Loading…' : viewMode === 'map' ? `${markers.length} project${markers.length !== 1 ? 's' : ''} on map` : 'Use Map view to see markers'}
+          </div>
+        </aside>
+
+        {/* ── CENTER: MAP or TABLE ── */}
+        <main className="flex-1 relative overflow-hidden">
+
+          {viewMode === 'analytics' ? (
+            <div className="h-full overflow-y-auto bg-gray-50">
+              <AnalyticsPanel filters={filters} />
+            </div>
+          ) : viewMode === 'map' ? (
+            <MapContainer
+              center={[20, 0]}
+              zoom={2}
+              style={{ height: '100%', width: '100%', background: '#e5e5e5' }}
+              zoomSnap={0.5}
+              zoomDelta={0.5}
+              wheelPxPerZoomLevel={120}
+              scrollWheelZoom={true}
+              zoomControl={false}
+            >
+              <ZoomControl position="bottomright" />
+              <LayersControl position="bottomright">
+                {Object.entries(BASEMAPS).map(([key, config]) => (
+                  <LayersControl.BaseLayer key={key} name={config.name} checked={key === 'streets'}>
+                    <TileLayer attribution={config.attribution} url={config.url} />
+                  </LayersControl.BaseLayer>
+                ))}
+              </LayersControl>
+
+              <MarkerClusterGroup
+                chunkedLoading
+                maxClusterRadius={40}
+                disableClusteringAtZoom={6}
+                spiderfyOnMaxZoom={true}
+                showCoverageOnHover={false}
+                iconCreateFunction={createRegionClusterIcon}
+              >
+                {markerElements.map(({ marker, icon }) => (
                   <Marker
                     key={marker.id}
                     position={[marker.latitude, marker.longitude]}
@@ -296,264 +450,128 @@ export default function Dashboard() {
                       mouseout: (e) => e.target.closePopup(),
                     }}
                   >
-                    <Popup 
-                      className="custom-popup p-0 overflow-hidden" 
-                      closeButton={false} 
-                      maxWidth={isMobile ? 220 : 280} 
-                      minWidth={isMobile ? 200 : 240}
+                    <Popup
+                      className="custom-popup p-0 overflow-hidden"
+                      closeButton={false}
+                      maxWidth={260}
+                      minWidth={220}
                     >
-                      <div className="bg-white rounded-lg shadow-sm overflow-hidden text-gray-900">
+                      <div className="bg-white overflow-hidden text-gray-900 rounded-lg shadow-sm">
+                        {/* Image or region-colored placeholder */}
                         {marker.imageUrl ? (
-                          <div className="h-32 w-full overflow-hidden">
-                             <img 
-                               src={marker.imageUrl} 
-                               alt={marker.projectName} 
-                               className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500" 
-                             />
+                          <div className="h-28 w-full overflow-hidden">
+                            <img
+                              src={marker.imageUrl}
+                              alt={marker.projectName}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                         ) : (
-                           <div className="h-24 w-full bg-gray-100 flex items-center justify-center">
-                              <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                           </div>
+                          <div
+                            className="h-20 w-full flex flex-col items-center justify-center gap-0.5"
+                            style={{
+                              background: `linear-gradient(135deg, ${REGION_COLORS[marker.region] || '#577CB3'} 0%, ${REGION_COLORS[marker.region] || '#577CB3'}99 100%)`,
+                            }}
+                          >
+                            <span className="text-white/90 text-[10px] font-medium text-center px-3 leading-tight">
+                              {marker.region?.replace('Section ', 'S').split(' - ')[1] || 'UIA Project'}
+                            </span>
+                            {marker.primarySdg && (
+                              <span className="text-white text-xs font-bold">SDG {marker.primarySdg}</span>
+                            )}
+                          </div>
                         )}
-                        
+
                         <div className="p-3">
-                          <h3 className="font-bold text-sm leading-tight mb-1 text-gray-900">
+                          <h3 className="font-bold text-sm leading-snug mb-1 text-gray-900 line-clamp-2">
                             {marker.projectName}
                           </h3>
-                          <p className="text-xs text-gray-500 mb-2 flex items-center">
-                             <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                             {marker.city}, {marker.country}
+                          <p className="text-xs text-gray-500 flex items-center gap-1 mb-2">
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {marker.city}, {marker.country}
                           </p>
-                          
-                          <div className="flex justify-between items-center mt-3">
-                              {marker.status && (
-                                <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
-                                    marker.status === 'Implemented' ? 'bg-green-100 text-green-700' :
-                                    marker.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
-                                    'bg-yellow-100 text-yellow-700'
-                                }`}>
-                                    {marker.status}
-                                </span>
-                              )}
-                              <button
-                                onClick={() => handleProjectSelect(marker.id)}
-                                className="text-xs font-medium text-primary-600 hover:text-primary-700 hover:underline"
-                              >
-                                View Details →
-                              </button>
+                          <div className="flex justify-between items-center">
+                            {marker.status && (
+                              <span className={`inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide ${
+                                marker.status === 'Implemented' ? 'bg-green-100 text-green-700' :
+                                marker.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                                'bg-yellow-100 text-yellow-700'
+                              }`}>
+                                {marker.status}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => handleProjectSelect(marker.id)}
+                              className="text-xs font-medium text-uia-blue hover:text-uia-red hover:underline transition-colors ml-auto"
+                            >
+                              View Details →
+                            </button>
                           </div>
                         </div>
                       </div>
                     </Popup>
                   </Marker>
-                  );
-                })}
+                ))}
               </MarkerClusterGroup>
 
               <MapUpdater markers={markers} />
             </MapContainer>
-         ) : (
-            <div className="h-full pt-32 pb-0 bg-gray-50">
-               <ProjectTable filters={filters} onProjectClick={(p) => handleProjectSelect(p.id)} />
+          ) : (
+            <div className="h-full overflow-y-auto bg-gray-50">
+              <ProjectTable filters={filters} onProjectClick={(p) => handleProjectSelect(p.id)} />
             </div>
-         )}
+          )}
 
-         {/* SDG Legend (only show in map view) */}
-         {viewMode === 'map' && !loading && markers.length > 0 && (
-           <SDGLegend
-             onSDGClick={(sdgId) => {
-               setFilters({ ...filters, sdg: sdgId as any });
-             }}
-             activeSdg={typeof filters.sdg === 'number' ? filters.sdg : null}
-           />
-         )}
-
-         {/* Empty State (when no markers found) */}
-         {viewMode === 'map' && !loading && markers.length === 0 && (
-           <EmptyState
-             icon="🌍"
-             title="No Projects Found"
-             description="No projects match your current filters. Try adjusting your criteria or clearing all filters to see the full catalog of sustainable development projects."
-             actionLabel="Clear All Filters"
-             onAction={handleClearFilters}
-             secondaryActionLabel="View All Projects"
-             onSecondaryAction={() => {
-               handleClearFilters();
-               setViewMode('table');
-             }}
-           />
-         )}
-
-         {/* Loading State */}
-         {loading && viewMode === 'map' && (
-           <div className="absolute inset-0 flex items-center justify-center z-20 bg-white/50 backdrop-blur-sm pointer-events-none">
-             <div className="bg-white p-8 rounded-2xl shadow-2xl shadow-black/10 pointer-events-auto">
-               <div className="flex flex-col items-center gap-4">
-                 <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin"></div>
-                 <p className="text-gray-600 font-medium">Loading projects...</p>
-               </div>
-             </div>
-           </div>
-         )}
-      </div>
-
-      {/* Header Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-30 px-6 py-4 pointer-events-none">
-        <div className="flex justify-between items-start">
-           <div className="pointer-events-auto flex gap-4">
-             <Link
-               to="/"
-               className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center text-uia-dark hover:text-uia-red"
-               title="Return to Home"
-             >
-               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-             </Link>
-             <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-4 shadow-lg shadow-black/5 hover:shadow-xl transition-shadow duration-300">
-               <h1 className="text-2xl font-display font-bold text-black tracking-uia-normal">SDG Atlas</h1>
-               <p className="text-xs font-display text-uia-dark mt-1 uppercase tracking-uia-wide">Global Sustainable Development Projects</p>
-             </div>
-             
-             {/* View Toggle */}
-             <div className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-1 shadow-lg shadow-black/5 flex items-center h-full self-stretch">
-               <button
-                 onClick={() => setViewMode('map')}
-                 className={`px-3 py-1.5 rounded-sm text-sm font-display font-medium transition-all duration-200 h-full flex items-center gap-2 ${viewMode === 'map' ? 'bg-uia-blue/10 text-uia-blue shadow-sm' : 'text-uia-dark hover:text-black hover:bg-uia-gray-light'}`}
-               >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  <span className="hidden sm:inline">Map</span>
-               </button>
-               <button
-                 onClick={() => setViewMode('table')}
-                 className={`px-3 py-1.5 rounded-sm text-sm font-display font-medium transition-all duration-200 h-full flex items-center gap-2 ${viewMode === 'table' ? 'bg-uia-blue/10 text-uia-blue shadow-sm' : 'text-uia-dark hover:text-black hover:bg-uia-gray-light'}`}
-               >
-                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
-                 <span className="hidden sm:inline">List</span>
-               </button>
-             </div>
-
-             <button
-               onClick={() => setShowAnalytics(true)}
-               className="bg-white/90 backdrop-blur-md border border-uia-dark rounded-md px-4 py-2 shadow-lg shadow-black/5 hover:bg-white hover:-translate-y-0.5 hover:shadow-xl transition-all duration-200 flex items-center gap-2 h-full self-stretch group text-uia-dark hover:text-uia-blue"
-             >
-               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-               </svg>
-               <span className="font-display font-medium text-sm hidden sm:block">Analytics</span>
-             </button>
-           </div>
-           
-           {/* Floating KPI Cards - UIA Style */}
-           <div className="pointer-events-auto bg-white/90 backdrop-blur-md border border-uia-dark rounded-md p-2 shadow-lg shadow-black/5 hidden md:flex gap-4">
-              <div className="px-4 py-2 border-r border-uia-dark last:border-0">
-                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Projects</div>
-                 <div className="text-xl font-display font-bold text-uia-blue">
-                    <AnimatedCounter value={kpis.totalProjects} />
-                 </div>
-              </div>
-              <div className="px-4 py-2 border-r border-uia-dark last:border-0">
-                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Cities</div>
-                 <div className="text-xl font-display font-bold text-uia-violet">
-                    <AnimatedCounter value={kpis.citiesEngaged} />
-                 </div>
-              </div>
-               <div className="px-4 py-2 border-r border-uia-dark last:border-0">
-                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Countries</div>
-                 <div className="text-xl font-display font-bold text-uia-blue">
-                    <AnimatedCounter value={kpis.countriesRepresented} />
-                 </div>
-              </div>
-               <div className="px-4 py-2 border-r border-uia-dark last:border-0">
-                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Funding Needed</div>
-                 <div className="text-xl font-display font-bold text-uia-red">
-                    <AnimatedCounter value={kpis.totalFundingNeeded} formatter={formatCurrency} />
-                 </div>
-              </div>
-               <div className="px-4 py-2">
-                 <div className="text-xs text-uia-dark uppercase font-display font-bold tracking-uia-wide">Funding Spent</div>
-                 <div className="text-xl font-display font-bold text-uia-blue">
-                    <AnimatedCounter value={kpis.totalFundingSpent} formatter={formatCurrency} />
-                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Search Bar Row */}
-          <div className="pointer-events-auto flex justify-center">
-            <SmartSearch
-              onProjectSelect={handleProjectSelect}
-              onFilterChange={(filter) => {
-                setFilters((prev) => ({
-                  ...prev,
-                  city: filter.city !== undefined ? filter.city : prev.city,
-                  sdg: filter.sdg !== undefined ? (filter.sdg as any) : prev.sdg,
-                }));
-              }}
+          {/* Map overlays */}
+          {viewMode === 'map' && !loading && markers.length > 0 && (
+            <SDGLegend
+              onSDGClick={(sdgId) => setFilters((f) => ({ ...f, sdg: sdgId as any }))}
+              activeSdg={typeof filters.sdg === 'number' ? filters.sdg : null}
             />
-          </div>
-        </div>
+          )}
+          {viewMode === 'map' && !loading && markers.length > 0 && RegionLegend}
 
-      {/* Analytics Panel Overlay */}
-      {showAnalytics && (
-        <AnalyticsPanel filters={filters} onClose={() => setShowAnalytics(false)} />
-      )}
-
-      {/* Sidebar Overlay */}
-      <div className={`absolute top-32 left-6 bottom-6 w-80 z-20 transition-transform duration-300 transform ${showFilters ? 'translate-x-0' : '-translate-x-[110%]'}`}>
-         <div className="h-full flex flex-col bg-white/95 backdrop-blur-md border border-uia-dark rounded-md shadow-2xl shadow-black/10 overflow-hidden">
-            <div className="p-4 border-b border-uia-dark flex justify-between items-center">
-              <h2 className="font-display font-semibold text-black">Filters</h2>
-              <button onClick={handleClearFilters} className="text-xs text-uia-blue hover:text-uia-red font-display font-medium">Reset</button>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                <div className="light-theme-wrapper">
-                   <FilterControls
-                      filters={filters}
-                      onFilterChange={setFilters}
-                      onClearFilters={handleClearFilters}
-                   />
-                </div>
-            </div>
-
-            <div className="p-4 border-t border-gray-200 bg-gray-50/50">
-               <div className="flex items-center justify-between text-xs text-gray-500">
-                 <span>Visible: <span className="text-gray-900 font-medium">{markers.length}</span></span>
-                 <button onClick={() => setShowFilters(false)} className="md:hidden text-gray-900 font-medium">Hide</button>
-               </div>
-            </div>
-         </div>
-      </div>
-
-      {/* Mobile Toggle Button */}
-      {!showFilters && (
-        <button 
-          onClick={() => setShowFilters(true)}
-          className="absolute top-32 left-6 z-20 bg-white text-gray-600 p-3 rounded-lg shadow-lg hover:text-primary-600 transition-colors border border-gray-200"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-        </button>
-      )}
-
-      {/* Loading State Overlay - Only for Map View */}
-      {loading && viewMode === 'map' && (
-        <div className="absolute inset-0 bg-white/60 flex items-center justify-center z-50 backdrop-blur-sm">
-           <div className="flex flex-col items-center">
-             <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
-             <p className="mt-4 text-gray-900 font-medium tracking-wide">Loading Atlas Data...</p>
-           </div>
-        </div>
-      )}
-
-      {/* Project Details Panel Overlay */}
-      {selectedProject && (
-         <div className="absolute top-0 right-0 bottom-0 w-full md:w-[480px] z-20 bg-white shadow-2xl border-l border-gray-200 transform transition-transform duration-300">
-            <ProjectDetailPanel 
-               project={selectedProject} 
-               onClose={handleProjectClose} 
+          {viewMode === 'map' && !loading && markers.length === 0 && (
+            <EmptyState
+              icon="🌍"
+              title="No Projects Found"
+              description="No projects match your current filters. Try adjusting your criteria or clearing all filters."
+              actionLabel="Clear All Filters"
+              onAction={handleClearFilters}
+              secondaryActionLabel="View All Projects"
+              onSecondaryAction={() => { handleClearFilters(); setViewMode('table'); }}
             />
-         </div>
-      )}
+          )}
+
+          {loading && viewMode === 'map' && (
+            <div className="absolute inset-0 flex items-center justify-center z-20 bg-white/60 backdrop-blur-sm pointer-events-none">
+              <div className="bg-white px-8 py-6 rounded-2xl shadow-2xl shadow-black/10 flex flex-col items-center gap-4 pointer-events-auto">
+                <div className="w-12 h-12 border-4 border-uia-blue/20 border-t-uia-blue rounded-full animate-spin" />
+                <p className="text-gray-600 font-medium text-sm">Loading Atlas data…</p>
+              </div>
+            </div>
+          )}
+
+        </main>
+
+        {/* ── RIGHT SIDEBAR: PROJECT DETAIL ── */}
+        {selectedProject && (
+          isMobile ? (
+            /* Mobile: full-screen overlay */
+            <div className="fixed inset-0 z-50 bg-white flex flex-col overflow-hidden">
+              <ProjectDetailPanel project={selectedProject} onClose={handleProjectClose} />
+            </div>
+          ) : (
+            /* Desktop: flex sibling */
+            <aside className="w-[420px] flex-shrink-0 border-l border-gray-200 flex flex-col overflow-hidden">
+              <ProjectDetailPanel project={selectedProject} onClose={handleProjectClose} />
+            </aside>
+          )
+        )}
+      </div>
     </div>
   );
 }

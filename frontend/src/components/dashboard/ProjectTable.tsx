@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { mockDashboardAPI as dashboardAPI } from '../../services/api/mockDashboardAPI';
+import { dashboardAPI } from '../../services/api/dashboardAPI';
 import type { Project, FilterOptions } from '../../types';
 import { TableSkeleton } from '../common/Skeleton';
 
@@ -57,14 +57,11 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
         "City",
         "Country",
         "Status",
-        "Funding Needed",
-        "Funding Spent",
         "Organization"
       ];
 
       const escapeCsv = (str: string | undefined | null) => {
         if (!str) return '';
-        // Use split/join to avoid regex parsing issues in some environments
         return `"${String(str).split('"').join('""')}"`;
       };
 
@@ -74,8 +71,6 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
         escapeCsv(p.city),
         escapeCsv(p.country),
         escapeCsv(p.projectStatus),
-        p.fundingNeeded,
-        p.fundingSpent || 0,
         escapeCsv(p.organizationName)
       ].join(","));
 
@@ -119,7 +114,6 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">City</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Funding Needed</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -127,7 +121,7 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
               <TableSkeleton />
             ) : projects.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">No projects found matching filters.</td>
+                <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">No projects found matching filters.</td>
               </tr>
             ) : (
               projects.map((project) => (
@@ -140,15 +134,12 @@ export default function ProjectTable({ filters, onProjectClick }: ProjectTablePr
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{project.uiaRegion}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{project.city}, {project.country}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                      ${project.projectStatus === 'Implemented' ? 'bg-green-100 text-green-800' : 
-                        project.projectStatus === 'In Progress' ? 'bg-blue-100 text-blue-800' : 
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                      ${project.projectStatus === 'Implemented' ? 'bg-green-100 text-green-800' :
+                        project.projectStatus === 'In Progress' ? 'bg-blue-100 text-blue-800' :
                         'bg-yellow-100 text-yellow-800'}`}>
                       {project.projectStatus}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    ${project.fundingNeeded.toLocaleString()}
                   </td>
                 </tr>
               ))
