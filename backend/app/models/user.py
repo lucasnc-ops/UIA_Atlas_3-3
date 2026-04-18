@@ -1,15 +1,8 @@
-from sqlalchemy import Column, String, DateTime, Enum
+from sqlalchemy import Column, String, DateTime, Enum, Uuid
 from datetime import datetime
 import uuid
 import enum
 from ..core.database import Base
-
-# For SQLite compatibility
-try:
-    from sqlalchemy.dialects.postgresql import UUID as PGUUID
-    UUID = PGUUID
-except:
-    UUID = String(36)
 
 
 class UserRole(str, enum.Enum):
@@ -24,7 +17,7 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(Enum(UserRole), default=UserRole.REVIEWER, nullable=False)

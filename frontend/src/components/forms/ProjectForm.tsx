@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import ReCAPTCHA from 'react-google-recaptcha';
-import type { ProjectCreate } from '../../services/api/projects';
+import { projectsApi, type ProjectCreate } from '../../services/api/projects';
 import {
   UIA_REGIONS,
   PROJECT_STATUSES,
@@ -32,8 +32,9 @@ export default function ProjectForm({
   isPublicSubmission = false,
   submitLabel = 'Submit Project',
 }: ProjectFormProps) {
-  const [imageInput, setImageInput] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch, reset } = useForm<ProjectCreate>({
     defaultValues: {
@@ -43,6 +44,7 @@ export default function ProjectForm({
       government_requirements: [],
       other_requirements: [],
       funding_needed: 0,
+      image_urls: [],
       gdpr_consent: false,
       ...initialValues
     }
@@ -58,35 +60,25 @@ export default function ProjectForm({
         government_requirements: [],
         other_requirements: [],
         funding_needed: 0,
+        image_urls: [],
         gdpr_consent: false,
         ...initialValues
       });
-      if (initialValues.image_urls) {
-        setImageInput(initialValues.image_urls.join('\n'));
-      }
     }
   }, [initialValues, reset]);
 
   const selectedSDGs = watch('sdgs');
+  const imageUrls = watch('image_urls') || [];
 
   const onFormSubmit: SubmitHandler<ProjectCreate> = async (data) => {
     // Require captcha for public submissions
     if (isPublicSubmission && !captchaToken) {
-      // We can't set error in parent easily without callback, but we can stop here.
-      // Ideally parent handles error state, but for local validation like this:
       alert("Please verify that you are not a robot.");
       return;
     }
 
-    // Process image URLs from string input
-    const urls = imageInput
-      .split('\n')
-      .map(url => url.trim())
-      .filter(url => url.length > 0);
-    
     const payload = {
       ...data,
-      image_urls: urls,
       // Ensure numbers are parsed
       funding_needed: Number(data.funding_needed),
       latitude: data.latitude ? Number(data.latitude) : undefined,
@@ -106,6 +98,39 @@ export default function ProjectForm({
     }
   };
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    const newUrls = [...imageUrls];
+
+    for (let i = 0; i < files.length; i++) {
+      try {
+        const result = await projectsApi.uploadImage(files[i]);
+        newUrls.push(result.url);
+      } catch (err: any) {
+        console.error("Failed to upload image:", err);
+        const errorMessage = err.response?.data?.detail || `Failed to upload ${files[i].name}`;
+        alert(errorMessage);
+      }
+    }
+
+    setValue('image_urls', newUrls);
+    setIsUploading(false);
+    
+    // Clear the input so same files can be re-selected if needed
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeImage = (index: number) => {
+    const newUrls = [...imageUrls];
+    newUrls.splice(index, 1);
+    setValue('image_urls', newUrls);
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       {submitError && (
@@ -114,82 +139,87 @@ export default function ProjectForm({
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-8 bg-mapbox-card p-8 rounded-xl shadow-xl border border-mapbox-border">
+      <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-12 bg-white p-8 md:p-12 border-2 border-uia-dark/10 shadow-uia-card">
         
         {/* Contact Information */}
         <section>
-          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-2xl font-display font-bold uppercase tracking-wider text-uia-blue mb-8 pb-3 border-b-2 border-uia-blue/10">
             Contact Information
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Organization Name</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Organization Name</label>
               <input
                 type="text"
                 {...register('organization_name', { required: 'Organization name is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia"
+                placeholder="Name of your organization"
               />
-              {errors.organization_name && <p className="mt-1 text-sm text-red-400">{errors.organization_name.message}</p>}
+              {errors.organization_name && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.organization_name.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Contact Person</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Contact Person</label>
               <input
                 type="text"
                 {...register('contact_person', { required: 'Contact person is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia"
+                placeholder="First and Last Name"
               />
-              {errors.contact_person && <p className="mt-1 text-sm text-red-400">{errors.contact_person.message}</p>}
+              {errors.contact_person && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.contact_person.message}</p>}
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Contact Email</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Contact Email</label>
               <input
                 type="email"
                 {...register('contact_email', { required: 'Email is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia"
+                placeholder="email@example.com"
               />
-              {errors.contact_email && <p className="mt-1 text-sm text-red-400">{errors.contact_email.message}</p>}
+              {errors.contact_email && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.contact_email.message}</p>}
             </div>
           </div>
         </section>
 
         {/* Project Basics */}
         <section>
-          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-2xl font-display font-bold uppercase tracking-wider text-uia-blue mb-8 pb-3 border-b-2 border-uia-blue/10">
             Project Details
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Project Name</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Project Name</label>
               <input
                 type="text"
                 {...register('project_name', { required: 'Project name is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia"
+                placeholder="Enter the project's full title"
               />
-              {errors.project_name && <p className="mt-1 text-sm text-red-400">{errors.project_name.message}</p>}
+              {errors.project_name && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.project_name.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Project Status</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Project Status</label>
               <select
                 {...register('project_status', { required: 'Status is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[position:right_0.5rem_center] bg-[length:1.5em_1.5em] bg-no-repeat pr-10"
               >
                 <option value="">Select Status</option>
                 {PROJECT_STATUSES.map(status => (
                   <option key={status} value={status}>{status}</option>
                 ))}
               </select>
-              {errors.project_status && <p className="mt-1 text-sm text-red-400">{errors.project_status.message}</p>}
+              {errors.project_status && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.project_status.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Funding Needed (USD)</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Funding Needed (USD)</label>
               <input
                 type="number"
                 {...register('funding_needed', { min: 0 })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia"
+                placeholder="0.00"
               />
             </div>
           </div>
@@ -197,59 +227,65 @@ export default function ProjectForm({
 
         {/* Location */}
         <section>
-          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-2xl font-display font-bold uppercase tracking-wider text-uia-blue mb-8 pb-3 border-b-2 border-uia-blue/10">
             Location
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">UIA Region</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">UIA Region</label>
               <select
                 {...register('uia_region', { required: 'Region is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[position:right_0.5rem_center] bg-[length:1.5em_1.5em] bg-no-repeat pr-10"
               >
                 <option value="">Select Region</option>
                 {UIA_REGIONS.map(region => (
                   <option key={region} value={region}>{region}</option>
                 ))}
               </select>
-              {errors.uia_region && <p className="mt-1 text-sm text-red-400">{errors.uia_region.message}</p>}
+              {errors.uia_region && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.uia_region.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">City</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">City</label>
               <input
                 type="text"
                 {...register('city', { required: 'City is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia"
+                placeholder="City name"
               />
+              {errors.city && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.city.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Country</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Country</label>
               <input
                 type="text"
                 {...register('country', { required: 'Country is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia"
+                placeholder="Country name"
               />
+              {errors.country && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.country.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Latitude</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Latitude</label>
               <input
                 type="number"
                 step="any"
                 {...register('latitude', { min: -90, max: 90 })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia"
+                placeholder="e.g. 41.3851"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Longitude</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Longitude</label>
               <input
                 type="number"
                 step="any"
                 {...register('longitude', { min: -180, max: 180 })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia"
+                placeholder="e.g. 2.1734"
               />
             </div>
           </div>
@@ -257,153 +293,172 @@ export default function ProjectForm({
 
         {/* Description */}
         <section>
-          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-2xl font-display font-bold uppercase tracking-wider text-uia-blue mb-8 pb-3 border-b-2 border-uia-blue/10">
             Description
           </h2>
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Brief Description (Summary)</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Brief Description (Summary)</label>
               <textarea
                 rows={3}
                 {...register('brief_description', { required: 'Brief description is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia min-h-[100px]"
+                placeholder="Summarize the project's goal and impact"
               />
-              {errors.brief_description && <p className="mt-1 text-sm text-red-400">{errors.brief_description.message}</p>}
+              {errors.brief_description && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.brief_description.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Detailed Description</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Detailed Description</label>
               <textarea
                 rows={6}
                 {...register('detailed_description', { required: 'Detailed description is required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia min-h-[200px]"
+                placeholder="Provide a comprehensive description of the project"
               />
+              {errors.detailed_description && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.detailed_description.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Success Factors</label>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Success Factors</label>
               <textarea
                 rows={4}
                 {...register('success_factors', { required: 'Success factors are required' })}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
+                className="input-uia min-h-[150px]"
                 placeholder="What makes this project successful? (e.g. Community involvement, innovative technology...)"
               />
+              {errors.success_factors && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.success_factors.message}</p>}
             </div>
           </div>
         </section>
 
         {/* SDGs */}
         <section>
-          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-2xl font-display font-bold uppercase tracking-wider text-uia-blue mb-8 pb-3 border-b-2 border-uia-blue/10">
             Sustainable Development Goals
           </h2>
-          <p className="text-sm text-mapbox-gray mb-4">Select all that apply.</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <p className="font-sans text-sm text-uia-dark mb-6">Select all UN Sustainable Development Goals that apply to this project.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {SDGS.map(sdg => (
               <div
                 key={sdg.id}
                 onClick={() => toggleSDG(sdg.id)}
-                className={`cursor-pointer p-3 rounded-lg border transition-all ${selectedSDGs?.includes(sdg.id)
-                    ? 'border-transparent ring-2 ring-primary-500 bg-primary-900/20'
-                    : 'border-mapbox-border bg-mapbox-dark hover:border-primary-500/50'
+                className={`cursor-pointer group flex flex-col items-center p-4 transition-all duration-200 border-2 ${selectedSDGs?.includes(sdg.id)
+                    ? 'border-uia-blue bg-uia-blue/5 scale-[1.02]'
+                    : 'border-transparent bg-uia-gray-light hover:bg-white hover:border-uia-dark/20'
                 }`}
               >
-                <div className="flex flex-col items-center text-center space-y-2">
-                  <div 
-                    className="w-8 h-8 flex items-center justify-center rounded-full text-white font-bold"
-                    style={{ backgroundColor: sdg.color }}
-                  >
-                    {sdg.id}
-                  </div>
-                  <span className="text-xs font-medium text-white">{sdg.name}</span>
+                <div 
+                  className="w-12 h-12 flex items-center justify-center text-white font-display font-bold text-xl shadow-sm mb-3"
+                  style={{ backgroundColor: sdg.color }}
+                >
+                  {sdg.id}
                 </div>
+                <span className={`text-[10px] font-display font-bold uppercase text-center leading-tight tracking-tight ${selectedSDGs?.includes(sdg.id) ? 'text-uia-blue' : 'text-uia-dark'}`}>
+                  {sdg.name}
+                </span>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Typologies & Requirements */}
+        {/* Categorization & Requirements */}
         <section>
-          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
+          <h2 className="text-2xl font-display font-bold uppercase tracking-wider text-uia-blue mb-8 pb-3 border-b-2 border-uia-blue/10">
             Categorization & Requirements
           </h2>
           
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-mapbox-light mb-3">Project Typologies</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="space-y-8">
+            {/* Project Typologies - Full Width Main Category */}
+            <div className="bg-uia-gray-light/30 p-6 md:p-8 border-l-5 border-uia-blue shadow-sm">
+              <label className="block font-display font-bold text-sm uppercase text-uia-blue tracking-widest mb-6">
+                Project Typologies
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-4">
                 {TYPOLOGIES.map(type => (
-                  <label key={type} className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer">
+                  <label key={type} className="inline-flex items-center group cursor-pointer">
                     <input
                       type="checkbox"
                       value={type}
                       {...register('typologies')}
-                      className="rounded border-mapbox-border bg-mapbox-dark text-primary-600 focus:ring-primary-500 h-4 w-4"
+                      className="form-checkbox h-5 w-5 text-uia-blue border-gray-300 focus:ring-uia-blue rounded-none transition duration-150 ease-in-out"
                     />
-                    <span className="ml-2 text-sm text-mapbox-gray">{type}</span>
+                    <span className="ml-3 font-sans text-sm text-gray-700 group-hover:text-uia-blue transition-colors font-medium">{type}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-mapbox-light mb-3">Funding Requirements</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {FUNDING_REQUIREMENTS.map(req => (
-                  <label key={req} className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer">
-                    <input
-                      type="checkbox"
-                      value={req}
-                      {...register('funding_requirements')}
-                      className="rounded border-mapbox-border bg-mapbox-dark text-primary-600 focus:ring-primary-500 h-4 w-4"
-                    />
-                    <span className="ml-2 text-sm text-mapbox-gray">{req}</span>
-                  </label>
-                ))}
+            {/* Sub-Categories Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Funding Card */}
+              <div className="bg-white p-6 border-l-5 border-uia-violet shadow-sm">
+                <label className="block font-display font-bold text-xs uppercase text-uia-violet tracking-wider mb-5 pb-2 border-b border-uia-violet/10">
+                  Funding Needs
+                </label>
+                <div className="space-y-3.5">
+                  {FUNDING_REQUIREMENTS.map(req => (
+                    <label key={req} className="inline-flex items-center group cursor-pointer w-full">
+                      <input
+                        type="checkbox"
+                        value={req}
+                        {...register('funding_requirements')}
+                        className="form-checkbox h-4 w-4 text-uia-violet border-gray-300 focus:ring-uia-violet rounded-none"
+                      />
+                      <span className="ml-3 font-sans text-xs text-gray-600 group-hover:text-uia-violet transition-colors">{req}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Government Card */}
+              <div className="bg-white p-6 border-l-5 border-uia-dark shadow-sm">
+                <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wider mb-5 pb-2 border-b border-uia-dark/10">
+                  Government Support
+                </label>
+                <div className="space-y-3.5">
+                  {GOVERNMENT_REQUIREMENTS.map(req => (
+                    <label key={req} className="inline-flex items-center group cursor-pointer w-full">
+                      <input
+                        type="checkbox"
+                        value={req}
+                        {...register('government_requirements')}
+                        className="form-checkbox h-4 w-4 text-uia-dark border-gray-300 focus:ring-uia-dark rounded-none"
+                      />
+                      <span className="ml-3 font-sans text-xs text-gray-600 group-hover:text-uia-dark transition-colors">{req}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Other Needs Card */}
+              <div className="bg-white p-6 border-l-5 border-gray-400 shadow-sm">
+                <label className="block font-display font-bold text-xs uppercase text-gray-600 tracking-wider mb-5 pb-2 border-b border-gray-200">
+                  Other Support
+                </label>
+                <div className="space-y-3.5">
+                  {OTHER_REQUIREMENTS.map(req => (
+                    <label key={req} className="inline-flex items-center group cursor-pointer w-full">
+                      <input
+                        type="checkbox"
+                        value={req}
+                        {...register('other_requirements')}
+                        className="form-checkbox h-4 w-4 text-gray-500 border-gray-300 focus:ring-gray-400 rounded-none"
+                      />
+                      <span className="ml-3 font-sans text-xs text-gray-600 group-hover:text-gray-900 transition-colors">{req}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-mapbox-light mb-3">Government Requirements</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {GOVERNMENT_REQUIREMENTS.map(req => (
-                  <label key={req} className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer">
-                    <input
-                      type="checkbox"
-                      value={req}
-                      {...register('government_requirements')}
-                      className="rounded border-mapbox-border bg-mapbox-dark text-primary-600 focus:ring-primary-500 h-4 w-4"
-                    />
-                    <span className="ml-2 text-sm text-mapbox-gray">{req}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-mapbox-light mb-3">Other Requirements</label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {OTHER_REQUIREMENTS.map(req => (
-                  <label key={req} className="inline-flex items-center p-2 rounded hover:bg-mapbox-dark transition-colors cursor-pointer">
-                    <input
-                      type="checkbox"
-                      value={req}
-                      {...register('other_requirements')}
-                      className="rounded border-mapbox-border bg-mapbox-dark text-primary-600 focus:ring-primary-500 h-4 w-4"
-                    />
-                    <span className="ml-2 text-sm text-mapbox-gray">{req}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-mapbox-gray mb-1">Other Requirement Details</label>
+            <div className="pt-2">
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Other Requirement Details</label>
               <input
                 type="text"
                 {...register('other_requirement_text')}
-                className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5"
-                placeholder="Specify any other requirements..."
+                className="input-uia"
+                placeholder="Specify any other specific needs or technical expertise required..."
               />
             </div>
           </div>
@@ -411,66 +466,120 @@ export default function ProjectForm({
 
         {/* Media */}
         <section>
-          <h2 className="text-xl font-semibold text-mapbox-light mb-6 pb-2 border-b border-mapbox-border">
-            Media
+          <h2 className="text-2xl font-display font-bold uppercase tracking-wider text-uia-blue mb-8 pb-3 border-b-2 border-uia-blue/10">
+            Project Images
           </h2>
-          <div>
-            <label className="block text-sm font-medium text-mapbox-gray mb-1">Image URLs</label>
-            <p className="text-xs text-mapbox-gray mb-2">Enter one URL per line. These will be displayed in the project gallery.</p>
-            <textarea
-              rows={4}
-              value={imageInput}
-              onChange={(e) => setImageInput(e.target.value)}
-              className="block w-full rounded-md border-mapbox-border bg-mapbox-dark text-mapbox-light shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm p-2.5 font-mono"
-              placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {imageUrls.map((url, index) => (
+                <div key={index} className="relative aspect-square bg-gray-100 group">
+                  <img
+                    src={url}
+                    alt={`Project ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-1 right-1 bg-uia-red text-white p-1 shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Remove image"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="aspect-square border-2 border-dashed border-gray-300 flex flex-col items-center justify-center hover:border-uia-blue hover:bg-uia-blue/5 transition-all group"
+              >
+                {isUploading ? (
+                  <svg className="animate-spin h-8 w-8 text-uia-blue" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <>
+                    <svg className="w-10 h-10 text-gray-400 group-hover:text-uia-blue mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span className="text-[10px] font-display font-bold uppercase text-gray-500 group-hover:text-uia-blue">Add Photo</span>
+                  </>
+                )}
+              </button>
+            </div>
+            
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              multiple
+              className="hidden"
             />
+            
+            <p className="font-sans text-xs text-uia-dark/60 italic">
+              Upload up to 5 high-quality images of your project. JPG, PNG or WebP, max 5MB each.
+            </p>
           </div>
         </section>
         
-        {/* Data Consent - Required only for Public Submission */}
+        {/* Data Consent */}
         {isPublicSubmission && (
-          <section className="bg-mapbox-dark/50 p-4 rounded-lg border border-mapbox-border">
-            <label className="flex items-start cursor-pointer">
+          <section className="bg-uia-gray-light p-6 border-l-5 border-uia-red shadow-sm">
+            <label className="flex items-start cursor-pointer group">
               <input
                 type="checkbox"
                 {...register('gdpr_consent', { 
                   required: 'You must consent to data processing to submit this project'
                 })}
-                className="mt-1 h-4 w-4 rounded border-mapbox-border bg-mapbox-dark text-primary-600 focus:ring-primary-500"
+                className="mt-1 h-5 w-5 text-uia-blue border-gray-300 focus:ring-uia-blue rounded-none"
               />
-              <div className="ml-3">
-                <p className="text-sm font-medium text-mapbox-light">I consent to the publication of this data.</p>
-                <p className="text-xs text-mapbox-gray mt-1">
+              <div className="ml-4">
+                <p className="font-display font-bold uppercase text-sm text-uia-black tracking-wide group-hover:text-uia-red transition-colors">I consent to the publication of this data.</p>
+                <p className="font-sans text-xs text-gray-600 mt-2 leading-relaxed">
                   By checking this box, I confirm that I have the right to share this information and images, 
                   and I agree for them to be published on the UIA SDG Atlas website.
                 </p>
                 {errors.gdpr_consent && (
-                  <p className="text-xs text-red-400 mt-1">{errors.gdpr_consent.message}</p>
+                  <p className="mt-3 text-[10px] font-bold text-uia-red uppercase tracking-widest">{errors.gdpr_consent.message}</p>
                 )}
               </div>
             </label>
           </section>
         )}
 
-        {/* Captcha - Required only for Public Submission */}
+        {/* Captcha */}
         {isPublicSubmission && (
-          <div className="pt-4 flex justify-center">
+          <div className="pt-4 flex justify-center border-t border-gray-100 mt-12">
               <ReCAPTCHA
                   sitekey={RECAPTCHA_SITE_KEY}
                   onChange={(token) => setCaptchaToken(token)}
-                  theme="dark"
+                  theme="light"
               />
           </div>
         )}
 
         {/* Submit Button */}
-        <div className="pt-4">
+        <div className="pt-8">
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-mapbox-light bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''}`}
+            className={`btn-uia-primary w-full py-4 text-base shadow-lg hover:shadow-xl transform active:scale-[0.98] ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
           >
-            {isSubmitting ? 'Submitting...' : submitLabel}
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing Submission...
+              </span>
+            ) : submitLabel}
           </button>
         </div>
       </form>

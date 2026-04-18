@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { mockDashboardAPI as dashboardAPI } from '../../services/api/mockDashboardAPI';
+import { dashboardAPI } from '../../services/api/dashboardAPI';
 
 interface SearchResult {
   id: string;
