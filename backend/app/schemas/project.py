@@ -11,7 +11,6 @@ class ProjectBase(BaseModel):
     contact_person: str
     contact_email: EmailStr
     project_status: str  # Planned | In Progress | Implemented
-    funding_needed: float = 0.0
     uia_region: str
     city: str
     country: str
@@ -51,17 +50,9 @@ class ProjectBase(BaseModel):
                 raise ValueError('SDG numbers must be between 1 and 17')
         return v
 
-    @field_validator('funding_needed')
-    @classmethod
-    def validate_funding(cls, v):
-        if v < 0:
-            raise ValueError('Funding needed cannot be negative')
-        return v
-
-
 class ProjectCreate(ProjectBase):
     """Schema for creating a project"""
-    captcha_token: Optional[str] = None
+    captcha_token: str
 
     @field_validator('gdpr_consent')
     @classmethod
@@ -79,8 +70,6 @@ class ProjectUpdate(BaseModel):
     contact_email: Optional[EmailStr] = None
     project_status: Optional[str] = None
     workflow_status: Optional[str] = None
-    funding_needed: Optional[float] = None
-    funding_spent: Optional[float] = None
     uia_region: Optional[str] = None
     city: Optional[str] = None
     country: Optional[str] = None
@@ -104,7 +93,6 @@ class ProjectResponse(ProjectBase):
     """Schema for project response"""
     id: UUID
     workflow_status: str
-    funding_spent: float
     rejection_reason: Optional[str] = None
     reviewer_notes: Optional[str] = None
     created_at: datetime
@@ -126,8 +114,6 @@ class DashboardKPIs(BaseModel):
     total_projects: int
     cities_engaged: int
     countries_represented: int
-    total_funding_needed: float
-    total_funding_spent: float
 
 
 class FilterOptions(BaseModel):

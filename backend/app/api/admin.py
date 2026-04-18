@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import List
 import uuid
@@ -11,6 +12,14 @@ from ..models.user import User
 from ..schemas.project import ProjectResponse, ProjectUpdate, ProjectListResponse
 from .projects import _format_project_response
 from ..services.email import send_changes_requested_email, send_approval_email, send_rejection_email
+
+
+class RejectBody(BaseModel):
+    reason: str
+
+
+class RequestChangesBody(BaseModel):
+    message: str
 
 router = APIRouter()
 
@@ -151,7 +160,7 @@ async def approve_project(
 @router.post("/projects/{project_id}/reject")
 async def reject_project(
     project_id: UUID,
-    reason: str,
+    body: RejectBody,
     current_user: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -166,11 +175,11 @@ async def reject_project(
         )
 
     project.workflow_status = WorkflowStatus.REJECTED
-    project.rejection_reason = reason
+    project.rejection_reason = body.reason
     db.commit()
 
     # Send email notification to submitter
-    await send_rejection_email(project.contact_email, project.project_name, reason)
+    await send_rejection_email(project.contact_email, project.project_name, body.reason)
 
     return {"message": "Project rejected", "project_id": str(project_id)}
 
@@ -178,7 +187,7 @@ async def reject_project(
 @router.post("/projects/{project_id}/request-changes")
 async def request_changes(
     project_id: UUID,
-    message: str,
+    body: RequestChangesBody,
     current_user: User = Depends(get_current_admin),
     db: Session = Depends(get_db)
 ):
@@ -193,7 +202,7 @@ async def request_changes(
         )
 
     project.workflow_status = WorkflowStatus.CHANGES_REQUESTED
-    project.reviewer_notes = message
+    project.reviewer_notes = body.message
     
     # Generate edit token if not exists
     if not project.edit_token:
@@ -203,7 +212,7 @@ async def request_changes(
 
     # Send email with edit link to submitter
     edit_link = f"{settings.FRONTEND_URL}/submit?edit_token={project.edit_token}"
-    await send_changes_requested_email(project.contact_email, project.project_name, edit_link, message)
+    await send_changes_requested_email(project.contact_email, project.project_name, edit_link, body.message)
 
     return {"message": "Changes requested", "project_id": str(project_id)}
 

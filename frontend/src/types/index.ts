@@ -63,8 +63,6 @@ export interface Project {
   contactEmail: string;
   projectStatus: ProjectStatus;
   workflowStatus: WorkflowStatus;
-  fundingNeeded: number;
-  fundingSpent: number;
   uiaRegion: UIARegion;
   city: string;
   country: string;
@@ -89,7 +87,6 @@ export interface ProjectSubmission {
   contactPerson: string;
   contactEmail: string;
   projectStatus: ProjectStatus;
-  fundingNeeded: number;
   uiaRegion: UIARegion;
   city: string;
   country: string;
@@ -128,8 +125,6 @@ export interface DashboardKPIs {
   totalProjects: number;
   citiesEngaged: number;
   countriesRepresented: number;
-  totalFundingNeeded: number;
-  totalFundingSpent: number;
 }
 
 export interface FilterOptions {
@@ -138,6 +133,7 @@ export interface FilterOptions {
   city?: string | 'All Cities';
   fundedBy?: string | 'All';
   search?: string;
+  edition?: 'all' | '2023' | '2026';
 }
 
 export interface User {

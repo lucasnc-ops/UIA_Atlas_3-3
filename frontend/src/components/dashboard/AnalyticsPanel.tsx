@@ -6,171 +6,311 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from 'recharts';
-import { mockDashboardAPI as dashboardAPI } from '../../services/api/mockDashboardAPI';
+import { dashboardAPI } from '../../services/api/dashboardAPI';
 import type { FilterOptions } from '../../types';
 
 interface AnalyticsPanelProps {
   filters: FilterOptions;
-  onClose: () => void;
 }
 
-const COLORS = [
+const SDG_COLORS = [
   '#E5243B', '#DDA63A', '#4C9F38', '#C5192D', '#FF3A21', '#26BDE2',
   '#FCC30B', '#A21942', '#FD6925', '#DD1367', '#FD9D24', '#BF8B2E',
-  '#3F7E44', '#0A97D9', '#56C02B', '#00689D', '#19486A'
+  '#3F7E44', '#0A97D9', '#56C02B', '#00689D', '#19486A',
 ];
 
-export default function AnalyticsPanel({ filters, onClose }: AnalyticsPanelProps) {
+const SDG_NAMES: Record<number, string> = {
+  1: 'No Poverty', 2: 'Zero Hunger', 3: 'Good Health', 4: 'Quality Education',
+  5: 'Gender Equality', 6: 'Clean Water', 7: 'Affordable Energy', 8: 'Decent Work',
+  9: 'Industry & Innovation', 10: 'Reduced Inequalities', 11: 'Sustainable Cities',
+  12: 'Responsible Consumption', 13: 'Climate Action', 14: 'Life Below Water',
+  15: 'Life on Land', 16: 'Peace & Justice', 17: 'Partnerships',
+};
+
+const REGION_DISPLAY: Record<string, string> = {
+  'SECTION_I': 'Section I — W. Europe',
+  'SECTION_II': 'Section II — E. Europe & C. Asia',
+  'SECTION_III': 'Section III — Middle East & Africa',
+  'SECTION_IV': 'Section IV — Asia & Pacific',
+  'SECTION_V': 'Section V — Americas',
+};
+
+const SECTION_COLORS: Record<string, string> = {
+  'SECTION_I': '#577CB3',
+  'SECTION_II': '#7B68EE',
+  'SECTION_III': '#C0392B',
+  'SECTION_IV': '#27AE60',
+  'SECTION_V': '#E67E22',
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  'Implemented': '#22c55e',
+  'In Progress': '#3b82f6',
+  'Needed but Constrained': '#f59e0b',
+  'Planned': '#8b5cf6',
+  'Unknown': '#9ca3af',
+};
+
+const CustomSDGTooltip = ({ active, payload }: any) => {
+  if (!active || !payload?.length) return null;
+  const { sdg, count } = payload[0].payload;
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-lg text-sm">
+      <p className="font-bold text-gray-900">SDG {sdg}: {SDG_NAMES[sdg] ?? ''}</p>
+      <p className="text-gray-600">{count} project{count !== 1 ? 's' : ''}</p>
+    </div>
+  );
+};
+
+const CustomCountryTooltip = ({ active, payload }: any) => {
+  if (!active || !payload?.length) return null;
+  const { country, count } = payload[0].payload;
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-lg text-sm">
+      <p className="font-bold text-gray-900">{country}</p>
+      <p className="text-gray-600">{count} project{count !== 1 ? 's' : ''}</p>
+    </div>
+  );
+};
+
+export default function AnalyticsPanel({ filters }: AnalyticsPanelProps) {
   const [sdgData, setSdgData] = useState<any[]>([]);
   const [regionData, setRegionData] = useState<any[]>([]);
   const [typologyData, setTypologyData] = useState<any[]>([]);
+  const [countryData, setCountryData] = useState<any[]>([]);
+  const [statusData, setStatusData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [sdg, region, typology] = await Promise.all([
+        const [sdg, region, typology, country, status] = await Promise.all([
           dashboardAPI.getSDGDistribution(filters),
           dashboardAPI.getRegionalDistribution(filters),
           dashboardAPI.getTypologyDistribution(filters),
+          dashboardAPI.getCountryDistribution(filters),
+          dashboardAPI.getStatusDistribution(filters),
         ]);
+        if (cancelled) return;
         setSdgData(sdg);
-        setRegionData(region);
+        setRegionData(
+          region.map((r: any) => ({
+            ...r,
+            label: REGION_DISPLAY[r.region] ?? r.region,
+            fill: SECTION_COLORS[r.region] ?? '#577CB3',
+          }))
+        );
         setTypologyData(typology);
+        setCountryData(country);
+        setStatusData(status);
       } catch (error) {
-        console.error('Error loading analytics:', error);
+        console.error('Analytics fetch error:', error);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-
     fetchData();
+    return () => { cancelled = true; };
   }, [filters]);
 
+  if (loading) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-uia-blue/20 border-t-uia-blue rounded-full animate-spin" />
+          <p className="text-gray-500 text-sm font-medium">Loading analytics…</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="absolute inset-0 z-[800] bg-white/95 backdrop-blur-sm flex flex-col overflow-hidden animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white/50">
-        <h2 className="text-xl font-bold text-gray-900 tracking-tight">Project Analytics</h2>
-        <button
-          onClick={onClose}
-          className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+    <div className="min-h-full bg-gray-50 p-6 space-y-6">
+
+      {/* Page header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-display font-bold text-gray-900 tracking-tight">Project Analytics</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Aggregated insights across {countryData.reduce((s, c) => s + c.count, 0)} approved projects
+            {filters.region && filters.region !== 'All Regions' ? ` · ${filters.region}` : ''}
+            {typeof filters.sdg === 'number' ? ` · SDG ${filters.sdg}` : ''}
+          </p>
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-        {loading ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="w-12 h-12 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"></div>
+      {/* ── Row 1: SDG Distribution (full width) ── */}
+      <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h3 className="text-base font-semibold text-gray-900 mb-1">SDG Impact Distribution</h3>
+        <p className="text-xs text-gray-400 mb-4">Number of projects linked to each Sustainable Development Goal</p>
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={sdgData} margin={{ bottom: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+              <XAxis
+                dataKey="sdg"
+                stroke="#9ca3af"
+                tick={{ fontSize: 11 }}
+                tickFormatter={(v) => `SDG ${v}`}
+              />
+              <YAxis stroke="#9ca3af" tick={{ fontSize: 11 }} allowDecimals={false} />
+              <Tooltip content={<CustomSDGTooltip />} />
+              <Bar dataKey="count" name="Projects" radius={[4, 4, 0, 0]}>
+                {sdgData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={SDG_COLORS[(entry.sdg - 1) % SDG_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      {/* ── Row 2: Regional + Status ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* Regional Distribution */}
+        <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <h3 className="text-base font-semibold text-gray-900 mb-1">Projects by UIA Section</h3>
+          <p className="text-xs text-gray-400 mb-4">Distribution across the five UIA geographical sections</p>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={regionData}
+                  cx="40%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={90}
+                  paddingAngle={3}
+                  dataKey="project_count"
+                  nameKey="label"
+                >
+                  {regionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill ?? '#577CB3'} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#fff', borderColor: '#e5e7eb', fontSize: 12 }}
+                  formatter={(value: any, _: any, props: any) => [
+                    `${value} projects`,
+                    props.payload.label,
+                  ]}
+                />
+                <Legend
+                  layout="vertical"
+                  verticalAlign="middle"
+                  align="right"
+                  wrapperStyle={{ fontSize: '11px', color: '#6b7280', lineHeight: '1.8' }}
+                  formatter={(value) => value}
+                />
+              </PieChart>
+            </ResponsiveContainer>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
-            
-            {/* SDG Distribution */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">SDG Impact Distribution</h3>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sdgData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                    <XAxis 
-                      dataKey="sdg" 
-                      stroke="#6b7280" 
-                      tick={{ fontSize: 12 }}
-                      label={{ value: 'SDG Goal', position: 'insideBottom', offset: -5, fill: '#6b7280' }}
-                    />
-                    <YAxis stroke="#6b7280" tick={{ fontSize: 12 }} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#fff', borderColor: '#e5e7eb', color: '#111827', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                      itemStyle={{ color: '#111827' }}
-                      cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
-                    />
-                    <Bar dataKey="count" name="Projects" radius={[4, 4, 0, 0]}>
-                      {sdgData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[(entry.sdg - 1) % COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+        </section>
 
-            {/* Regional Distribution */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Projects by Region</h3>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={regionData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
-                      paddingAngle={5}
-                      dataKey="projectCount"
-                      nameKey="region"
-                    >
-                      {regionData.map((_entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#fff', borderColor: '#e5e7eb', color: '#111827', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                      itemStyle={{ color: '#111827' }}
+        {/* Project Status */}
+        <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <h3 className="text-base font-semibold text-gray-900 mb-1">Project Status Breakdown</h3>
+          <p className="text-xs text-gray-400 mb-4">Current implementation stage of approved projects</p>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={statusData}
+                layout="vertical"
+                margin={{ left: 8, right: 16 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+                <XAxis type="number" stroke="#9ca3af" tick={{ fontSize: 11 }} allowDecimals={false} />
+                <YAxis
+                  dataKey="status"
+                  type="category"
+                  stroke="#9ca3af"
+                  width={160}
+                  tick={{ fontSize: 11 }}
+                />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#fff', borderColor: '#e5e7eb', fontSize: 12 }}
+                  formatter={(value: any) => [`${value} projects`, 'Count']}
+                />
+                <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={22}>
+                  {statusData.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={STATUS_COLORS[entry.status] ?? '#9ca3af'}
                     />
-                    <Legend 
-                      layout="vertical" 
-                      verticalAlign="middle" 
-                      align="right"
-                      wrapperStyle={{ fontSize: '12px', color: '#6b7280' }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Typology Breakdown */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg lg:col-span-2">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Project Typologies</h3>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={typologyData} layout="vertical" margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
-                    <XAxis type="number" stroke="#6b7280" />
-                    <YAxis 
-                      dataKey="typology" 
-                      type="category" 
-                      stroke="#6b7280" 
-                      width={150}
-                      tick={{ fontSize: 11 }}
-                    />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#fff', borderColor: '#e5e7eb', color: '#111827', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                      itemStyle={{ color: '#111827' }}
-                      cursor={{ fill: 'rgba(0, 0, 0, 0.05)' }}
-                    />
-                    <Bar dataKey="count" name="Projects" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-        )}
+        </section>
       </div>
+
+      {/* ── Row 3: Country Distribution (full width) ── */}
+      <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h3 className="text-base font-semibold text-gray-900 mb-1">Top Countries by Project Count</h3>
+        <p className="text-xs text-gray-400 mb-4">Countries with the most UIA-approved urban innovation projects (top 15)</p>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={countryData}
+              layout="vertical"
+              margin={{ left: 8, right: 24 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+              <XAxis type="number" stroke="#9ca3af" tick={{ fontSize: 11 }} allowDecimals={false} />
+              <YAxis
+                dataKey="country"
+                type="category"
+                stroke="#9ca3af"
+                width={120}
+                tick={{ fontSize: 11 }}
+              />
+              <Tooltip content={<CustomCountryTooltip />} />
+              <Bar dataKey="count" fill="#577CB3" radius={[0, 4, 4, 0]} barSize={16} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
+      {/* ── Row 4: Typology Breakdown (full width) ── */}
+      <section className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <h3 className="text-base font-semibold text-gray-900 mb-1">Project Typologies</h3>
+        <p className="text-xs text-gray-400 mb-4">Distribution by urban intervention type</p>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={typologyData}
+              layout="vertical"
+              margin={{ left: 8, right: 24 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
+              <XAxis type="number" stroke="#9ca3af" tick={{ fontSize: 11 }} allowDecimals={false} />
+              <YAxis
+                dataKey="typology"
+                type="category"
+                stroke="#9ca3af"
+                width={160}
+                tick={{ fontSize: 11 }}
+              />
+              <Tooltip
+                contentStyle={{ backgroundColor: '#fff', borderColor: '#e5e7eb', fontSize: 12 }}
+                formatter={(value: any) => [`${value} projects`, 'Count']}
+              />
+              <Bar dataKey="count" fill="#484675" radius={[0, 4, 4, 0]} barSize={16} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </section>
+
     </div>
   );
 }

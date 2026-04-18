@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { mockDashboardAPI as dashboardAPI } from '../../services/api/mockDashboardAPI';
+import { dashboardAPI } from '../../services/api/dashboardAPI';
 import type { FilterOptions, UIARegion, SDG } from '../../types';
 
 interface FilterControlsProps {
@@ -44,14 +44,12 @@ export default function FilterControls({
   onFilterChange,
 }: FilterControlsProps) {
   const [cities, setCities] = useState<string[]>([]);
-  const [fundingSources, setFundingSources] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchFilters = async () => {
       try {
         const data = await dashboardAPI.getFilters();
         setCities(data.cities);
-        setFundingSources(data.fundingSources);
       } catch (error) {
         console.error('Error fetching filters:', error);
       }
@@ -63,8 +61,8 @@ export default function FilterControls({
     (filters.region && filters.region !== 'All Regions') ||
     (filters.sdg && filters.sdg !== 'All SDGs') ||
     (filters.city && filters.city !== 'All Cities') ||
-    (filters.fundedBy && filters.fundedBy !== 'All') ||
-    (filters.search && filters.search !== '');
+    (filters.search && filters.search !== '') ||
+    (filters.edition && filters.edition !== 'all');
 
   return (
     <div className="space-y-6">
@@ -95,6 +93,24 @@ export default function FilterControls({
             />
           </svg>
         </div>
+      </div>
+
+      {/* Edition Filter */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+          Guidebook Edition
+        </label>
+        <select
+          value={filters.edition ?? 'all'}
+          onChange={(e) =>
+            onFilterChange({ ...filters, edition: e.target.value as 'all' | '2023' | '2026' })
+          }
+          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300"
+        >
+          <option value="all">All Editions</option>
+          <option value="2023">2023 Guidebook</option>
+          <option value="2026">2026 Guidebook</option>
+        </select>
       </div>
 
       {/* Region Filter */}
@@ -139,30 +155,6 @@ export default function FilterControls({
           {cities.map((city) => (
             <option key={city} value={city}>
               {city}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Funded By Filter */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-          Funded By
-        </label>
-        <select
-          value={filters.fundedBy || 'All'}
-          onChange={(e) =>
-            onFilterChange({
-              ...filters,
-              fundedBy: e.target.value === 'All' ? 'All' : e.target.value,
-            })
-          }
-          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300"
-        >
-          <option value="All">All Funding Sources</option>
-          {fundingSources.map((source) => (
-            <option key={source} value={source}>
-              {source}
             </option>
           ))}
         </select>
@@ -221,23 +213,23 @@ export default function FilterControls({
                 </button>
               </span>
             )}
-            {filters.fundedBy && filters.fundedBy !== 'All' && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
-                {filters.fundedBy}
-                <button
-                  onClick={() => onFilterChange({ ...filters, fundedBy: 'All' })}
-                  className="ml-2 text-primary-400 hover:text-primary-600"
-                >
-                  ×
-                </button>
-              </span>
-            )}
             {filters.sdg && filters.sdg !== 'All SDGs' && (
               <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200">
                 SDG {filters.sdg}
                 <button
                   onClick={() => onFilterChange({ ...filters, sdg: 'All SDGs' })}
                   className="ml-2 text-green-400 hover:text-green-600"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {filters.edition && filters.edition !== 'all' && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-uia-blue/10 text-uia-blue border border-uia-blue/20">
+                {filters.edition === '2023' ? '2023 Guidebook' : '2026 Guidebook'}
+                <button
+                  onClick={() => onFilterChange({ ...filters, edition: 'all' })}
+                  className="ml-2 text-uia-blue/60 hover:text-uia-blue"
                 >
                   ×
                 </button>
