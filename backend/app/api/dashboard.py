@@ -93,6 +93,27 @@ async def get_dashboard_kpis(
     }
 
 
+@router.get("/projects/{project_id}", response_model=ProjectResponse)
+async def get_dashboard_project(project_id: str, db: Session = Depends(get_db)):
+    """Get single approved project by ID"""
+    import uuid
+    from fastapi import HTTPException
+    try:
+        pid = uuid.UUID(project_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    project = db.query(Project).filter(
+        Project.id == pid,
+        Project.workflow_status == WorkflowStatus.APPROVED
+    ).first()
+
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return _format_project_response(project)
+
+
 @router.get("/projects", response_model=ProjectListResponse)
 async def get_dashboard_projects(
     page: int = Query(1, ge=1),
