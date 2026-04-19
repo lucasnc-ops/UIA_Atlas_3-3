@@ -367,7 +367,8 @@ def _format_project_response(project: Project) -> dict:
     status_labels = {
         "planned": "Planned",
         "in_progress": "In Progress",
-        "implemented": "Implemented"
+        "implemented": "Implemented",
+        "needed_but_constrained": "Needed but Constrained",
     }
     
     status_value = project.project_status.value if project.project_status else None

@@ -3,7 +3,6 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { projectsApi, type ProjectCreate } from '../../services/api/projects';
 import {
-  UIA_REGIONS,
   PROJECT_STATUSES,
   TYPOLOGIES,
   FUNDING_REQUIREMENTS,
@@ -11,6 +10,7 @@ import {
   OTHER_REQUIREMENTS,
   SDGS,
 } from '../../utils/constants';
+import { REGION_LABELS, countryList } from '../../data/countriesByRegion';
 
 interface ProjectFormProps {
   initialValues?: Partial<ProjectCreate>;
@@ -21,8 +21,7 @@ interface ProjectFormProps {
   submitLabel?: string;
 }
 
-// Fallback to test key if env var is missing or empty
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI";
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
 
 export default function ProjectForm({
   initialValues,
@@ -43,14 +42,12 @@ export default function ProjectForm({
       funding_requirements: [],
       government_requirements: [],
       other_requirements: [],
-      funding_needed: 0,
       image_urls: [],
       gdpr_consent: false,
-      ...initialValues
-    }
+      ...initialValues,
+    },
   });
 
-  // Reset form when initialValues change
   useEffect(() => {
     if (initialValues) {
       reset({
@@ -59,70 +56,53 @@ export default function ProjectForm({
         funding_requirements: [],
         government_requirements: [],
         other_requirements: [],
-        funding_needed: 0,
         image_urls: [],
         gdpr_consent: false,
-        ...initialValues
+        ...initialValues,
       });
     }
   }, [initialValues, reset]);
 
   const selectedSDGs = watch('sdgs');
   const imageUrls = watch('image_urls') || [];
+  const watchedRegion = watch('uia_region');
+  const watchedBrief = watch('brief_description') ?? '';
+
+  // Reset country when region changes
+  useEffect(() => {
+    setValue('country', '');
+  }, [watchedRegion, setValue]);
 
   const onFormSubmit: SubmitHandler<ProjectCreate> = async (data) => {
-    // Require captcha for public submissions
     if (isPublicSubmission && !captchaToken) {
-      alert("Please verify that you are not a robot.");
+      alert('Please verify that you are not a robot.');
       return;
     }
-
-    const payload = {
-      ...data,
-      // Ensure numbers are parsed
-      funding_needed: Number(data.funding_needed),
-      latitude: data.latitude ? Number(data.latitude) : undefined,
-      longitude: data.longitude ? Number(data.longitude) : undefined,
-      captcha_token: captchaToken || undefined,
-    };
-
-    await onSubmit(payload);
+    await onSubmit({ ...data, captcha_token: captchaToken || undefined });
   };
 
   const toggleSDG = (id: number) => {
     const current = selectedSDGs || [];
-    if (current.includes(id)) {
-      setValue('sdgs', current.filter(s => s !== id));
-    } else {
-      setValue('sdgs', [...current, id]);
-    }
+    setValue('sdgs', current.includes(id) ? current.filter(s => s !== id) : [...current, id]);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-
     setIsUploading(true);
     const newUrls = [...imageUrls];
-
     for (let i = 0; i < files.length; i++) {
       try {
         const result = await projectsApi.uploadImage(files[i]);
         newUrls.push(result.url);
       } catch (err: any) {
-        console.error("Failed to upload image:", err);
         const errorMessage = err.response?.data?.detail || `Failed to upload ${files[i].name}`;
         alert(errorMessage);
       }
     }
-
     setValue('image_urls', newUrls);
     setIsUploading(false);
-    
-    // Clear the input so same files can be re-selected if needed
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const removeImage = (index: number) => {
@@ -130,6 +110,9 @@ export default function ProjectForm({
     newUrls.splice(index, 1);
     setValue('image_urls', newUrls);
   };
+
+  const SELECT_CLASSES = "input-uia appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[position:right_0.5rem_center] bg-[length:1.5em_1.5em] bg-no-repeat pr-10";
+  const countries = watchedRegion ? countryList(watchedRegion) : [];
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -140,7 +123,7 @@ export default function ProjectForm({
       )}
 
       <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-12 bg-white p-8 md:p-12 border-2 border-uia-dark/10 shadow-uia-card">
-        
+
         {/* Contact Information */}
         <section>
           <h2 className="text-2xl font-display font-bold uppercase tracking-wider text-uia-blue mb-8 pb-3 border-b-2 border-uia-blue/10">
@@ -173,7 +156,10 @@ export default function ProjectForm({
               <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Contact Email</label>
               <input
                 type="email"
-                {...register('contact_email', { required: 'Email is required' })}
+                {...register('contact_email', {
+                  required: 'Email is required',
+                  pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Enter a valid email address' },
+                })}
                 className="input-uia"
                 placeholder="email@example.com"
               />
@@ -199,11 +185,11 @@ export default function ProjectForm({
               {errors.project_name && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.project_name.message}</p>}
             </div>
 
-            <div>
+            <div className="md:col-span-2">
               <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Project Status</label>
               <select
                 {...register('project_status', { required: 'Status is required' })}
-                className="input-uia appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[position:right_0.5rem_center] bg-[length:1.5em_1.5em] bg-no-repeat pr-10"
+                className={SELECT_CLASSES}
               >
                 <option value="">Select Status</option>
                 {PROJECT_STATUSES.map(status => (
@@ -211,16 +197,6 @@ export default function ProjectForm({
                 ))}
               </select>
               {errors.project_status && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.project_status.message}</p>}
-            </div>
-
-            <div>
-              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Funding Needed (USD)</label>
-              <input
-                type="number"
-                {...register('funding_needed', { min: 0 })}
-                className="input-uia"
-                placeholder="0.00"
-              />
             </div>
           </div>
         </section>
@@ -230,19 +206,37 @@ export default function ProjectForm({
           <h2 className="text-2xl font-display font-bold uppercase tracking-wider text-uia-blue mb-8 pb-3 border-b-2 border-uia-blue/10">
             Location
           </h2>
+          <p className="font-sans text-sm text-uia-dark/70 mb-6">
+            Select your UIA region, then choose the country and type your project city. Coordinates will be assigned by UIA staff.
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="md:col-span-2">
               <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">UIA Region</label>
               <select
                 {...register('uia_region', { required: 'Region is required' })}
-                className="input-uia appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2020%2020%22%3E%3Cpath%20stroke%3D%22%236b7280%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%221.5%22%20d%3D%22m6%208%204%204%204-4%22%2F%3E%3C%2Fsvg%3E')] bg-[position:right_0.5rem_center] bg-[length:1.5em_1.5em] bg-no-repeat pr-10"
+                className={SELECT_CLASSES}
               >
                 <option value="">Select Region</option>
-                {UIA_REGIONS.map(region => (
-                  <option key={region} value={region}>{region}</option>
+                {Object.entries(REGION_LABELS).map(([code, label]) => (
+                  <option key={code} value={code}>{label}</option>
                 ))}
               </select>
               {errors.uia_region && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.uia_region.message}</p>}
+            </div>
+
+            <div>
+              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Country</label>
+              <select
+                {...register('country', { required: 'Country is required' })}
+                className={SELECT_CLASSES}
+                disabled={!watchedRegion}
+              >
+                <option value="">{watchedRegion ? 'Select Country' : 'Select a region first'}</option>
+                {countries.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              {errors.country && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.country.message}</p>}
             </div>
 
             <div>
@@ -254,39 +248,6 @@ export default function ProjectForm({
                 placeholder="City name"
               />
               {errors.city && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.city.message}</p>}
-            </div>
-
-            <div>
-              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Country</label>
-              <input
-                type="text"
-                {...register('country', { required: 'Country is required' })}
-                className="input-uia"
-                placeholder="Country name"
-              />
-              {errors.country && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.country.message}</p>}
-            </div>
-
-            <div>
-              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Latitude</label>
-              <input
-                type="number"
-                step="any"
-                {...register('latitude', { min: -90, max: 90 })}
-                className="input-uia"
-                placeholder="e.g. 41.3851"
-              />
-            </div>
-
-            <div>
-              <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Longitude</label>
-              <input
-                type="number"
-                step="any"
-                {...register('longitude', { min: -180, max: 180 })}
-                className="input-uia"
-                placeholder="e.g. 2.1734"
-              />
             </div>
           </div>
         </section>
@@ -301,11 +262,18 @@ export default function ProjectForm({
               <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wide mb-2">Brief Description (Summary)</label>
               <textarea
                 rows={3}
-                {...register('brief_description', { required: 'Brief description is required' })}
+                {...register('brief_description', {
+                  required: 'Brief description is required',
+                  maxLength: { value: 100, message: 'Brief description must be 100 characters or fewer' },
+                })}
                 className="input-uia min-h-[100px]"
-                placeholder="Summarize the project's goal and impact"
+                placeholder="Summarize the project's goal and impact (max 100 characters)"
+                maxLength={100}
               />
-              {errors.brief_description && <p className="mt-2 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.brief_description.message}</p>}
+              <p className={`text-xs text-right mt-1 ${watchedBrief.length >= 90 ? 'text-uia-red font-bold' : 'text-gray-400'}`}>
+                {watchedBrief.length}/100
+              </p>
+              {errors.brief_description && <p className="mt-1 text-xs font-bold text-uia-red uppercase tracking-tight">{errors.brief_description.message}</p>}
             </div>
 
             <div>
@@ -348,7 +316,7 @@ export default function ProjectForm({
                     : 'border-transparent bg-uia-gray-light hover:bg-white hover:border-uia-dark/20'
                 }`}
               >
-                <div 
+                <div
                   className="w-12 h-12 flex items-center justify-center text-white font-display font-bold text-xl shadow-sm mb-3"
                   style={{ backgroundColor: sdg.color }}
                 >
@@ -367,9 +335,7 @@ export default function ProjectForm({
           <h2 className="text-2xl font-display font-bold uppercase tracking-wider text-uia-blue mb-8 pb-3 border-b-2 border-uia-blue/10">
             Categorization & Requirements
           </h2>
-          
           <div className="space-y-8">
-            {/* Project Typologies - Full Width Main Category */}
             <div className="bg-uia-gray-light/30 p-6 md:p-8 border-l-5 border-uia-blue shadow-sm">
               <label className="block font-display font-bold text-sm uppercase text-uia-blue tracking-widest mb-6">
                 Project Typologies
@@ -389,9 +355,7 @@ export default function ProjectForm({
               </div>
             </div>
 
-            {/* Sub-Categories Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Funding Card */}
               <div className="bg-white p-6 border-l-5 border-uia-violet shadow-sm">
                 <label className="block font-display font-bold text-xs uppercase text-uia-violet tracking-wider mb-5 pb-2 border-b border-uia-violet/10">
                   Funding Needs
@@ -411,7 +375,6 @@ export default function ProjectForm({
                 </div>
               </div>
 
-              {/* Government Card */}
               <div className="bg-white p-6 border-l-5 border-uia-dark shadow-sm">
                 <label className="block font-display font-bold text-xs uppercase text-uia-dark tracking-wider mb-5 pb-2 border-b border-uia-dark/10">
                   Government Support
@@ -431,7 +394,6 @@ export default function ProjectForm({
                 </div>
               </div>
 
-              {/* Other Needs Card */}
               <div className="bg-white p-6 border-l-5 border-gray-400 shadow-sm">
                 <label className="block font-display font-bold text-xs uppercase text-gray-600 tracking-wider mb-5 pb-2 border-b border-gray-200">
                   Other Support
@@ -473,11 +435,7 @@ export default function ProjectForm({
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {imageUrls.map((url, index) => (
                 <div key={index} className="relative aspect-square bg-gray-100 group">
-                  <img
-                    src={url}
-                    alt={`Project ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={url} alt={`Project ${index + 1}`} className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
@@ -490,7 +448,6 @@ export default function ProjectForm({
                   </button>
                 </div>
               ))}
-              
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -499,8 +456,8 @@ export default function ProjectForm({
               >
                 {isUploading ? (
                   <svg className="animate-spin h-8 w-8 text-uia-blue" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
                 ) : (
                   <>
@@ -512,60 +469,78 @@ export default function ProjectForm({
                 )}
               </button>
             </div>
-            
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              accept="image/*"
-              multiple
-              className="hidden"
-            />
-            
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" multiple className="hidden" />
             <p className="font-sans text-xs text-uia-dark/60 italic">
               Upload up to 5 high-quality images of your project. JPG, PNG or WebP, max 5MB each.
             </p>
           </div>
         </section>
-        
-        {/* Data Consent */}
+
+        {/* Data Privacy & Consent */}
         {isPublicSubmission && (
-          <section className="bg-uia-gray-light p-6 border-l-5 border-uia-red shadow-sm">
-            <label className="flex items-start cursor-pointer group">
-              <input
-                type="checkbox"
-                {...register('gdpr_consent', { 
-                  required: 'You must consent to data processing to submit this project'
-                })}
-                className="mt-1 h-5 w-5 text-uia-blue border-gray-300 focus:ring-uia-blue rounded-none"
-              />
-              <div className="ml-4">
-                <p className="font-display font-bold uppercase text-sm text-uia-black tracking-wide group-hover:text-uia-red transition-colors">I consent to the publication of this data.</p>
-                <p className="font-sans text-xs text-gray-600 mt-2 leading-relaxed">
-                  By checking this box, I confirm that I have the right to share this information and images, 
-                  and I agree for them to be published on the UIA SDG Atlas website.
-                </p>
-                {errors.gdpr_consent && (
-                  <p className="mt-3 text-[10px] font-bold text-uia-red uppercase tracking-widest">{errors.gdpr_consent.message}</p>
-                )}
+          <section>
+            <div className="border border-gray-200 rounded-lg p-6 bg-gray-50 space-y-4">
+              <h3 className="font-display font-bold text-lg uppercase tracking-wider text-uia-dark">Data Privacy & Consent</h3>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                By submitting this form, UIA (Union Internationale des Architectes) will collect, store and may publish
+                the information above for the Panorama SDG initiative. Data is processed in accordance with applicable
+                data protection legislation, including the LGPD (Lei Geral de Proteção de Dados) and GDPR.
+              </p>
+              <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
+                <li>You may request access, correction or deletion of your data at any time.</li>
+                <li>Data is stored securely and only shared with UIA member organisations.</li>
+                <li>Submitted project information may appear publicly on the Panorama SDG map.</li>
+              </ul>
+              <div className="flex gap-6 text-sm pt-1">
+                <a
+                  href="https://www.uia-architectes.org/en/privacy-policy/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-uia-blue underline hover:text-uia-violet transition-colors font-medium"
+                >
+                  Privacy Policy
+                </a>
+                <a
+                  href="https://www.uia-architectes.org/en/terms-of-use/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-uia-blue underline hover:text-uia-violet transition-colors font-medium"
+                >
+                  Terms of Use
+                </a>
               </div>
-            </label>
+              <label className="flex items-start gap-3 cursor-pointer group pt-1">
+                <input
+                  type="checkbox"
+                  {...register('gdpr_consent', { required: 'You must accept the terms to submit.' })}
+                  className="mt-0.5 h-5 w-5 text-uia-blue border-gray-300 focus:ring-uia-blue rounded-none flex-shrink-0"
+                />
+                <span className="text-sm font-medium text-gray-800 group-hover:text-uia-blue transition-colors leading-relaxed">
+                  I have read and accept the Privacy Policy and Terms of Use, and I consent to UIA processing
+                  and publishing my project data as described above.
+                </span>
+              </label>
+              {errors.gdpr_consent && (
+                <p className="text-xs font-bold text-uia-red uppercase tracking-tight">{errors.gdpr_consent.message}</p>
+              )}
+            </div>
           </section>
         )}
 
-        {/* Captcha */}
+        {/* reCAPTCHA */}
         {isPublicSubmission && (
-          <div className="pt-4 flex justify-center border-t border-gray-100 mt-12">
-              <ReCAPTCHA
-                  sitekey={RECAPTCHA_SITE_KEY}
-                  onChange={(token) => setCaptchaToken(token)}
-                  theme="light"
-              />
+          <div className="flex flex-col items-center gap-2 pt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-500 font-sans">Please verify you are not a robot to submit your project.</p>
+            <ReCAPTCHA
+              sitekey={RECAPTCHA_SITE_KEY}
+              onChange={(token) => setCaptchaToken(token)}
+              theme="light"
+            />
           </div>
         )}
 
         {/* Submit Button */}
-        <div className="pt-8">
+        <div className="pt-4">
           <button
             type="submit"
             disabled={isSubmitting}
@@ -574,8 +549,8 @@ export default function ProjectForm({
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">
                 <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
                 Processing Submission...
               </span>

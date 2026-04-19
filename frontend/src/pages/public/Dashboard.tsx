@@ -390,12 +390,21 @@ export default function Dashboard() {
           </div>
 
           {/* Filters scroll area */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <FilterControls
-              filters={filters}
-              onFilterChange={setFilters}
-              onClearFilters={handleClearFilters}
-            />
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4">
+              <FilterControls
+                filters={filters}
+                onFilterChange={setFilters}
+                onClearFilters={handleClearFilters}
+              />
+            </div>
+            {viewMode === 'map' && (
+              <SDGLegend
+                mode="sidebar"
+                activeSdg={typeof filters.sdg === 'number' ? filters.sdg : null}
+                onSDGClick={(id) => setFilters((f) => ({ ...f, sdg: id as any }))}
+              />
+            )}
           </div>
 
           {/* Footer: visible count */}
@@ -526,12 +535,6 @@ export default function Dashboard() {
           )}
 
           {/* Map overlays */}
-          {viewMode === 'map' && !loading && markers.length > 0 && (
-            <SDGLegend
-              onSDGClick={(sdgId) => setFilters((f) => ({ ...f, sdg: sdgId as any }))}
-              activeSdg={typeof filters.sdg === 'number' ? filters.sdg : null}
-            />
-          )}
           {viewMode === 'map' && !loading && markers.length > 0 && RegionLegend}
 
           {viewMode === 'map' && !loading && markers.length === 0 && (

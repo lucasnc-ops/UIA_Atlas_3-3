@@ -64,9 +64,14 @@ def test_submit_project_invalid_captcha(client):
     mock_client.__aexit__ = AsyncMock(return_value=None)
     mock_client.post = AsyncMock(return_value=mock_response)
 
-    with patch("app.api.projects.httpx.AsyncClient", return_value=mock_client):
-        with _mock_email():
-            resp = client.post(SUBMIT_URL, json=VALID_PROJECT)
+    with patch("app.api.projects.settings") as mock_settings:
+        mock_settings.ENABLE_RECAPTCHA = True
+        mock_settings.RECAPTCHA_SECRET_KEY = "test-secret"
+        mock_settings.ADMIN_EMAIL = "admin@test.com"
+        mock_settings.FRONTEND_URL = "http://localhost:5173"
+        with patch("app.api.projects.httpx.AsyncClient", return_value=mock_client):
+            with _mock_email():
+                resp = client.post(SUBMIT_URL, json=VALID_PROJECT)
     assert resp.status_code == 400
     assert "reCAPTCHA" in resp.json()["detail"]
 
