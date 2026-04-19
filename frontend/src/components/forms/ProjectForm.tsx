@@ -67,6 +67,9 @@ export default function ProjectForm({
   const imageUrls = watch('image_urls') || [];
   const watchedRegion = watch('uia_region');
   const watchedBrief = watch('brief_description') ?? '';
+  const watchedTypologies = watch('typologies') || [];
+  const watchedFunding = watch('funding_requirements') || [];
+  const watchedGovt = watch('government_requirements') || [];
 
   // Reset country when region changes
   useEffect(() => {
@@ -92,6 +95,10 @@ export default function ProjectForm({
     setIsUploading(true);
     const newUrls = [...imageUrls];
     for (let i = 0; i < files.length; i++) {
+      if (files[i].size > 5 * 1024 * 1024) {
+        alert(`${files[i].name} exceeds the 5 MB limit and was skipped.`);
+        continue;
+      }
       try {
         const result = await projectsApi.uploadImage(files[i]);
         newUrls.push(result.url);
@@ -353,6 +360,16 @@ export default function ProjectForm({
                   </label>
                 ))}
               </div>
+              {watchedTypologies.includes('Others') && (
+                <div className="mt-4">
+                  <input
+                    type="text"
+                    {...register('other_typology_text')}
+                    className="input-uia"
+                    placeholder="Please describe the other typology..."
+                  />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -373,6 +390,16 @@ export default function ProjectForm({
                     </label>
                   ))}
                 </div>
+                {watchedFunding.includes('Others') && (
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      {...register('other_funding_text')}
+                      className="input-uia text-xs"
+                      placeholder="Describe other funding need..."
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="bg-white p-6 border-l-5 border-uia-dark shadow-sm">
@@ -392,6 +419,16 @@ export default function ProjectForm({
                     </label>
                   ))}
                 </div>
+                {watchedGovt.includes('Others') && (
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      {...register('other_gov_text')}
+                      className="input-uia text-xs"
+                      placeholder="Describe other government support needed..."
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="bg-white p-6 border-l-5 border-gray-400 shadow-sm">

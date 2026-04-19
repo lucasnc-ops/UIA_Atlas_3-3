@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { adminAPI } from '../../services/api/admin';
+import Lightbox from '../../components/common/Lightbox';
 import type { Project } from '../../types';
 
 export default function ProjectReview() {
@@ -13,6 +14,8 @@ export default function ProjectReview() {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [changesMessage, setChangesMessage] = useState('');
   const [showChangesModal, setShowChangesModal] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   useEffect(() => {
     if (projectId) {
@@ -192,6 +195,9 @@ export default function ProjectReview() {
                   <ul className="list-disc list-inside text-sm text-white space-y-1">
                     {project.fundingRequirements.map((r, i) => <li key={i}>{r}</li>)}
                   </ul>
+                  {project.otherFundingText && (
+                    <p className="text-xs text-mapbox-gray mt-1 italic">Note: {project.otherFundingText}</p>
+                  )}
                 </div>
               )}
               {project.governmentRequirements?.length > 0 && (
@@ -200,6 +206,9 @@ export default function ProjectReview() {
                   <ul className="list-disc list-inside text-sm text-white space-y-1">
                     {project.governmentRequirements.map((r, i) => <li key={i}>{r}</li>)}
                   </ul>
+                  {project.otherGovText && (
+                    <p className="text-xs text-mapbox-gray mt-1 italic">Note: {project.otherGovText}</p>
+                  )}
                 </div>
               )}
               {project.otherRequirements?.length > 0 && (
@@ -208,6 +217,9 @@ export default function ProjectReview() {
                   <ul className="list-disc list-inside text-sm text-white space-y-1">
                     {project.otherRequirements.map((r, i) => <li key={i}>{r}</li>)}
                   </ul>
+                  {project.otherRequirementText && (
+                    <p className="text-xs text-mapbox-gray mt-1 italic">Note: {project.otherRequirementText}</p>
+                  )}
                 </div>
               )}
             </div>
@@ -219,17 +231,46 @@ export default function ProjectReview() {
           {/* Images */}
           {project.imageUrls?.length > 0 && (
             <div className="bg-mapbox-card border border-mapbox-border rounded-lg p-4">
-              <h3 className="text-xs font-bold text-mapbox-gray uppercase tracking-wider mb-3">Project Images</h3>
+              <h3 className="text-xs font-bold text-mapbox-gray uppercase tracking-wider mb-3">
+                Project Images ({project.imageUrls.length})
+              </h3>
               <div className="space-y-2">
-                <img src={project.imageUrls[0]} alt="Main" className="w-full h-48 object-cover rounded-md border border-mapbox-border" />
+                <img
+                  src={project.imageUrls[0]}
+                  alt="Main"
+                  className="w-full h-48 object-cover rounded-md border border-mapbox-border cursor-pointer hover:opacity-90 transition-opacity"
+                  onClick={() => { setLightboxIndex(0); setLightboxOpen(true); }}
+                />
                 <div className="grid grid-cols-3 gap-2">
                   {project.imageUrls.slice(1, 4).map((url, i) => (
-                    <img key={i} src={url} alt="Thumb" className="w-full h-20 object-cover rounded-md border border-mapbox-border" />
+                    <img
+                      key={i}
+                      src={url}
+                      alt="Thumb"
+                      className="w-full h-20 object-cover rounded-md border border-mapbox-border cursor-pointer hover:opacity-90 transition-opacity"
+                      onClick={() => { setLightboxIndex(i + 1); setLightboxOpen(true); }}
+                    />
                   ))}
                 </div>
+                {project.imageUrls.length > 4 && (
+                  <button
+                    onClick={() => { setLightboxIndex(4); setLightboxOpen(true); }}
+                    className="text-xs text-primary-400 hover:underline"
+                  >
+                    +{project.imageUrls.length - 4} more image{project.imageUrls.length - 4 > 1 ? 's' : ''}
+                  </button>
+                )}
               </div>
             </div>
           )}
+          <Lightbox
+            images={project.imageUrls ?? []}
+            initialIndex={lightboxIndex}
+            isOpen={lightboxOpen}
+            onClose={() => setLightboxOpen(false)}
+            onPrev={() => setLightboxIndex(i => (i - 1 + (project.imageUrls?.length ?? 1)) % (project.imageUrls?.length ?? 1))}
+            onNext={() => setLightboxIndex(i => (i + 1) % (project.imageUrls?.length ?? 1))}
+          />
 
           {/* Organization */}
           <div className="bg-mapbox-card border border-mapbox-border rounded-lg p-6">
@@ -239,6 +280,12 @@ export default function ProjectReview() {
                 <span className="block text-xs text-mapbox-gray">Organization</span>
                 <span className="block text-sm font-medium text-white">{project.organizationName}</span>
               </div>
+              {project.authors && (
+                <div>
+                  <span className="block text-xs text-mapbox-gray">Architect(s) / Authors</span>
+                  <span className="block text-sm font-medium text-white">{project.authors}</span>
+                </div>
+              )}
               <div>
                 <span className="block text-xs text-mapbox-gray">Contact Person</span>
                 <span className="block text-sm font-medium text-white">{project.contactPerson}</span>
@@ -266,7 +313,7 @@ export default function ProjectReview() {
               </div>
               <div className="flex justify-between border-b border-mapbox-border pb-2">
                 <span className="text-sm text-mapbox-gray">Region</span>
-                <span className="text-sm font-medium text-white text-right">{project.uiaRegion.split('-')[0]}</span>
+                <span className="text-sm font-medium text-white text-right">{project.uiaRegion}</span>
               </div>
               <div>
                 <span className="block text-xs text-mapbox-gray mb-1">Typologies</span>
@@ -277,6 +324,9 @@ export default function ProjectReview() {
                     </span>
                   ))}
                 </div>
+                {project.otherTypologyText && (
+                  <p className="text-xs text-mapbox-gray mt-1 italic">Note: {project.otherTypologyText}</p>
+                )}
               </div>
               <div>
                 <span className="block text-xs text-mapbox-gray mb-1">SDGs</span>
@@ -291,20 +341,25 @@ export default function ProjectReview() {
             </div>
           </div>
 
-          {/* Financials */}
-          <div className="bg-mapbox-card border border-mapbox-border rounded-lg p-6">
-            <h3 className="text-xs font-bold text-mapbox-gray uppercase tracking-wider mb-4">Financials</h3>
-            <div className="space-y-4">
-              <div>
-                <span className="block text-xs text-mapbox-gray">Funding Needed</span>
-                <span className="block text-xl font-mono text-white">${project.fundingNeeded.toLocaleString()}</span>
-              </div>
-              <div>
-                <span className="block text-xs text-mapbox-gray">Funding Spent</span>
-                <span className="block text-xl font-mono text-green-400">${project.fundingSpent.toLocaleString()}</span>
+          {(project.fundingNeeded != null || project.fundingSpent != null) && (
+            <div className="bg-mapbox-card border border-mapbox-border rounded-lg p-6">
+              <h3 className="text-xs font-bold text-mapbox-gray uppercase tracking-wider mb-4">Financials</h3>
+              <div className="space-y-4">
+                {project.fundingNeeded != null && (
+                  <div>
+                    <span className="block text-xs text-mapbox-gray">Funding Needed</span>
+                    <span className="block text-xl font-mono text-white">${project.fundingNeeded.toLocaleString()}</span>
+                  </div>
+                )}
+                {project.fundingSpent != null && (
+                  <div>
+                    <span className="block text-xs text-mapbox-gray">Funding Spent</span>
+                    <span className="block text-xl font-mono text-green-400">${project.fundingSpent.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

@@ -8,19 +8,19 @@ from ..core.database import Base
 
 class ProjectStatus(str, enum.Enum):
     """Project implementation status"""
-    PLANNED = "planned"
-    IN_PROGRESS = "in_progress"
-    IMPLEMENTED = "implemented"
-    NEEDED_BUT_CONSTRAINED = "needed_but_constrained"
+    PLANNED = "PLANNED"
+    IN_PROGRESS = "IN_PROGRESS"
+    IMPLEMENTED = "IMPLEMENTED"
+    NEEDED_BUT_CONSTRAINED = "NEEDED_BUT_CONSTRAINED"
 
 
 class WorkflowStatus(str, enum.Enum):
     """Project workflow/review status"""
-    SUBMITTED = "submitted"
-    IN_REVIEW = "in_review"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    CHANGES_REQUESTED = "changes_requested"
+    SUBMITTED = "SUBMITTED"
+    IN_REVIEW = "IN_REVIEW"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    CHANGES_REQUESTED = "CHANGES_REQUESTED"
 
 
 class UIARegion(str, enum.Enum):
@@ -76,9 +76,14 @@ class Project(Base):
 
     # Other requirement text (for custom "Other" option)
     other_requirement_text = Column(Text, nullable=True)
+    other_typology_text    = Column(Text, nullable=True)
+    other_funding_text     = Column(Text, nullable=True)
+    other_gov_text         = Column(Text, nullable=True)
 
     # External reference (UIA Guidebook project code, e.g. IFF1, LDP6)
     external_code = Column(String(16), nullable=True, index=True)
+    # Architect(s) / authors (populated from UIA Guidebook data)
+    authors = Column(Text, nullable=True)
 
     # Review/moderation
     rejection_reason = Column(Text, nullable=True)

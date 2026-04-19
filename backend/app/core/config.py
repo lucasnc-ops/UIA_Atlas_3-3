@@ -8,9 +8,16 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str
 
-    # Supabase
+    # Supabase (legacy — only needed when MINIO_ENDPOINT is not set)
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
+
+    # MinIO / S3-compatible image storage
+    MINIO_ENDPOINT: str = ""
+    MINIO_ACCESS_KEY: str = ""
+    MINIO_SECRET_KEY: str = ""
+    MINIO_BUCKET: str = "project-images"
+    MINIO_PUBLIC_URL: str = ""
 
     # Security
     SECRET_KEY: str
