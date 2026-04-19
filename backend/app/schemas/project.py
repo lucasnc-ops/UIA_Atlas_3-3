@@ -48,6 +48,10 @@ class ProjectBase(BaseModel):
     government_requirements: List[str]
     other_requirements: List[str]
     other_requirement_text: Optional[str] = None
+    other_typology_text: Optional[str] = None
+    other_funding_text: Optional[str] = None
+    other_gov_text: Optional[str] = None
+    authors: Optional[str] = None
     sdgs: List[int]  # 1-17
     image_urls: List[str]
     gdpr_consent: bool
@@ -124,6 +128,10 @@ class ProjectUpdate(BaseModel):
     government_requirements: Optional[List[str]] = None
     other_requirements: Optional[List[str]] = None
     other_requirement_text: Optional[str] = None
+    other_typology_text: Optional[str] = None
+    other_funding_text: Optional[str] = None
+    other_gov_text: Optional[str] = None
+    authors: Optional[str] = None
     sdgs: Optional[List[int]] = None
     image_urls: Optional[List[str]] = None
     rejection_reason: Optional[str] = None

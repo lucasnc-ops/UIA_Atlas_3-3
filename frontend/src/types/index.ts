@@ -75,6 +75,11 @@ export interface Project {
   fundingRequirements: FundingRequirement[];
   governmentRequirements: GovernmentRequirement[];
   otherRequirements: OtherRequirement[];
+  otherRequirementText?: string;
+  otherTypologyText?: string;
+  otherFundingText?: string;
+  otherGovText?: string;
+  authors?: string;
   sdgs: SDG[];
   imageUrls: string[];
   createdAt: string;
