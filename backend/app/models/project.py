@@ -11,6 +11,7 @@ class ProjectStatus(str, enum.Enum):
     PLANNED = "planned"
     IN_PROGRESS = "in_progress"
     IMPLEMENTED = "implemented"
+    NEEDED_BUT_CONSTRAINED = "needed_but_constrained"
 
 
 class WorkflowStatus(str, enum.Enum):

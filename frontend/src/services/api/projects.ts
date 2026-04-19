@@ -6,12 +6,11 @@ export interface ProjectCreate {
   contact_person: string;
   contact_email: string;
   project_status: string;
-  funding_needed: number;
   uia_region: string;
   city: string;
   country: string;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
   brief_description: string;
   detailed_description: string;
   success_factors: string;
