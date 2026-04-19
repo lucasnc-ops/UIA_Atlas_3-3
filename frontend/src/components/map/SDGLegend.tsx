@@ -23,11 +23,47 @@ const SDG_INFO = [
 ];
 
 interface SDGLegendProps {
-  onSDGClick?: (sdgId: number) => void;
+  onSDGClick?: (sdgId: number | null) => void;
   activeSdg?: number | null;
+  mode?: 'overlay' | 'sidebar';
 }
 
-export default function SDGLegend({ onSDGClick, activeSdg }: SDGLegendProps) {
+export default function SDGLegend({ onSDGClick, activeSdg, mode = 'overlay' }: SDGLegendProps) {
+  // Sidebar mode: compact chip grid embedded in the left sidebar
+  if (mode === 'sidebar') {
+    return (
+      <div className="flex-shrink-0 px-3 py-3 border-t border-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Filter by SDG</p>
+          {activeSdg && (
+            <button
+              onClick={() => onSDGClick?.(null)}
+              className="text-[10px] text-uia-blue hover:text-uia-red transition-colors font-medium"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-6 gap-1">
+          {SDG_INFO.map(({ id, shortName }) => (
+            <button
+              key={id}
+              onClick={() => onSDGClick?.(activeSdg === id ? null : id)}
+              title={`SDG ${id}: ${shortName}`}
+              className={`w-full aspect-square rounded overflow-hidden transition-all focus:outline-none
+                ${activeSdg === id
+                  ? 'ring-2 ring-offset-1 ring-gray-700 scale-110 opacity-100'
+                  : 'opacity-60 hover:opacity-100 hover:scale-105'
+                }`}
+            >
+              <img src={ASSETS.sdgIcon(id)} alt={`SDG ${id}`} className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   // Desktop starts expanded; mobile starts collapsed
   const [isCollapsed, setIsCollapsed] = useState(window.innerWidth < 768);
@@ -132,7 +168,7 @@ export default function SDGLegend({ onSDGClick, activeSdg }: SDGLegendProps) {
             </div>
             <div className="mt-3 pt-3 border-t border-gray-200">
               <p className="text-[10px] text-gray-500 leading-relaxed">
-                <strong>Marker sizes</strong>: Small (&lt;$10M), Medium ($10M–$50M), Large (&gt;$50M)
+                Tap a goal to filter the map by SDG.
               </p>
             </div>
           </div>
@@ -207,7 +243,7 @@ export default function SDGLegend({ onSDGClick, activeSdg }: SDGLegendProps) {
 
           <div className="mt-4 pt-3 border-t border-gray-200">
             <p className="text-[10px] text-gray-500 leading-relaxed">
-              <strong>Marker sizes</strong> indicate funding: Small (&lt;$10M), Medium ($10M-$50M), Large (&gt;$50M)
+              Markers are colored by UIA region. Click a goal to filter.
             </p>
           </div>
         </div>

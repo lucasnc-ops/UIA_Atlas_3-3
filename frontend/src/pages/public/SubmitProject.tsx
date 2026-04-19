@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { projectsApi, type ProjectCreate } from '../../services/api/projects';
 import ProjectForm from '../../components/forms/ProjectForm';
+import { REGION_CODE_FROM_LABEL } from '../../data/countriesByRegion';
 import { Button } from '../../components/uia';
 
 export default function SubmitProject() {
@@ -30,8 +31,7 @@ export default function SubmitProject() {
         contact_person: project.contact_person,
         contact_email: project.contact_email,
         project_status: project.project_status,
-        funding_needed: project.funding_needed,
-        uia_region: project.uia_region,
+        uia_region: REGION_CODE_FROM_LABEL[project.uia_region] ?? project.uia_region,
         city: project.city,
         country: project.country,
         latitude: project.latitude,

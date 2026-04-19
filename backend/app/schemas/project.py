@@ -3,6 +3,30 @@ from typing import List, Optional
 from datetime import datetime
 from uuid import UUID
 
+_STATUS_MAP = {
+    "planned": "planned",
+    "in_progress": "in_progress",
+    "implemented": "implemented",
+    "needed_but_constrained": "needed_but_constrained",
+    "Planned": "planned",
+    "In Progress": "in_progress",
+    "Implemented": "implemented",
+    "Needed but Constrained": "needed_but_constrained",
+}
+
+_REGION_MAP = {
+    "SECTION_I": "SECTION_I",
+    "SECTION_II": "SECTION_II",
+    "SECTION_III": "SECTION_III",
+    "SECTION_IV": "SECTION_IV",
+    "SECTION_V": "SECTION_V",
+    "Section I - Western Europe": "SECTION_I",
+    "Section II - Eastern Europe & Central Asia": "SECTION_II",
+    "Section III - Middle East & Africa": "SECTION_III",
+    "Section IV - Asia & Pacific": "SECTION_IV",
+    "Section V - Americas": "SECTION_V",
+}
+
 
 class ProjectBase(BaseModel):
     """Base project schema with common fields"""
@@ -10,7 +34,7 @@ class ProjectBase(BaseModel):
     organization_name: str
     contact_person: str
     contact_email: EmailStr
-    project_status: str  # Planned | In Progress | Implemented
+    project_status: str
     uia_region: str
     city: str
     country: str
@@ -27,6 +51,22 @@ class ProjectBase(BaseModel):
     sdgs: List[int]  # 1-17
     image_urls: List[str]
     gdpr_consent: bool
+
+    @field_validator('project_status')
+    @classmethod
+    def normalize_status(cls, v):
+        normalized = _STATUS_MAP.get(v)
+        if normalized is None:
+            raise ValueError(f"Invalid project_status: '{v}'. Must be one of: Planned, In Progress, Implemented, Needed but Constrained")
+        return normalized
+
+    @field_validator('uia_region')
+    @classmethod
+    def normalize_region(cls, v):
+        normalized = _REGION_MAP.get(v)
+        if normalized is None:
+            raise ValueError(f"Invalid uia_region: '{v}'")
+        return normalized
 
     @field_validator('latitude')
     @classmethod
@@ -49,6 +89,7 @@ class ProjectBase(BaseModel):
             if sdg < 1 or sdg > 17:
                 raise ValueError('SDG numbers must be between 1 and 17')
         return v
+
 
 class ProjectCreate(ProjectBase):
     """Schema for creating a project"""
@@ -87,6 +128,26 @@ class ProjectUpdate(BaseModel):
     image_urls: Optional[List[str]] = None
     rejection_reason: Optional[str] = None
     reviewer_notes: Optional[str] = None
+
+    @field_validator('project_status')
+    @classmethod
+    def normalize_status(cls, v):
+        if v is None:
+            return v
+        normalized = _STATUS_MAP.get(v)
+        if normalized is None:
+            raise ValueError(f"Invalid project_status: '{v}'")
+        return normalized
+
+    @field_validator('uia_region')
+    @classmethod
+    def normalize_region(cls, v):
+        if v is None:
+            return v
+        normalized = _REGION_MAP.get(v)
+        if normalized is None:
+            raise ValueError(f"Invalid uia_region: '{v}'")
+        return normalized
 
 
 class ProjectResponse(ProjectBase):
