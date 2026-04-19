@@ -7,6 +7,13 @@ data/sql/supabase_update_coordinates_2026.sql.
 
 Usage:
     python scripts/gen_coords_2026.py
+
+Coordinate lookup priority:
+  1. CODE_COORD_MAP  — keyed by external_code ("P1", "P42", …)  [preferred]
+  2. LEGACY_COORD_MAP — keyed by (city, country) tuple            [fallback]
+
+When adding new entries, prefer CODE_COORD_MAP to avoid city/country collisions
+(e.g. multiple projects sharing the same city string or "Unknown" country).
 """
 
 import re
@@ -17,11 +24,20 @@ INPUT_SQL  = REPO_ROOT / "data" / "sql" / "supabase_import_2026.sql"
 OUTPUT_SQL = REPO_ROOT / "data" / "sql" / "supabase_update_coordinates_2026.sql"
 
 # ---------------------------------------------------------------------------
-# Coordinate lookup
-# Keys   : (city_as_stored_in_db, country_as_stored_in_db)  — exact strings
+# PRIMARY lookup — keyed by external_code (add entries here to override)
 # Values : (latitude, longitude, clean_city, clean_country) OR None (skip)
 # ---------------------------------------------------------------------------
-COORD_MAP = {
+CODE_COORD_MAP: dict = {
+    # Example:
+    # "P6":  None,  # OA — no geocodable location
+    "P6":  None,
+}
+
+# ---------------------------------------------------------------------------
+# LEGACY lookup — keyed by (city_as_stored_in_db, country_as_stored_in_db)
+# Kept for backward compatibility; prefer CODE_COORD_MAP for new entries.
+# ---------------------------------------------------------------------------
+LEGACY_COORD_MAP = {
 
     # --- Argentina ---
     ("Conlara Valley, San Luis Province", "Argentina"):     (-32.9000,  -66.3000, "Conlara Valley",          "Argentina"),
@@ -265,6 +281,9 @@ COORD_MAP = {
     ("São Paulo, São Paulo",               "Brazil"):       (-23.5505,  -46.6333, "São Paulo",               "Brazil"),
 }
 
+# Alias for backward compatibility
+COORD_MAP = LEGACY_COORD_MAP
+
 
 def sql_str(s: str) -> str:
     return "'" + s.replace("'", "''") + "'"
@@ -325,14 +344,17 @@ def main():
     missing  = []
 
     for ext_code, city, country in projects:
-        key = (city, country)
-
-        if key not in COORD_MAP:
-            missing.append(f"  -- MISSING: {ext_code} → {key!r}")
-            lines.append(f"-- MISSING: {ext_code}  city={city!r}  country={country!r}")
-            continue
-
-        coords = COORD_MAP[key]
+        # Primary lookup: by external_code (avoids city/country collision)
+        if ext_code in CODE_COORD_MAP:
+            coords = CODE_COORD_MAP[ext_code]
+        else:
+            # Fallback: legacy city/country tuple lookup
+            key = (city, country)
+            if key not in LEGACY_COORD_MAP:
+                missing.append(f"  -- MISSING: {ext_code} → {key!r}")
+                lines.append(f"-- MISSING: {ext_code}  city={city!r}  country={country!r}")
+                continue
+            coords = LEGACY_COORD_MAP[key]
 
         if coords is None:
             lines.append(f"-- SKIP {ext_code}: no geocodable location ({city!r}, {country!r})")

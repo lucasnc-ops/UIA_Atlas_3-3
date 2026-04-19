@@ -10,6 +10,15 @@ from .projects import _format_project_response
 
 router = APIRouter()
 
+REGION_DISPLAY = {
+    "SECTION_I":   "Section I - Western Europe",
+    "SECTION_II":  "Section II - Eastern Europe & Central Asia",
+    "SECTION_III": "Section III - Middle East & Africa",
+    "SECTION_IV":  "Section IV - Asia & Pacific",
+    "SECTION_V":   "Section V - Americas",
+}
+REGION_REVERSE = {v: k for k, v in REGION_DISPLAY.items()}
+
 
 @router.get("/filters")
 async def get_dashboard_filters(response: Response, db: Session = Depends(get_db)):
@@ -57,7 +66,7 @@ async def get_dashboard_kpis(
 
     # Apply filters
     if region and region != "All Regions":
-        query = query.filter(Project.uia_region == region)
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
     if sdg:
@@ -134,7 +143,7 @@ async def get_dashboard_projects(
 
     # Apply filters
     if region and region != "All Regions":
-        query = query.filter(Project.uia_region == region)
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
     if sdg:
@@ -207,7 +216,7 @@ async def get_map_markers(
 
     # Apply filters
     if region and region != "All Regions":
-        query = query.filter(Project.uia_region == region)
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
     if sdg:
@@ -249,7 +258,7 @@ async def get_map_markers(
             "country": m.country,
             "latitude": m.latitude,
             "longitude": m.longitude,
-            "region": m.uia_region.value if m.uia_region else None,
+            "region": REGION_DISPLAY.get(m.uia_region.value, m.uia_region.value) if m.uia_region else None,
             "status": m.project_status.value if m.project_status else None,
             "primary_sdg": m.primary_sdg,
             "image_url": m.image_url
@@ -276,7 +285,7 @@ async def get_sdg_distribution(
     )
 
     if region and region != "All Regions":
-        query = query.filter(Project.uia_region == region)
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
     if funded_by and funded_by != "All":
@@ -336,7 +345,7 @@ async def get_regional_distribution(
     results = query.group_by(Project.uia_region).all()
 
     return [
-        {"region": r.uia_region.value, "project_count": r.count}
+        {"region": REGION_DISPLAY.get(r.uia_region.value, r.uia_region.value), "project_count": r.count}
         for r in results
     ]
 
@@ -359,7 +368,7 @@ async def get_typology_distribution(
     )
 
     if region and region != "All Regions":
-        query = query.filter(Project.uia_region == region)
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
     if sdg:
         query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
     if funded_by and funded_by != "All":
@@ -397,7 +406,7 @@ async def get_country_distribution(
     ).filter(Project.workflow_status == WorkflowStatus.APPROVED)
 
     if region and region != "All Regions":
-        query = query.filter(Project.uia_region == region)
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
     if sdg:
         query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
     if search:

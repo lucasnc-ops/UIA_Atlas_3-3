@@ -19,6 +19,9 @@ export interface ProjectCreate {
   government_requirements: string[];
   other_requirements: string[];
   other_requirement_text?: string;
+  other_typology_text?: string;
+  other_funding_text?: string;
+  other_gov_text?: string;
   sdgs: number[];
   image_urls: string[];
   captcha_token?: string;

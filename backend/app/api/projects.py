@@ -6,6 +6,7 @@ import httpx
 from ..core.database import get_db
 from ..core.limiter import limiter
 from ..core.supabase import get_supabase_client
+from ..core.storage import upload_file as storage_upload_file
 from ..models.project import (
     Project, ProjectSDG, ProjectTypology,
     ProjectRequirement, ProjectImage, WorkflowStatus
@@ -51,38 +52,12 @@ async def upload_project_image(
     unique_filename = f"{uuid4()}{file_ext}"
     file_path = f"submissions/{unique_filename}"
     
-    # 4. Upload to Supabase
+    # 4. Upload to storage (MinIO if configured, otherwise Supabase)
     try:
-        supabase = get_supabase_client()
-        bucket_name = "project-images"
-        
-        # Upload using the storage client
-        # In supabase-py, upload() returns a response object that might contain error info
-        try:
-            res = supabase.storage.from_(bucket_name).upload(
-                path=file_path,
-                file=content,
-                file_options={"content-type": file.content_type}
-            )
-        except Exception as storage_err:
-            logger.error(f"Supabase Storage Exception: {str(storage_err)}")
-            # Check if it's a bucket missing error
-            if "bucket" in str(storage_err).lower() or "found" in str(storage_err).lower():
-                raise HTTPException(
-                    status_code=400, 
-                    detail="Storage bucket 'project-images' not found. Please create it in Supabase."
-                )
-            raise storage_err
-        
-        # 5. Get Public URL
-        public_url = supabase.storage.from_(bucket_name).get_public_url(file_path)
-        
+        public_url = storage_upload_file(content, file_path, file.content_type)
         return {"url": public_url, "filename": unique_filename}
-        
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Full Upload logic error: {str(e)}")
+        logger.error(f"Storage upload error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
     finally:
         await file.close()
@@ -133,6 +108,9 @@ async def submit_project(request: Request, project_data: ProjectCreate, db: Sess
         detailed_description=project_data.detailed_description,
         success_factors=project_data.success_factors,
         other_requirement_text=project_data.other_requirement_text,
+        other_typology_text=project_data.other_typology_text,
+        other_funding_text=project_data.other_funding_text,
+        other_gov_text=project_data.other_gov_text,
         gdpr_consent=project_data.gdpr_consent,
     )
 
@@ -242,6 +220,9 @@ async def update_project_by_token(
     project.detailed_description = project_data.detailed_description
     project.success_factors = project_data.success_factors
     project.other_requirement_text = project_data.other_requirement_text
+    project.other_typology_text = project_data.other_typology_text
+    project.other_funding_text = project_data.other_funding_text
+    project.other_gov_text = project_data.other_gov_text
     project.gdpr_consent = project_data.gdpr_consent
     
     # Reset status to SUBMITTED for re-review
@@ -365,10 +346,10 @@ def _format_project_response(project: Project) -> dict:
 
     # Map status codes to readable labels
     status_labels = {
-        "planned": "Planned",
-        "in_progress": "In Progress",
-        "implemented": "Implemented",
-        "needed_but_constrained": "Needed but Constrained",
+        "PLANNED": "Planned",
+        "IN_PROGRESS": "In Progress",
+        "IMPLEMENTED": "Implemented",
+        "NEEDED_BUT_CONSTRAINED": "Needed but Constrained",
     }
     
     status_value = project.project_status.value if project.project_status else None
@@ -382,7 +363,7 @@ def _format_project_response(project: Project) -> dict:
         "contact_person": project.contact_person,
         "contact_email": project.contact_email,
         "project_status": status_value,
-        "workflow_status": project.workflow_status.value if project.workflow_status else None,
+        "workflow_status": project.workflow_status.value.lower() if project.workflow_status else None,
         "uia_region": region_value,
         "city": project.city,
         "country": project.country,
@@ -402,6 +383,10 @@ def _format_project_response(project: Project) -> dict:
             r.requirement for r in project.requirements if r.requirement_type == 'other'
         ] if project.requirements else [],
         "other_requirement_text": project.other_requirement_text,
+        "other_typology_text": project.other_typology_text,
+        "other_funding_text": project.other_funding_text,
+        "other_gov_text": project.other_gov_text,
+        "authors": project.authors,
         "gdpr_consent": project.gdpr_consent,
         "sdgs": [s.sdg_number for s in project.sdgs] if project.sdgs else [],
         "image_urls": [img.image_url for img in sorted(project.images, key=lambda x: x.display_order)] if project.images else [],
