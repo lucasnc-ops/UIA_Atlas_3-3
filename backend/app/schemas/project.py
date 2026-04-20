@@ -4,14 +4,18 @@ from datetime import datetime
 from uuid import UUID
 
 _STATUS_MAP = {
-    "planned": "planned",
-    "in_progress": "in_progress",
-    "implemented": "implemented",
-    "needed_but_constrained": "needed_but_constrained",
-    "Planned": "planned",
-    "In Progress": "in_progress",
-    "Implemented": "implemented",
-    "Needed but Constrained": "needed_but_constrained",
+    "planned": "PLANNED",
+    "in_progress": "IN_PROGRESS",
+    "implemented": "IMPLEMENTED",
+    "needed_but_constrained": "NEEDED_BUT_CONSTRAINED",
+    "Planned": "PLANNED",
+    "In Progress": "IN_PROGRESS",
+    "Implemented": "IMPLEMENTED",
+    "Needed but Constrained": "NEEDED_BUT_CONSTRAINED",
+    "PLANNED": "PLANNED",
+    "IN_PROGRESS": "IN_PROGRESS",
+    "IMPLEMENTED": "IMPLEMENTED",
+    "NEEDED_BUT_CONSTRAINED": "NEEDED_BUT_CONSTRAINED",
 }
 
 _REGION_MAP = {
