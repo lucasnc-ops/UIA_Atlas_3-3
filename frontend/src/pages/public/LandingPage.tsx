@@ -68,7 +68,7 @@ export default function LandingPage() {
               <Link to="/dashboard">
                 <Button variant="dark" size="lg" className="min-w-[200px]">
                   <span className="flex items-center justify-center gap-2">
-                    Explore Atlas
+                    See the Projects
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
@@ -204,7 +204,7 @@ export default function LandingPage() {
 
             <Link to="/dashboard">
               <Button variant="dark-outline" size="lg" className="border-2 border-white text-white hover:bg-white hover:text-uia-dark-button min-w-[200px]">
-                Explore the Atlas
+                See the Projects
               </Button>
             </Link>
           </div>

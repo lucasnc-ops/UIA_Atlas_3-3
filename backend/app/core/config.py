@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     SMTP_PORT: int = 587
     SMTP_USER: str = "apikey"
     SMTP_PASSWORD: str = "placeholder-password"
-    SMTP_FROM_EMAIL: str = "noreply@atlas33.org"
-    SMTP_FROM_NAME: str = "Atlas 3+3"
+    SMTP_FROM_EMAIL: str = "noreply@panorama-sdg.org"
+    SMTP_FROM_NAME: str = "Panorama SDG"
 
     # Admin
     ADMIN_EMAIL: str = "admin@uia.org"
@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
 
     # CORS
-    CORS_ORIGINS: str = "http://localhost:5173,https://atlas-33.vercel.app"
+    CORS_ORIGINS: str = "http://localhost:5173"
     # Optional: Regex pattern for allowed origins (e.g., for Vercel preview deployments)
     # Example: r"https://.*\.vercel\.app"
     CORS_ORIGIN_REGEX: str = r"https://.*\.vercel\.app"

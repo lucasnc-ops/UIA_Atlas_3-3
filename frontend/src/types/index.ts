@@ -1,4 +1,4 @@
-// Core Types for Atlas 3+3
+// Core Types for Panorama SDG
 
 export type ProjectStatus = 'Planned' | 'In Progress' | 'Implemented' | 'Needed but Constrained';
 

@@ -690,7 +690,7 @@ export default function Dashboard() {
             <div className="absolute inset-0 flex items-center justify-center z-20 bg-white/60 backdrop-blur-sm pointer-events-none">
               <div className="bg-white px-8 py-6 rounded-2xl shadow-2xl shadow-black/10 flex flex-col items-center gap-4 pointer-events-auto">
                 <div className="w-12 h-12 border-4 border-uia-blue/20 border-t-uia-blue rounded-full animate-spin" />
-                <p className="text-gray-600 font-medium text-sm">Loading Atlas data…</p>
+                <p className="text-gray-600 font-medium text-sm">Loading project data…</p>
               </div>
             </div>
           )}

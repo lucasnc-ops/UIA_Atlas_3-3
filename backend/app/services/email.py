@@ -37,7 +37,7 @@ async def send_changes_requested_email(to_email: str, project_name: str, edit_li
     <html>
     <body style="font-family: sans-serif; color: #333;">
         <h2>Updates Requested for {project_name}</h2>
-        <p>Thank you for your submission to the UIA SDG Atlas.</p>
+        <p>Thank you for your submission to Panorama SDG.</p>
         <p>Our review team has requested some changes before we can publish your project.</p>
         <p><strong>Reviewer Notes:</strong></p>
         <blockquote style="background: #f9f9f9; padding: 15px; border-left: 4px solid #ccc; margin: 20px 0;">
@@ -60,7 +60,7 @@ async def send_approval_email(to_email: str, project_name: str, public_link: str
     <html>
     <body style="font-family: sans-serif; color: #333;">
         <h2>Congratulations!</h2>
-        <p>Your project <strong>{project_name}</strong> has been approved and published on the UIA SDG Atlas.</p>
+        <p>Your project <strong>{project_name}</strong> has been approved and published on Panorama SDG.</p>
         <p style="margin: 20px 0;">
             <a href="{public_link}" style="background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: bold;">View Project</a>
         </p>
@@ -75,7 +75,7 @@ async def send_rejection_email(to_email: str, project_name: str, reason: str):
     <html>
     <body style="font-family: sans-serif; color: #333;">
         <h2>Project Submission Update</h2>
-        <p>Thank you for submitting <strong>{project_name}</strong> to the UIA SDG Atlas.</p>
+        <p>Thank you for submitting <strong>{project_name}</strong> to Panorama SDG.</p>
         <p>After careful review, we are unable to publish your project at this time.</p>
         <p><strong>Reason:</strong> {reason}</p>
     </body>

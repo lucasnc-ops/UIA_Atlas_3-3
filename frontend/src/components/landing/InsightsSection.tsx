@@ -188,7 +188,7 @@ export default function InsightsSection() {
             href="/dashboard"
             className="inline-flex items-center gap-2 text-sm font-display font-bold text-uia-blue uppercase tracking-uia-wide hover:text-uia-red transition-colors"
           >
-            Explore full interactive atlas
+            See all projects
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>

@@ -13,8 +13,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI(
-    title="Atlas 3+3 API",
-    description="API for sustainable development projects platform",
+    title="Panorama SDG API",
+    description="API for the UIA Panorama SDG sustainable development projects platform",
     version="0.1.0",
 )
 
@@ -87,7 +87,7 @@ app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
 async def root():
     """Root endpoint"""
     return {
-        "message": "Atlas 3+3 API",
+        "message": "Panorama SDG API",
         "version": "0.1.0",
         "docs": "/docs"
     }
