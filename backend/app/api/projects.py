@@ -5,7 +5,6 @@ from uuid import UUID, uuid4
 import httpx
 from ..core.database import get_db
 from ..core.limiter import limiter
-from ..core.supabase import get_supabase_client
 from ..core.storage import upload_file as storage_upload_file
 from ..models.project import (
     Project, ProjectSDG, ProjectTypology,

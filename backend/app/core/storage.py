@@ -5,7 +5,10 @@ from .config import settings
 
 def _get_s3_client():
     if not settings.MINIO_ENDPOINT:
-        return None
+        raise RuntimeError(
+            "MINIO_ENDPOINT is not configured. "
+            "Set it in docker-compose.yml or your .env file."
+        )
     return boto3.client(
         "s3",
         endpoint_url=settings.MINIO_ENDPOINT,
@@ -17,23 +20,12 @@ def _get_s3_client():
 
 
 def upload_file(content: bytes, file_path: str, content_type: str) -> str:
-    """Upload bytes to MinIO (if configured) or fall back to Supabase Storage."""
+    """Upload bytes to MinIO. Raises RuntimeError if MinIO is not configured."""
     s3 = _get_s3_client()
-    if s3:
-        s3.put_object(
-            Bucket=settings.MINIO_BUCKET,
-            Key=file_path,
-            Body=content,
-            ContentType=content_type,
-        )
-        return f"{settings.MINIO_PUBLIC_URL}/{settings.MINIO_BUCKET}/{file_path}"
-
-    # Supabase Storage fallback
-    from .supabase import get_supabase_client
-    sb = get_supabase_client()
-    sb.storage.from_(settings.MINIO_BUCKET).upload(
-        path=file_path,
-        file=content,
-        file_options={"content-type": content_type},
+    s3.put_object(
+        Bucket=settings.MINIO_BUCKET,
+        Key=file_path,
+        Body=content,
+        ContentType=content_type,
     )
-    return sb.storage.from_(settings.MINIO_BUCKET).get_public_url(file_path)
+    return f"{settings.MINIO_PUBLIC_URL}/{settings.MINIO_BUCKET}/{file_path}"

@@ -69,8 +69,8 @@ async def add_security_headers(request: Request, call_next):
         "script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
         "font-src 'self' https://fonts.gstatic.com; "
-        "img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.supabase.co blob:; "
-        "connect-src 'self' https://*.supabase.co; "
+        "img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com http://localhost:9000 blob:; "
+        "connect-src 'self'; "
         "frame-ancestors 'none'"
     )
     return response
