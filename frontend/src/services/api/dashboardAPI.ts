@@ -128,10 +128,10 @@ export const dashboardAPI = {
   },
 
   /**
-   * Get single project by ID
+   * Get single project by ID (works for approved + guidebook-submitted projects)
    */
   async getProject(projectId: string): Promise<Project> {
-    const response = await apiClient.get(`/api/projects/${projectId}`);
+    const response = await apiClient.get(`/api/dashboard/projects/${projectId}`);
     return response.data;
   },
 

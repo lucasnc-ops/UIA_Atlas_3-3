@@ -61,6 +61,31 @@ async def get_dashboard_filters(response: Response, db: Session = Depends(get_db
     }
 
 
+@router.get("/projects/{project_id}", response_model=ProjectResponse)
+async def get_dashboard_project(
+    project_id: str,
+    db: Session = Depends(get_db)
+):
+    """Get a single project visible on the public map (approved OR guidebook-submitted)."""
+    from uuid import UUID
+    try:
+        pid = UUID(project_id)
+    except ValueError:
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=400, detail="Invalid project ID")
+
+    project = db.query(Project).filter(
+        Project.id == pid,
+        _workflow_filter(show_submissions=True)
+    ).first()
+
+    if not project:
+        from fastapi import HTTPException, status
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    return _format_project_response(project)
+
+
 @router.get("/kpis", response_model=DashboardKPIs)
 @limiter.limit("60/minute")
 async def get_dashboard_kpis(
