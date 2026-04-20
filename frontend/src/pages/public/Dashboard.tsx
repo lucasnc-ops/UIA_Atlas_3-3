@@ -12,6 +12,7 @@ import AnalyticsPanel from '../../components/dashboard/AnalyticsPanel';
 import ProjectTable from '../../components/dashboard/ProjectTable';
 import {
   createRegionMarker,
+  createCommunityMarker,
   createRegionClusterIcon,
   getMarkerSizeByFunding,
   MARKER_STYLES,
@@ -20,7 +21,6 @@ import {
 } from '../../components/map/CustomSDGMarker';
 import SDGLegend, { LEGEND_STYLES } from '../../components/map/SDGLegend';
 import EmptyState, { EMPTY_STATE_STYLES } from '../../components/common/EmptyState';
-import SmartSearch from '../../components/dashboard/SmartSearch';
 import AnimatedCounter from '../../components/common/AnimatedCounter';
 
 // Fix Leaflet default marker icons
@@ -66,6 +66,7 @@ interface MapMarker {
   fundingNeeded?: number;
   primarySdg?: number;
   imageUrl?: string;
+  category?: '2026' | '2023' | 'community';
 }
 
 
@@ -119,7 +120,7 @@ export default function Dashboard() {
   });
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [filters, setFilters] = useState<FilterOptions>({ region: 'All Regions', sdgs: [] });
+  const [filters, setFilters] = useState<FilterOptions>({ region: 'All Regions', sdgs: [], showSubmissions: true });
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'table' | 'analytics'>('map');
@@ -210,20 +211,40 @@ export default function Dashboard() {
     setSearchParams(p);
   };
 
-  const handleClearFilters = () => setFilters({ region: 'All Regions', sdgs: [] });
+  const handleClearFilters = () => setFilters((f) => ({ region: 'All Regions', sdgs: [], showSubmissions: f.showSubmissions }));
 
-  const markerElements = useMemo(
+  const guidebookMarkers = useMemo(
+    () => markers.filter((m) => m.category !== 'community'),
+    [markers]
+  );
+
+  const communityMarkers = useMemo(
+    () => markers.filter((m) => m.category === 'community'),
+    [markers]
+  );
+
+  const guidebookMarkerElements = useMemo(
     () =>
-      markers.map((marker) => ({
+      guidebookMarkers.map((marker) => ({
         marker,
         icon: createRegionMarker({
           sdgNumber: marker.primarySdg ?? undefined,
           region: marker.region,
           projectName: marker.projectName,
           size: getMarkerSizeByFunding(marker.fundingNeeded || 0),
+          edition: (marker.category as '2023' | '2026') ?? '2026',
         }),
       })),
-    [markers]
+    [guidebookMarkers]
+  );
+
+  const communityMarkerElements = useMemo(
+    () =>
+      communityMarkers.map((marker) => ({
+        marker,
+        icon: createCommunityMarker({ projectName: marker.projectName }),
+      })),
+    [communityMarkers]
   );
 
   // ─── Region legend (inside map) ───
@@ -250,6 +271,24 @@ export default function Dashboard() {
           >
             Clear ×
           </button>
+        )}
+      </div>
+      {/* Edition style key */}
+      <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
+        <p className="text-[9px] font-bold text-gray-300 uppercase tracking-wider">Edition</p>
+        <div className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-uia-blue border-2 border-white shadow-sm flex-shrink-0" />
+          <span className="text-[10px] text-gray-500">2026 Selected</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-uia-blue flex-shrink-0" style={{ border: '2px dashed rgba(255,255,255,0.85)', outline: '1px solid #577CB3', opacity: 0.88 }} />
+          <span className="text-[10px] text-gray-500">2023 Selected</span>
+        </div>
+        {filters.showSubmissions && (
+          <div className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" style={{ border: '1.5px dashed white', opacity: 0.7 }} />
+            <span className="text-[10px] text-gray-400">Submitted</span>
+          </div>
         )}
       </div>
     </div>
@@ -288,20 +327,6 @@ export default function Dashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
             </svg>
           </button>
-        </div>
-
-        {/* Center: Search */}
-        <div className="flex-1 min-w-0">
-          <SmartSearch
-            onProjectSelect={handleProjectSelect}
-            onFilterChange={(filter) => {
-              setFilters((prev) => ({
-                ...prev,
-                city: filter.city !== undefined ? filter.city : prev.city,
-                sdgs: filter.sdg !== undefined ? [filter.sdg as any] : prev.sdgs,
-              }));
-            }}
-          />
         </div>
 
         {/* Right: controls */}
@@ -413,6 +438,34 @@ export default function Dashboard() {
             </div>
           </div>
 
+          {/* Submitted projects toggle — prominent, top of filters */}
+          <div className="flex-shrink-0 px-4 py-2.5 border-b border-gray-100 bg-gray-50/40">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <div
+                onClick={() => setFilters((f) => ({ ...f, showSubmissions: !f.showSubmissions }))}
+                className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 ${
+                  filters.showSubmissions ? 'bg-uia-blue' : 'bg-gray-300'
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                    filters.showSubmissions ? 'translate-x-4' : 'translate-x-0'
+                  }`}
+                />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-display font-bold text-gray-600 uppercase tracking-wide leading-tight">
+                  Submitted (non-selected)
+                </div>
+                <div className="text-[10px] text-gray-400 leading-tight">
+                  {communityMarkers.length > 0
+                    ? `${communityMarkers.length} projects · 2023 & 2026`
+                    : '2023 & 2026 non-selected'}
+                </div>
+              </div>
+            </label>
+          </div>
+
           {/* Filters scroll area */}
           <div className="flex-1 overflow-y-auto">
             <div className="p-4">
@@ -440,7 +493,9 @@ export default function Dashboard() {
 
           {/* Footer: visible count */}
           <div className="flex-shrink-0 px-4 py-2.5 border-t border-gray-100 bg-gray-50/80 text-xs text-gray-500">
-            {loading ? 'Loading…' : viewMode === 'map' ? `${markers.length} project${markers.length !== 1 ? 's' : ''} on map` : 'Use Map view to see markers'}
+            {loading ? 'Loading…' : viewMode === 'map'
+              ? `${guidebookMarkers.length} selected${filters.showSubmissions && communityMarkers.length > 0 ? ` + ${communityMarkers.length} submitted` : ''} on map`
+              : 'Use Map view to see markers'}
           </div>
         </aside>
 
@@ -471,6 +526,7 @@ export default function Dashboard() {
                 ))}
               </LayersControl>
 
+              {/* Guidebook markers — always visible */}
               <MarkerClusterGroup
                 chunkedLoading
                 maxClusterRadius={40}
@@ -479,7 +535,7 @@ export default function Dashboard() {
                 showCoverageOnHover={false}
                 iconCreateFunction={createRegionClusterIcon}
               >
-                {markerElements.map(({ marker, icon }) => (
+                {guidebookMarkerElements.map(({ marker, icon }) => (
                   <Marker
                     key={marker.id}
                     position={[marker.latitude, marker.longitude]}
@@ -504,7 +560,6 @@ export default function Dashboard() {
                           region={marker.region}
                           primarySdg={marker.primarySdg}
                         />
-
                         <div className="p-3">
                           <h3 className="font-bold text-sm leading-snug mb-1 text-gray-900 line-clamp-2">
                             {marker.projectName}
@@ -540,7 +595,75 @@ export default function Dashboard() {
                 ))}
               </MarkerClusterGroup>
 
-              <MapUpdater markers={markers} />
+              {/* Community submission markers — only when toggle is on */}
+              {filters.showSubmissions && (
+                <MarkerClusterGroup
+                  chunkedLoading
+                  maxClusterRadius={50}
+                  disableClusteringAtZoom={7}
+                  spiderfyOnMaxZoom={true}
+                  showCoverageOnHover={false}
+                  iconCreateFunction={(cluster) => {
+                    const count = cluster.getChildCount();
+                    const size = count < 10 ? 28 : count < 50 ? 36 : 44;
+                    return L.divIcon({
+                      html: `<div style="width:${size}px;height:${size}px;background:#9CA3AF;border:2px dashed #fff;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:${size < 36 ? 10 : 12}px;box-shadow:0 2px 6px rgba(0,0,0,0.25);opacity:0.8;cursor:pointer;">${count > 99 ? '99+' : count}</div>`,
+                      className: '',
+                      iconSize: [size, size],
+                      iconAnchor: [size / 2, size / 2],
+                    });
+                  }}
+                >
+                  {communityMarkerElements.map(({ marker, icon }) => (
+                    <Marker
+                      key={marker.id}
+                      position={[marker.latitude, marker.longitude]}
+                      icon={icon}
+                      eventHandlers={{
+                        click: () => handleProjectSelect(marker.id),
+                        mouseover: (e) => e.target.openPopup(),
+                        mouseout: (e) => e.target.closePopup(),
+                      }}
+                    >
+                      <Popup
+                        className="custom-popup p-0 overflow-hidden"
+                        closeButton={false}
+                        maxWidth={240}
+                        minWidth={200}
+                      >
+                        <div className="bg-white overflow-hidden text-gray-900 rounded-lg shadow-sm">
+                          <div className="h-10 bg-gray-100 flex items-center justify-center gap-1.5">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                              Submitted
+                            </span>
+                            <span className="text-[9px] text-gray-300 font-medium">— not selected</span>
+                          </div>
+                          <div className="p-3">
+                            <h3 className="font-bold text-sm leading-snug mb-1 text-gray-900 line-clamp-2">
+                              {marker.projectName}
+                            </h3>
+                            <p className="text-xs text-gray-500 flex items-center gap-1 mb-2">
+                              <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              {marker.city}, {marker.country}
+                            </p>
+                            <button
+                              onClick={() => handleProjectSelect(marker.id)}
+                              className="text-xs font-medium text-gray-500 hover:text-uia-blue hover:underline transition-colors"
+                            >
+                              View Details →
+                            </button>
+                          </div>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                </MarkerClusterGroup>
+              )}
+
+              <MapUpdater markers={guidebookMarkers} />
             </MapContainer>
           ) : (
             <div className="h-full overflow-y-auto bg-gray-50">

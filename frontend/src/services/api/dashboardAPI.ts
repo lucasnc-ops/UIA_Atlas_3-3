@@ -46,6 +46,7 @@ interface MapMarker {
   fundingNeeded: number;
   primarySdg: number;
   imageUrl?: string;
+  category: 'guidebook_2026' | 'guidebook_2023' | 'community' | '2026' | '2023';
 }
 
 interface SDGDistribution {
@@ -191,16 +192,18 @@ export const dashboardAPI = {
   /**
    * Get project counts by edition (2023 vs 2026)
    */
-  async getEditionComparison(): Promise<{ edition: string; count: number }[]> {
-    const response = await apiClient.get('/api/dashboard/analytics/edition-comparison');
+  async getEditionComparison(filters?: FilterOptions): Promise<{ edition: string; count: number }[]> {
+    const params = this._buildFilterParams(filters);
+    const response = await apiClient.get('/api/dashboard/analytics/edition-comparison', { params });
     return response.data;
   },
 
   /**
    * Get project counts per (region, sdg) for heatmap
    */
-  async getSdgRegionHeatmap(): Promise<{ region: string; sdg: number; count: number }[]> {
-    const response = await apiClient.get('/api/dashboard/analytics/sdg-region-heatmap');
+  async getSdgRegionHeatmap(filters?: FilterOptions): Promise<{ region: string; sdg: number; count: number }[]> {
+    const params = this._buildFilterParams(filters);
+    const response = await apiClient.get('/api/dashboard/analytics/sdg-region-heatmap', { params });
     return response.data;
   },
 
@@ -235,6 +238,10 @@ export const dashboardAPI = {
 
     if (filters.edition && filters.edition !== 'all') {
       params.edition = filters.edition;
+    }
+
+    if (filters.showSubmissions) {
+      (params as any).show_submissions = true;
     }
 
     return params;

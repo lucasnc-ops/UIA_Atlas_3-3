@@ -49,6 +49,7 @@ const SIZE_CONFIG = {
 
 /**
  * Creates a marker colored by UIA region with an SDG accent dot.
+ * 2023 markers have a dashed inner ring to distinguish them from 2026.
  * Falls back to a neutral slate color for unknown regions.
  */
 export function createRegionMarker({
@@ -56,15 +57,24 @@ export function createRegionMarker({
   region,
   projectName,
   size = 'small',
+  edition = '2026',
 }: {
   sdgNumber?: number;
   region?: string;
   projectName: string;
   size?: MarkerSize;
+  edition?: '2023' | '2026';
 }): L.DivIcon {
   const regionColor = (region && REGION_COLORS[region]) || '#6C757D';
   const sdgColor   = sdgNumber ? (SDG_COLORS[sdgNumber] || '#888') : null;
   const cfg = SIZE_CONFIG[size];
+
+  // 2023 markers: slightly transparent + dashed inner outline to visually separate editions
+  const is2023 = edition === '2023';
+  const borderStyle = is2023
+    ? `border:2px dashed rgba(255,255,255,0.85);outline:1px solid ${regionColor};`
+    : 'border:3px solid white;';
+  const opacity = is2023 ? 'opacity:0.88;' : '';
 
   // Small SDG accent dot in top-right corner (only when SDG is known)
   const accentDot = sdgColor
@@ -87,7 +97,8 @@ export function createRegionMarker({
         <div class="region-marker-dot" style="
           width:${cfg.w}px;height:${cfg.h}px;
           background:${regionColor};
-          border:3px solid white;
+          ${borderStyle}
+          ${opacity}
           border-radius:50%;
           box-shadow:0 2px 8px rgba(0,0,0,0.35);
           display:flex;align-items:center;justify-content:center;
@@ -103,6 +114,32 @@ export function createRegionMarker({
     iconSize:   [cfg.w, cfg.h],
     iconAnchor: [cfg.w / 2, cfg.h / 2],
     popupAnchor: [0, -cfg.h / 2],
+  });
+}
+
+/**
+ * Community submission marker — small gray dot, dashed border, semi-transparent.
+ */
+export function createCommunityMarker({
+  projectName,
+}: {
+  projectName: string;
+}): L.DivIcon {
+  const size = 16;
+  return L.divIcon({
+    html: `<div class="community-marker-dot" style="
+      width:${size}px;height:${size}px;
+      background:#9CA3AF;
+      border:2px dashed #fff;
+      border-radius:50%;
+      box-shadow:0 1px 3px rgba(0,0,0,0.2);
+      opacity:0.7;
+      cursor:pointer;
+    " title="${projectName}"></div>`,
+    className: '',
+    iconSize:   [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
   });
 }
 
@@ -166,5 +203,12 @@ export const MARKER_STYLES = `
   }
   .region-cluster:hover {
     transform: scale(1.1);
+  }
+  .community-marker-dot {
+    transition: transform 0.15s ease, opacity 0.15s ease;
+  }
+  .community-marker-dot:hover {
+    transform: scale(1.3) !important;
+    opacity: 1 !important;
   }
 `;

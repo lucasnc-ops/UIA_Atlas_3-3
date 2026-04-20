@@ -1,7 +1,18 @@
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Card } from '../../components/uia';
+import { dashboardAPI } from '../../services/api/dashboardAPI';
+import AnimatedCounter from '../../components/common/AnimatedCounter';
 
 export default function LandingPage() {
+  const [totalProjects, setTotalProjects] = useState(311);
+
+  useEffect(() => {
+    dashboardAPI.getKPIs({ showSubmissions: true }).then((kpis) => {
+      setTotalProjects(kpis.totalProjects);
+    }).catch(() => {});
+  }, []);
+
   return (
     <div className="bg-white text-black font-sans selection:bg-uia-blue/10 selection:text-uia-blue">
 
@@ -85,7 +96,9 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-uia-dark">
             <div className="py-10 px-8 text-center group cursor-pointer hover:bg-uia-gray-light transition-all duration-300">
-              <div className="text-5xl font-display font-bold text-uia-red mb-2 group-hover:scale-110 transition-transform">288</div>
+              <div className="text-5xl font-display font-bold text-uia-red mb-2 group-hover:scale-110 transition-transform">
+                <AnimatedCounter value={totalProjects} />
+              </div>
               <div className="text-xs font-display font-bold text-uia-dark uppercase tracking-uia-wide">Projects</div>
             </div>
             <div className="py-10 px-8 text-center group cursor-pointer hover:bg-uia-gray-light transition-all duration-300">

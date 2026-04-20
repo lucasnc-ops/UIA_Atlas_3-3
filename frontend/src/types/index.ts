@@ -139,6 +139,7 @@ export interface FilterOptions {
   fundedBy?: string | 'All';
   search?: string;
   edition?: 'all' | '2023' | '2026';
+  showSubmissions?: boolean;
 }
 
 export interface User {

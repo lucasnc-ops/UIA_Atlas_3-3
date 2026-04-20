@@ -104,14 +104,14 @@ export default function AnalyticsPanel({ filters }: AnalyticsPanelProps) {
   const [loading, setLoading] = useState(true);
   const [activeSDG, setActiveSDG] = useState<number | null>(null);
 
-  // Fetch static data (not affected by activeSDG drill-down)
+  // Fetch edition + heatmap (re-run when showSubmissions changes)
   useEffect(() => {
     let cancelled = false;
     const fetchStatic = async () => {
       try {
         const [edition, heatmap] = await Promise.all([
-          dashboardAPI.getEditionComparison(),
-          dashboardAPI.getSdgRegionHeatmap(),
+          dashboardAPI.getEditionComparison(filters),
+          dashboardAPI.getSdgRegionHeatmap(filters),
         ]);
         if (cancelled) return;
         setEditionData(edition);
@@ -122,7 +122,7 @@ export default function AnalyticsPanel({ filters }: AnalyticsPanelProps) {
     };
     fetchStatic();
     return () => { cancelled = true; };
-  }, []);
+  }, [filters.showSubmissions]);
 
   // Fetch filter-dependent data (respects both filters and activeSDG drill-down)
   useEffect(() => {

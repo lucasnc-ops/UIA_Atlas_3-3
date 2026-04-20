@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy.orm import Session
-from sqlalchemy import func, distinct, select, case
+from sqlalchemy import func, distinct, select, case, or_, and_
 from typing import Optional, List
 from ..core.database import get_db
 from ..core.limiter import limiter
@@ -9,6 +9,22 @@ from ..schemas.project import ProjectListResponse, DashboardKPIs, ProjectRespons
 from .projects import _format_project_response
 
 router = APIRouter()
+
+# Guidebook project codes (selected + submitted non-selected)
+_GUIDEBOOK_PREFIXES = ("P%", "IFF%", "EFP%", "LDP%")
+
+
+def _workflow_filter(show_submissions: bool):
+    """Return the SQLAlchemy filter clause for project visibility."""
+    if show_submissions:
+        return or_(
+            Project.workflow_status == WorkflowStatus.APPROVED,
+            and_(
+                Project.workflow_status == WorkflowStatus.SUBMITTED,
+                or_(*[Project.external_code.like(p) for p in _GUIDEBOOK_PREFIXES])
+            )
+        )
+    return Project.workflow_status == WorkflowStatus.APPROVED
 
 REGION_DISPLAY = {
     "SECTION_I":   "Section I - Western Europe",
@@ -56,13 +72,13 @@ async def get_dashboard_kpis(
     funded_by: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
     edition: Optional[str] = Query(None),
+    show_submissions: bool = Query(True),
     db: Session = Depends(get_db)
 ):
     response.headers["Cache-Control"] = "public, max-age=30"
     """Get dashboard KPIs with optional filters"""
 
-    # Base query for approved projects
-    query = db.query(Project).filter(Project.workflow_status == WorkflowStatus.APPROVED)
+    query = db.query(Project).filter(_workflow_filter(show_submissions))
 
     # Apply filters
     if region and region != "All Regions":
@@ -134,12 +150,12 @@ async def get_dashboard_projects(
     search: Optional[str] = Query(None),
     sort_by: str = Query("created_at", pattern="^(project_name|created_at)$"),
     sort_order: str = Query("desc", pattern="^(asc|desc)$"),
+    show_submissions: bool = Query(False),
     db: Session = Depends(get_db)
 ):
-    """Get paginated list of approved projects with filters"""
+    """Get paginated list of guidebook projects with filters"""
 
-    # Base query
-    query = db.query(Project).filter(Project.workflow_status == WorkflowStatus.APPROVED)
+    query = db.query(Project).filter(_workflow_filter(show_submissions))
 
     # Apply filters
     if region and region != "All Regions":
@@ -192,6 +208,7 @@ async def get_map_markers(
     funded_by: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
     edition: Optional[str] = Query(None),
+    show_submissions: bool = Query(False),
     db: Session = Depends(get_db)
 ):
     """Get project markers for map (lightweight data)"""
@@ -205,14 +222,37 @@ async def get_map_markers(
         Project.longitude,
         Project.uia_region,
         Project.project_status,
+        Project.workflow_status,
+        Project.external_code,
         ProjectImage.image_url
     ).outerjoin(
         ProjectImage, (ProjectImage.project_id == Project.id) & (ProjectImage.display_order == 0)
-    ).filter(
-        Project.workflow_status == WorkflowStatus.APPROVED,
-        Project.latitude.isnot(None),
-        Project.longitude.isnot(None)
     )
+
+    if show_submissions:
+        # Include guidebook non-selected submissions (P%, IFF%, EFP%, LDP%)
+        query = query.filter(
+            or_(
+                Project.workflow_status == WorkflowStatus.APPROVED,
+                and_(
+                    Project.workflow_status == WorkflowStatus.SUBMITTED,
+                    or_(
+                        Project.external_code.like("P%"),
+                        Project.external_code.like("IFF%"),
+                        Project.external_code.like("EFP%"),
+                        Project.external_code.like("LDP%"),
+                    )
+                )
+            ),
+            Project.latitude.isnot(None),
+            Project.longitude.isnot(None)
+        )
+    else:
+        query = query.filter(
+            Project.workflow_status == WorkflowStatus.APPROVED,
+            Project.latitude.isnot(None),
+            Project.longitude.isnot(None)
+        )
 
     # Apply filters
     if region and region != "All Regions":
@@ -250,6 +290,12 @@ async def get_map_markers(
 
     markers = query.all()
 
+    def _marker_category(m) -> str:
+        code = m.external_code or ""
+        if m.workflow_status == WorkflowStatus.SUBMITTED:
+            return "community"
+        return "2026" if code.startswith("P") else "2023"
+
     return [
         {
             "id": str(m.id),
@@ -261,7 +307,8 @@ async def get_map_markers(
             "region": REGION_DISPLAY.get(m.uia_region.value, m.uia_region.value) if m.uia_region else None,
             "status": m.project_status.value if m.project_status else None,
             "primary_sdg": m.primary_sdg,
-            "image_url": m.image_url
+            "image_url": m.image_url,
+            "category": _marker_category(m),
         }
         for m in markers
     ]
@@ -273,6 +320,7 @@ async def get_sdg_distribution(
     city: Optional[str] = Query(None),
     funded_by: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    show_submissions: bool = Query(False),
     db: Session = Depends(get_db)
 ):
     """Get SDG distribution for charts"""
@@ -280,9 +328,7 @@ async def get_sdg_distribution(
     query = db.query(
         ProjectSDG.sdg_number,
         func.count(distinct(ProjectSDG.project_id)).label('count')
-    ).join(Project).filter(
-        Project.workflow_status == WorkflowStatus.APPROVED
-    )
+    ).join(Project).filter(_workflow_filter(show_submissions))
 
     if region and region != "All Regions":
         query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
@@ -313,6 +359,7 @@ async def get_regional_distribution(
     city: Optional[str] = Query(None),
     funded_by: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    show_submissions: bool = Query(False),
     db: Session = Depends(get_db)
 ):
     """Get project count by region"""
@@ -320,9 +367,7 @@ async def get_regional_distribution(
     query = db.query(
         Project.uia_region,
         func.count(Project.id).label('count')
-    ).filter(
-        Project.workflow_status == WorkflowStatus.APPROVED
-    )
+    ).filter(_workflow_filter(show_submissions))
 
     if sdg:
         query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg))
@@ -356,6 +401,7 @@ async def get_typology_distribution(
     sdg: Optional[List[int]] = Query(None),
     funded_by: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    show_submissions: bool = Query(False),
     db: Session = Depends(get_db)
 ):
     """Get project typology distribution"""
@@ -363,9 +409,7 @@ async def get_typology_distribution(
     query = db.query(
         ProjectTypology.typology,
         func.count(distinct(ProjectTypology.project_id)).label('count')
-    ).join(Project).filter(
-        Project.workflow_status == WorkflowStatus.APPROVED
-    )
+    ).join(Project).filter(_workflow_filter(show_submissions))
 
     if region and region != "All Regions":
         query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
@@ -396,6 +440,7 @@ async def get_country_distribution(
     sdg: Optional[List[int]] = Query(None),
     search: Optional[str] = Query(None),
     limit: int = Query(15, ge=1, le=50),
+    show_submissions: bool = Query(False),
     db: Session = Depends(get_db)
 ):
     """Get top countries by project count"""
@@ -403,7 +448,7 @@ async def get_country_distribution(
     query = db.query(
         Project.country,
         func.count(Project.id).label('count')
-    ).filter(Project.workflow_status == WorkflowStatus.APPROVED)
+    ).filter(_workflow_filter(show_submissions))
 
     if region and region != "All Regions":
         query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
@@ -429,6 +474,7 @@ async def get_status_distribution(
     region: Optional[str] = Query(None),
     sdg: Optional[List[int]] = Query(None),
     search: Optional[str] = Query(None),
+    show_submissions: bool = Query(False),
     db: Session = Depends(get_db)
 ):
     """Get project count by project_status"""
@@ -436,7 +482,7 @@ async def get_status_distribution(
     query = db.query(
         Project.project_status,
         func.count(Project.id).label('count')
-    ).filter(Project.workflow_status == WorkflowStatus.APPROVED)
+    ).filter(_workflow_filter(show_submissions))
 
     if region and region != "All Regions":
         query = query.filter(Project.uia_region == region)
@@ -459,7 +505,10 @@ async def get_status_distribution(
 
 
 @router.get("/analytics/edition-comparison")
-async def get_edition_comparison(db: Session = Depends(get_db)):
+async def get_edition_comparison(
+    show_submissions: bool = Query(False),
+    db: Session = Depends(get_db)
+):
     """Project counts grouped by edition (2023 vs 2026)"""
     edition_label = case(
         (Project.external_code.like("P%"), "2026"),
@@ -467,21 +516,24 @@ async def get_edition_comparison(db: Session = Depends(get_db)):
     ).label("edition")
 
     results = db.query(edition_label, func.count(Project.id).label("count"))\
-        .filter(Project.workflow_status == WorkflowStatus.APPROVED)\
+        .filter(_workflow_filter(show_submissions))\
         .group_by(edition_label).all()
 
     return [{"edition": r.edition, "count": r.count} for r in results]
 
 
 @router.get("/analytics/sdg-region-heatmap")
-async def get_sdg_region_heatmap(db: Session = Depends(get_db)):
+async def get_sdg_region_heatmap(
+    show_submissions: bool = Query(False),
+    db: Session = Depends(get_db)
+):
     """Project counts per (region, sdg) for heatmap visualization"""
     results = db.query(
         Project.uia_region,
         ProjectSDG.sdg_number,
         func.count(distinct(Project.id)).label("count")
     ).join(ProjectSDG)\
-     .filter(Project.workflow_status == WorkflowStatus.APPROVED)\
+     .filter(_workflow_filter(show_submissions))\
      .group_by(Project.uia_region, ProjectSDG.sdg_number).all()
 
     return [
