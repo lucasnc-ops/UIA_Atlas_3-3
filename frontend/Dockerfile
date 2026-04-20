@@ -1,4 +1,12 @@
-# Stage 1: Build the Vite app
+# Dev stage — used by docker-compose (volume-mounted, runs Vite dev server)
+FROM node:20-alpine AS dev
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+EXPOSE 5173
+CMD ["npm", "run", "dev", "--", "--host"]
+
+# Production stage — used for standalone deployments
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
@@ -9,8 +17,7 @@ ARG VITE_API_URL
 ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
-# Stage 2: Serve static files
-FROM node:20-alpine
+FROM node:20-alpine AS prod
 WORKDIR /app
 RUN npm install -g serve
 COPY --from=builder /app/dist ./dist

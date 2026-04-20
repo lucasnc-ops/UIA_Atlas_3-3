@@ -1,8 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 import logging
 from .core.config import settings
-from .api import auth, projects, dashboard, admin, debug
+from .core.limiter import limiter
+from .api import auth, projects, dashboard, admin
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -14,6 +18,10 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# Rate limiter state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 # CORS configuration
 cors_kwargs = {
     "allow_credentials": True,
@@ -24,7 +32,11 @@ cors_kwargs = {
 
 # Add explicit origins if configured
 origins_list = settings.cors_origins_list
-if origins_list:
+if settings.ENVIRONMENT == "development":
+    # In development, be permissive to avoid local blocks
+    cors_kwargs["allow_origins"] = ["*"]
+    logger.info("CORS: Development mode - allowing all origins")
+elif origins_list:
     cors_kwargs["allow_origins"] = origins_list
     logger.info(f"CORS allowed origins: {origins_list}")
 else:
@@ -44,12 +56,31 @@ if not origins_list and not settings.CORS_ORIGIN_REGEX:
 logger.info(f"Final CORS configuration: {cors_kwargs}")
 app.add_middleware(CORSMiddleware, **cors_kwargs)
 
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    """Inject security response headers on every response."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://*.supabase.co blob:; "
+        "connect-src 'self' https://*.supabase.co; "
+        "frame-ancestors 'none'"
+    )
+    return response
+
+
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(projects.router, prefix="/api/projects", tags=["Projects"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
 app.include_router(admin.router, prefix="/api/admin", tags=["Admin"])
-app.include_router(debug.router, prefix="/api/debug", tags=["Debug"])
 
 
 @app.get("/")
@@ -66,13 +97,3 @@ async def root():
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
-
-
-@app.get("/debug/cors")
-async def debug_cors():
-    """Debug endpoint to check CORS configuration"""
-    return {
-        "cors_origins": settings.cors_origins_list,
-        "cors_origin_regex": settings.CORS_ORIGIN_REGEX,
-        "environment": settings.ENVIRONMENT,
-    }

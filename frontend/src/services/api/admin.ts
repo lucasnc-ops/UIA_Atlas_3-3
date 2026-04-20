@@ -49,12 +49,12 @@ export const adminAPI = {
 
   // Reject project
   rejectProject: async (projectId: string, reason: string): Promise<void> => {
-    await apiClient.post(`/api/admin/projects/${projectId}/reject?reason=${encodeURIComponent(reason)}`);
+    await apiClient.post(`/api/admin/projects/${projectId}/reject`, { reason });
   },
 
   // Request changes
   requestChanges: async (projectId: string, message: string): Promise<void> => {
-    await apiClient.post(`/api/admin/projects/${projectId}/request-changes?message=${encodeURIComponent(message)}`);
+    await apiClient.post(`/api/admin/projects/${projectId}/request-changes`, { message });
   },
 
   // Delete project

@@ -63,8 +63,6 @@ export interface Project {
   contactEmail: string;
   projectStatus: ProjectStatus;
   workflowStatus: WorkflowStatus;
-  fundingNeeded: number;
-  fundingSpent: number;
   uiaRegion: UIARegion;
   city: string;
   country: string;
@@ -77,6 +75,11 @@ export interface Project {
   fundingRequirements: FundingRequirement[];
   governmentRequirements: GovernmentRequirement[];
   otherRequirements: OtherRequirement[];
+  otherRequirementText?: string;
+  otherTypologyText?: string;
+  otherFundingText?: string;
+  otherGovText?: string;
+  authors?: string;
   sdgs: SDG[];
   imageUrls: string[];
   createdAt: string;
@@ -89,7 +92,6 @@ export interface ProjectSubmission {
   contactPerson: string;
   contactEmail: string;
   projectStatus: ProjectStatus;
-  fundingNeeded: number;
   uiaRegion: UIARegion;
   city: string;
   country: string;
@@ -128,16 +130,16 @@ export interface DashboardKPIs {
   totalProjects: number;
   citiesEngaged: number;
   countriesRepresented: number;
-  totalFundingNeeded: number;
-  totalFundingSpent: number;
 }
 
 export interface FilterOptions {
   region?: UIARegion | 'All Regions';
-  sdg?: SDG | 'All SDGs';
+  sdgs?: SDG[];
   city?: string | 'All Cities';
   fundedBy?: string | 'All';
   search?: string;
+  edition?: 'all' | '2023' | '2026';
+  showSubmissions?: boolean;
 }
 
 export interface User {

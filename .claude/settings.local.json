@@ -30,12 +30,7 @@
       "Bash(xargs grep:*)",
       "Bash(gh pr:*)",
       "Bash(xargs wc:*)",
-      "mcp__Claude_Preview__preview_start",
-      "Bash(npx tsc:*)",
-      "Bash(node_modules/.bin/tsc --noEmit)",
-      "Bash(node_modules/.bin/vite build:*)",
-      "Bash(where gh:*)",
-      "Bash(winget list:*)"
+      "Bash(npx tsc *)"
     ],
     "deny": [],
     "ask": []

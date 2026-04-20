@@ -22,12 +22,27 @@ const toCamelCase = (obj: any): any => {
   return obj;
 };
 
+// Serialize params so arrays repeat the key: ?sdg=1&sdg=2 (FastAPI List[int] format)
+const paramsSerializer = (params: Record<string, any>) => {
+  const parts: string[] = [];
+  for (const [key, val] of Object.entries(params)) {
+    if (val === undefined || val === null) continue;
+    if (Array.isArray(val)) {
+      val.forEach((v) => parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`));
+    } else {
+      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
+    }
+  }
+  return parts.join('&');
+};
+
 // Create axios instance
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
   headers: {
     'Content-Type': 'application/json',
   },
+  paramsSerializer,
 });
 
 // Add response interceptor to transform keys

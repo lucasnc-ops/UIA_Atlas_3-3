@@ -19,10 +19,11 @@ interface FilterData {
 
 interface FilterParams {
   region?: string;
-  sdg?: number;
+  sdg?: number | number[];
   city?: string;
   fundedBy?: string;
   search?: string;
+  edition?: string;
 }
 
 interface PaginatedResponse {
@@ -45,6 +46,7 @@ interface MapMarker {
   fundingNeeded: number;
   primarySdg: number;
   imageUrl?: string;
+  category: 'guidebook_2026' | 'guidebook_2023' | 'community' | '2026' | '2023';
 }
 
 interface SDGDistribution {
@@ -129,7 +131,7 @@ export const dashboardAPI = {
    * Get single project by ID
    */
   async getProject(projectId: string): Promise<Project> {
-    const response = await apiClient.get(`/api/dashboard/projects/${projectId}`);
+    const response = await apiClient.get(`/api/projects/${projectId}`);
     return response.data;
   },
 
@@ -170,6 +172,42 @@ export const dashboardAPI = {
   },
 
   /**
+   * Get top countries by project count
+   */
+  async getCountryDistribution(filters?: FilterOptions): Promise<{ country: string; count: number }[]> {
+    const params = this._buildFilterParams(filters);
+    const response = await apiClient.get('/api/dashboard/analytics/country-distribution', { params });
+    return response.data;
+  },
+
+  /**
+   * Get project count by project_status
+   */
+  async getStatusDistribution(filters?: FilterOptions): Promise<{ status: string; count: number }[]> {
+    const params = this._buildFilterParams(filters);
+    const response = await apiClient.get('/api/dashboard/analytics/status-distribution', { params });
+    return response.data;
+  },
+
+  /**
+   * Get project counts by edition (2023 vs 2026)
+   */
+  async getEditionComparison(filters?: FilterOptions): Promise<{ edition: string; count: number }[]> {
+    const params = this._buildFilterParams(filters);
+    const response = await apiClient.get('/api/dashboard/analytics/edition-comparison', { params });
+    return response.data;
+  },
+
+  /**
+   * Get project counts per (region, sdg) for heatmap
+   */
+  async getSdgRegionHeatmap(filters?: FilterOptions): Promise<{ region: string; sdg: number; count: number }[]> {
+    const params = this._buildFilterParams(filters);
+    const response = await apiClient.get('/api/dashboard/analytics/sdg-region-heatmap', { params });
+    return response.data;
+  },
+
+  /**
    * Helper: Build API query parameters from FilterOptions
    * Removes "All" selections and converts to backend format
    */
@@ -182,8 +220,8 @@ export const dashboardAPI = {
       params.region = filters.region;
     }
 
-    if (filters.sdg && filters.sdg !== 'All SDGs') {
-      params.sdg = typeof filters.sdg === 'number' ? filters.sdg : parseInt(filters.sdg);
+    if (filters.sdgs && filters.sdgs.length > 0) {
+      params.sdg = filters.sdgs as any;
     }
 
     if (filters.city && filters.city !== 'All Cities') {
@@ -196,6 +234,14 @@ export const dashboardAPI = {
 
     if (filters.search) {
       params.search = filters.search;
+    }
+
+    if (filters.edition && filters.edition !== 'all') {
+      params.edition = filters.edition;
+    }
+
+    if (filters.showSubmissions) {
+      (params as any).show_submissions = true;
     }
 
     return params;

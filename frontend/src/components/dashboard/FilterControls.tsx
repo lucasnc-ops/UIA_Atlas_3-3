@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { mockDashboardAPI as dashboardAPI } from '../../services/api/mockDashboardAPI';
+import { useState, useEffect, useRef } from 'react';
+import { dashboardAPI } from '../../services/api/dashboardAPI';
 import type { FilterOptions, UIARegion, SDG } from '../../types';
 
 interface FilterControlsProps {
@@ -17,7 +17,7 @@ const regions: (UIARegion | 'All Regions')[] = [
   'Section V - Americas',
 ];
 
-const sdgs: (SDG | 'All SDGs')[] = ['All SDGs', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
+const SDG_NUMBERS: SDG[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
 
 const sdgLabels: Record<SDG, string> = {
   1: 'No Poverty',
@@ -44,14 +44,14 @@ export default function FilterControls({
   onFilterChange,
 }: FilterControlsProps) {
   const [cities, setCities] = useState<string[]>([]);
-  const [fundingSources, setFundingSources] = useState<string[]>([]);
+  const [sdgOpen, setSdgOpen] = useState(false);
+  const sdgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchFilters = async () => {
       try {
         const data = await dashboardAPI.getFilters();
         setCities(data.cities);
-        setFundingSources(data.fundingSources);
       } catch (error) {
         console.error('Error fetching filters:', error);
       }
@@ -59,12 +59,33 @@ export default function FilterControls({
     fetchFilters();
   }, []);
 
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (sdgRef.current && !sdgRef.current.contains(e.target as Node)) {
+        setSdgOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const selectedSdgs = filters.sdgs ?? [];
+
+  const toggleSdg = (sdg: SDG) => {
+    const next = selectedSdgs.includes(sdg)
+      ? selectedSdgs.filter((s) => s !== sdg)
+      : [...selectedSdgs, sdg];
+    onFilterChange({ ...filters, sdgs: next });
+  };
+
+  const clearSdgs = () => onFilterChange({ ...filters, sdgs: [] });
+
   const hasActiveFilters =
     (filters.region && filters.region !== 'All Regions') ||
-    (filters.sdg && filters.sdg !== 'All SDGs') ||
+    (selectedSdgs.length > 0) ||
     (filters.city && filters.city !== 'All Cities') ||
-    (filters.fundedBy && filters.fundedBy !== 'All') ||
-    (filters.search && filters.search !== '');
+    (filters.search && filters.search !== '') ||
+    (filters.edition && filters.edition !== 'all');
 
   return (
     <div className="space-y-6">
@@ -95,6 +116,24 @@ export default function FilterControls({
             />
           </svg>
         </div>
+      </div>
+
+      {/* Edition Filter */}
+      <div>
+        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+          Guidebook Edition
+        </label>
+        <select
+          value={filters.edition ?? 'all'}
+          onChange={(e) =>
+            onFilterChange({ ...filters, edition: e.target.value as 'all' | '2023' | '2026' })
+          }
+          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300"
+        >
+          <option value="all">All Editions</option>
+          <option value="2023">2023 Guidebook</option>
+          <option value="2026">2026 Guidebook</option>
+        </select>
       </div>
 
       {/* Region Filter */}
@@ -135,7 +174,6 @@ export default function FilterControls({
           }
           className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300"
         >
-          <option value="All Cities">All Cities</option>
           {cities.map((city) => (
             <option key={city} value={city}>
               {city}
@@ -144,60 +182,68 @@ export default function FilterControls({
         </select>
       </div>
 
-      {/* Funded By Filter */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
-          Funded By
-        </label>
-        <select
-          value={filters.fundedBy || 'All'}
-          onChange={(e) =>
-            onFilterChange({
-              ...filters,
-              fundedBy: e.target.value === 'All' ? 'All' : e.target.value,
-            })
-          }
-          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300"
-        >
-          <option value="All">All Funding Sources</option>
-          {fundingSources.map((source) => (
-            <option key={source} value={source}>
-              {source}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* SDG Filter */}
-      <div>
+      {/* SDG Multi-Select Dropdown */}
+      <div ref={sdgRef} className="relative">
         <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
           Sustainable Development Goal
         </label>
-        <select
-          value={filters.sdg || 'All SDGs'}
-          onChange={(e) => {
-            const value = e.target.value;
-            onFilterChange({
-              ...filters,
-              sdg: value === 'All SDGs' ? 'All SDGs' : (parseInt(value) as SDG),
-            });
-          }}
-          className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm text-gray-900 transition-colors hover:border-gray-300"
+        <button
+          type="button"
+          onClick={() => setSdgOpen((o) => !o)}
+          className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm text-gray-900 transition-colors hover:border-gray-300"
         >
-          {sdgs.map((sdg) => (
-            <option key={sdg} value={sdg} className="bg-white text-gray-900">
-              {sdg === 'All SDGs' ? 'All SDGs' : `SDG ${sdg}: ${sdgLabels[sdg as SDG]}`}
-            </option>
-          ))}
-        </select>
+          <span className={selectedSdgs.length === 0 ? 'text-gray-500' : 'text-gray-900'}>
+            {selectedSdgs.length === 0
+              ? 'All SDGs'
+              : selectedSdgs.length === 1
+              ? `SDG ${selectedSdgs[0]}: ${sdgLabels[selectedSdgs[0]]}`
+              : `${selectedSdgs.length} SDGs selected`}
+          </span>
+          <svg
+            className={`w-4 h-4 text-gray-400 transition-transform ${sdgOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {sdgOpen && (
+          <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-72 overflow-y-auto">
+            {selectedSdgs.length > 0 && (
+              <div className="px-3 py-2 border-b border-gray-100">
+                <button
+                  onClick={clearSdgs}
+                  className="text-xs text-red-500 hover:text-red-700 font-medium"
+                >
+                  Clear selection
+                </button>
+              </div>
+            )}
+            {SDG_NUMBERS.map((sdg) => (
+              <label
+                key={sdg}
+                className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedSdgs.includes(sdg)}
+                  onChange={() => toggleSdg(sdg)}
+                  className="w-4 h-4 rounded border-gray-300 text-uia-blue focus:ring-uia-blue"
+                />
+                <span className="text-xs font-bold text-gray-500 w-5 shrink-0">{sdg}</span>
+                <span className="text-sm text-gray-800">{sdgLabels[sdg]}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Active Filters Summary */}
       {hasActiveFilters && (
         <div className="pt-4 border-t border-gray-200">
-          <p className="text-xs font-medium text-gray-500 mb-3">
-            Active Filters
-          </p>
+          <p className="text-xs font-medium text-gray-500 mb-3">Active Filters</p>
           <div className="flex flex-wrap gap-2">
             {filters.region && filters.region !== 'All Regions' && (
               <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
@@ -221,23 +267,20 @@ export default function FilterControls({
                 </button>
               </span>
             )}
-            {filters.fundedBy && filters.fundedBy !== 'All' && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-primary-50 text-primary-700 border border-primary-200">
-                {filters.fundedBy}
-                <button
-                  onClick={() => onFilterChange({ ...filters, fundedBy: 'All' })}
-                  className="ml-2 text-primary-400 hover:text-primary-600"
-                >
+            {selectedSdgs.length > 0 && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200">
+                SDG {selectedSdgs.join(', ')}
+                <button onClick={clearSdgs} className="ml-2 text-green-400 hover:text-green-600">
                   ×
                 </button>
               </span>
             )}
-            {filters.sdg && filters.sdg !== 'All SDGs' && (
-              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200">
-                SDG {filters.sdg}
+            {filters.edition && filters.edition !== 'all' && (
+              <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-uia-blue/10 text-uia-blue border border-uia-blue/20">
+                {filters.edition === '2023' ? '2023 Guidebook' : '2026 Guidebook'}
                 <button
-                  onClick={() => onFilterChange({ ...filters, sdg: 'All SDGs' })}
-                  className="ml-2 text-green-400 hover:text-green-600"
+                  onClick={() => onFilterChange({ ...filters, edition: 'all' })}
+                  className="ml-2 text-uia-blue/60 hover:text-uia-blue"
                 >
                   ×
                 </button>

@@ -41,6 +41,10 @@ dist-ssr/
 *.sqlite
 *.sqlite3
 
+# Seed data (contains PII — never commit)
+data/seed/*.sql
+data/seed/*.dump
+
 # Logs
 logs/
 *.log
