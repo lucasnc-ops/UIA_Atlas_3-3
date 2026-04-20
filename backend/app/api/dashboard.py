@@ -90,7 +90,7 @@ async def get_dashboard_kpis(
 
     # Calculate metrics
     stats = query.with_entities(
-        func.count(Project.id).label('total_projects'),
+        func.count(distinct(Project.id)).label('total_projects'),
         func.count(distinct(Project.city)).label('cities_engaged'),
         func.count(distinct(Project.country)).label('countries_represented'),
     ).first()
@@ -147,7 +147,7 @@ async def get_dashboard_projects(
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
     if sdg:
-        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg))
+        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg)).distinct()
     if funded_by and funded_by != "All":
         query = query.join(ProjectRequirement).filter(
             ProjectRequirement.requirement_type == 'funding',
@@ -220,7 +220,7 @@ async def get_map_markers(
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
     if sdg:
-        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg))
+        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg)).distinct()
     if funded_by and funded_by != "All":
         query = query.join(ProjectRequirement).filter(
             ProjectRequirement.requirement_type == 'funding',
