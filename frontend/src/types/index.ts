@@ -134,7 +134,7 @@ export interface DashboardKPIs {
 
 export interface FilterOptions {
   region?: UIARegion | 'All Regions';
-  sdg?: SDG | 'All SDGs';
+  sdgs?: SDG[];
   city?: string | 'All Cities';
   fundedBy?: string | 'All';
   search?: string;

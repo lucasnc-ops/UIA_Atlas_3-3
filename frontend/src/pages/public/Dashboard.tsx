@@ -95,7 +95,7 @@ export default function Dashboard() {
   });
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [filters, setFilters] = useState<FilterOptions>({ region: 'All Regions', sdg: 'All SDGs' });
+  const [filters, setFilters] = useState<FilterOptions>({ region: 'All Regions', sdgs: [] });
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<'map' | 'table' | 'analytics'>('map');
@@ -186,7 +186,7 @@ export default function Dashboard() {
     setSearchParams(p);
   };
 
-  const handleClearFilters = () => setFilters({ region: 'All Regions', sdg: 'All SDGs' });
+  const handleClearFilters = () => setFilters({ region: 'All Regions', sdgs: [] });
 
   const markerElements = useMemo(
     () =>
@@ -274,7 +274,7 @@ export default function Dashboard() {
               setFilters((prev) => ({
                 ...prev,
                 city: filter.city !== undefined ? filter.city : prev.city,
-                sdg: filter.sdg !== undefined ? (filter.sdg as any) : prev.sdg,
+                sdgs: filter.sdg !== undefined ? [filter.sdg as any] : prev.sdgs,
               }));
             }}
           />
@@ -401,8 +401,8 @@ export default function Dashboard() {
             {viewMode === 'map' && (
               <SDGLegend
                 mode="sidebar"
-                activeSdg={typeof filters.sdg === 'number' ? filters.sdg : null}
-                onSDGClick={(id) => setFilters((f) => ({ ...f, sdg: id as any }))}
+                activeSdg={(filters.sdgs?.length === 1 ? filters.sdgs[0] : null) ?? null}
+                onSDGClick={(id) => setFilters((f) => ({ ...f, sdgs: [id as any] }))}
               />
             )}
           </div>
