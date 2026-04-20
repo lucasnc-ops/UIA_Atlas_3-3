@@ -19,7 +19,7 @@ interface FilterData {
 
 interface FilterParams {
   region?: string;
-  sdg?: number;
+  sdg?: number | number[];
   city?: string;
   fundedBy?: string;
   search?: string;
@@ -189,6 +189,22 @@ export const dashboardAPI = {
   },
 
   /**
+   * Get project counts by edition (2023 vs 2026)
+   */
+  async getEditionComparison(): Promise<{ edition: string; count: number }[]> {
+    const response = await apiClient.get('/api/dashboard/analytics/edition-comparison');
+    return response.data;
+  },
+
+  /**
+   * Get project counts per (region, sdg) for heatmap
+   */
+  async getSdgRegionHeatmap(): Promise<{ region: string; sdg: number; count: number }[]> {
+    const response = await apiClient.get('/api/dashboard/analytics/sdg-region-heatmap');
+    return response.data;
+  },
+
+  /**
    * Helper: Build API query parameters from FilterOptions
    * Removes "All" selections and converts to backend format
    */
@@ -201,8 +217,8 @@ export const dashboardAPI = {
       params.region = filters.region;
     }
 
-    if (filters.sdg && filters.sdg !== 'All SDGs') {
-      params.sdg = typeof filters.sdg === 'number' ? filters.sdg : parseInt(filters.sdg);
+    if (filters.sdgs && filters.sdgs.length > 0) {
+      params.sdg = filters.sdgs as any;
     }
 
     if (filters.city && filters.city !== 'All Cities') {
