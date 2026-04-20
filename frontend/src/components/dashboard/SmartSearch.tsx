@@ -224,7 +224,7 @@ export default function SmartSearch({ onProjectSelect, onFilterChange, autoFocus
 
       {/* Results Dropdown */}
       {isOpen && (
-        <div className="absolute top-full mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-2xl shadow-black/10 overflow-hidden z-50 max-h-96 overflow-y-auto">
+        <div className="absolute top-full mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-2xl shadow-black/10 overflow-hidden z-[9999] max-h-96 overflow-y-auto">
           {isLoading ? (
             <div className="px-4 py-8 text-center text-gray-500">
               <div className="inline-block w-6 h-6 border-2 border-gray-300 border-t-primary-600 rounded-full animate-spin"></div>

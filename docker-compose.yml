@@ -73,7 +73,10 @@ services:
         condition: service_completed_successfully
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: dev
+    command: npm run dev -- --host
     volumes:
       - ./frontend:/app
       - /app/node_modules
