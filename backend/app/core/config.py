@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     MINIO_PUBLIC_URL: str = ""
 
     # Security
-    SECRET_KEY: str
+    SECRET_KEY: str = "dev-secret-key-please-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     RECAPTCHA_SECRET_KEY: str = "placeholder-recaptcha-key"
@@ -36,6 +36,10 @@ class Settings(BaseSettings):
 
     # Admin
     ADMIN_EMAIL: str = "admin@uia.org"
+    ADMIN_API_KEY: str = "change-me-in-production"
+
+    # Image base URL (MinIO public endpoint)
+    IMAGE_BASE_URL: str = "http://localhost:9000/project-images"
 
     # Frontend
     FRONTEND_URL: str = "http://localhost:5173"

@@ -40,7 +40,8 @@ cd atlas_33
 cp .env.example .env          # set ADMIN_API_KEY at minimum
 docker compose up -d
 # Wait ~30s for services to be healthy
-docker exec -i atlas_33-db-1 psql -U atlas_user atlas_db < data/sql/seed.sql
+docker exec -i atlas_33-db-1 psql -U postgres panorama_sdg < data/sql/seed.sql
+docker exec atlas_33-backend-1 python scripts/create_admin.py
 open http://localhost:5173    # or navigate in browser
 ```
 

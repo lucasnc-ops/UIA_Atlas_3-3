@@ -21,19 +21,21 @@ cd atlas_33
 ## 2. Configure environment
 
 ```bash
+# Root env (MinIO credentials, optional overrides)
 cp .env.example .env
+
+# Backend env (JWT secret + email)
+cp backend/.env.example backend/.env
 ```
 
-Open `.env` and set at minimum:
+Open `backend/.env` and set at minimum:
 
 | Variable | What to set |
 |---|---|
-| `ADMIN_API_KEY` | A strong random string (your admin password) |
-| `MINIO_ROOT_USER` | MinIO username (default: `atlas_minio`) |
-| `MINIO_ROOT_PASSWORD` | MinIO password (default: `atlas_minio_pass`) |
+| `SECRET_KEY` | Any long random string (e.g. `openssl rand -hex 32`) |
 | `ADMIN_EMAIL` | Where submission notifications go |
 
-All other defaults work for local development.
+Everything else has working defaults for local Docker development. You do **not** need to touch the root `.env` unless you want to change MinIO or PostgreSQL passwords.
 
 ## 3. Start the stack
 
@@ -54,10 +56,24 @@ docker compose logs -f   # watch for errors
 
 ```bash
 # Restore the full project database
-docker exec -i atlas_33-db-1 psql -U atlas_user atlas_db < data/sql/seed.sql
+docker exec -i atlas_33-db-1 psql -U postgres panorama_sdg < data/sql/seed.sql
 ```
 
 This loads all 309 approved projects (2023 + 2026 Guidebook editions).
+
+## 4b. Create admin account
+
+The seed restores project data only — run this to create the admin login:
+
+```bash
+docker exec atlas_33-backend-1 python scripts/create_admin.py
+```
+
+This creates the admin account with:
+- **Email**: `admin@panorama-sdg.org`
+- **Password**: `Panorama2030!`
+
+Change these in `backend/scripts/create_admin.py` before running if you want different credentials.
 
 ## 5. Upload project images to MinIO
 
