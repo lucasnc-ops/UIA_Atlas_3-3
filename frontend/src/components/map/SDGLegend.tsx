@@ -23,21 +23,26 @@ const SDG_INFO = [
 ];
 
 interface SDGLegendProps {
-  onSDGClick?: (sdgId: number | null) => void;
+  onSDGClick?: (sdgId: number) => void;
+  onClearSdgs?: () => void;
   activeSdg?: number | null;
+  activeSdgs?: number[];
   mode?: 'overlay' | 'sidebar';
 }
 
-export default function SDGLegend({ onSDGClick, activeSdg, mode = 'overlay' }: SDGLegendProps) {
+export default function SDGLegend({ onSDGClick, onClearSdgs, activeSdg, activeSdgs, mode = 'overlay' }: SDGLegendProps) {
+  // Normalise: prefer activeSdgs array; fall back to legacy activeSdg single value
+  const activeSet = activeSdgs ?? (activeSdg != null ? [activeSdg] : []);
+
   // Sidebar mode: compact chip grid embedded in the left sidebar
   if (mode === 'sidebar') {
     return (
       <div className="flex-shrink-0 px-3 py-3 border-t border-gray-200">
         <div className="flex items-center justify-between mb-2">
           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Filter by SDG</p>
-          {activeSdg && (
+          {activeSet.length > 0 && (
             <button
-              onClick={() => onSDGClick?.(null)}
+              onClick={() => onClearSdgs?.()}
               className="text-[10px] text-uia-blue hover:text-uia-red transition-colors font-medium"
             >
               Clear
@@ -48,10 +53,10 @@ export default function SDGLegend({ onSDGClick, activeSdg, mode = 'overlay' }: S
           {SDG_INFO.map(({ id, shortName }) => (
             <button
               key={id}
-              onClick={() => onSDGClick?.(activeSdg === id ? null : id)}
+              onClick={() => onSDGClick?.(id)}
               title={`SDG ${id}: ${shortName}`}
               className={`w-full aspect-square rounded overflow-hidden transition-all focus:outline-none
-                ${activeSdg === id
+                ${activeSet.includes(id)
                   ? 'ring-2 ring-offset-1 ring-gray-700 scale-110 opacity-100'
                   : 'opacity-60 hover:opacity-100 hover:scale-105'
                 }`}

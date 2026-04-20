@@ -69,6 +69,30 @@ interface MapMarker {
 }
 
 
+function MarkerImage({
+  src, alt, regionColor, region, primarySdg,
+}: { src?: string; alt: string; regionColor: string; region?: string; primarySdg?: number }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return (
+      <div
+        className="h-20 w-full flex flex-col items-center justify-center gap-0.5"
+        style={{ background: `linear-gradient(135deg, ${regionColor} 0%, ${regionColor}99 100%)` }}
+      >
+        <span className="text-white/90 text-[10px] font-medium text-center px-3 leading-tight">
+          {region?.replace('Section ', 'S').split(' - ')[1] || 'UIA Project'}
+        </span>
+        {primarySdg && <span className="text-white text-xs font-bold">SDG {primarySdg}</span>}
+      </div>
+    );
+  }
+  return (
+    <div className="h-28 w-full overflow-hidden">
+      <img src={src} alt={alt} className="w-full h-full object-cover" onError={() => setFailed(true)} />
+    </div>
+  );
+}
+
 function MapUpdater({ markers }: { markers: MapMarker[] }) {
   const map = useMap();
   const hasAutoFit = useRef(false);
@@ -238,7 +262,7 @@ export default function Dashboard() {
       <style>{EMPTY_STATE_STYLES}</style>
 
       {/* ══ TOP BAR ══ */}
-      <header className="h-14 flex-shrink-0 flex items-center gap-3 px-4 border-b border-gray-200 bg-white z-40 shadow-sm">
+      <header className="h-14 flex-shrink-0 flex items-center gap-3 px-4 border-b border-gray-200 bg-white z-50 shadow-sm overflow-visible">
         {/* Left: logo + mobile filter toggle */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <Link
@@ -401,8 +425,15 @@ export default function Dashboard() {
             {viewMode === 'map' && (
               <SDGLegend
                 mode="sidebar"
-                activeSdg={(filters.sdgs?.length === 1 ? filters.sdgs[0] : null) ?? null}
-                onSDGClick={(id) => setFilters((f) => ({ ...f, sdgs: [id as any] }))}
+                activeSdgs={filters.sdgs ?? []}
+                onSDGClick={(id) => setFilters((f) => {
+                  const current = f.sdgs ?? [];
+                  const next = current.includes(id as any)
+                    ? current.filter((s) => s !== id)
+                    : [...current, id as any];
+                  return { ...f, sdgs: next };
+                })}
+                onClearSdgs={() => setFilters((f) => ({ ...f, sdgs: [] }))}
               />
             )}
           </div>
@@ -466,30 +497,13 @@ export default function Dashboard() {
                       minWidth={220}
                     >
                       <div className="bg-white overflow-hidden text-gray-900 rounded-lg shadow-sm">
-                        {/* Image or region-colored placeholder */}
-                        {marker.imageUrl ? (
-                          <div className="h-28 w-full overflow-hidden">
-                            <img
-                              src={marker.imageUrl}
-                              alt={marker.projectName}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                        ) : (
-                          <div
-                            className="h-20 w-full flex flex-col items-center justify-center gap-0.5"
-                            style={{
-                              background: `linear-gradient(135deg, ${REGION_COLORS[marker.region] || '#577CB3'} 0%, ${REGION_COLORS[marker.region] || '#577CB3'}99 100%)`,
-                            }}
-                          >
-                            <span className="text-white/90 text-[10px] font-medium text-center px-3 leading-tight">
-                              {marker.region?.replace('Section ', 'S').split(' - ')[1] || 'UIA Project'}
-                            </span>
-                            {marker.primarySdg && (
-                              <span className="text-white text-xs font-bold">SDG {marker.primarySdg}</span>
-                            )}
-                          </div>
-                        )}
+                        <MarkerImage
+                          src={marker.imageUrl}
+                          alt={marker.projectName}
+                          regionColor={REGION_COLORS[marker.region] || '#577CB3'}
+                          region={marker.region}
+                          primarySdg={marker.primarySdg}
+                        />
 
                         <div className="p-3">
                           <h3 className="font-bold text-sm leading-snug mb-1 text-gray-900 line-clamp-2">
