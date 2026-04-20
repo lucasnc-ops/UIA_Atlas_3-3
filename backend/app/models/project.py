@@ -1,32 +1,26 @@
-from sqlalchemy import Column, String, Integer, Float, Text, DateTime, ForeignKey, Enum, Boolean
+from sqlalchemy import Column, String, Integer, Float, Text, DateTime, ForeignKey, Enum, Boolean, Uuid
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import uuid
 import enum
 from ..core.database import Base
 
-# For SQLite compatibility, use String for UUID
-try:
-    from sqlalchemy.dialects.postgresql import UUID as PGUUID
-    UUID = PGUUID
-except:
-    UUID = String(36)
-
 
 class ProjectStatus(str, enum.Enum):
     """Project implementation status"""
-    PLANNED = "planned"
-    IN_PROGRESS = "in_progress"
-    IMPLEMENTED = "implemented"
+    PLANNED = "PLANNED"
+    IN_PROGRESS = "IN_PROGRESS"
+    IMPLEMENTED = "IMPLEMENTED"
+    NEEDED_BUT_CONSTRAINED = "NEEDED_BUT_CONSTRAINED"
 
 
 class WorkflowStatus(str, enum.Enum):
     """Project workflow/review status"""
-    SUBMITTED = "submitted"
-    IN_REVIEW = "in_review"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    CHANGES_REQUESTED = "changes_requested"
+    SUBMITTED = "SUBMITTED"
+    IN_REVIEW = "IN_REVIEW"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    CHANGES_REQUESTED = "CHANGES_REQUESTED"
 
 
 class UIARegion(str, enum.Enum):
@@ -43,7 +37,7 @@ class Project(Base):
 
     __tablename__ = "projects"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     # Submitter information
     organization_name = Column(String(255), nullable=False)
@@ -61,8 +55,7 @@ class Project(Base):
     )
 
     # Financial
-    funding_needed = Column(Float, default=0.0)
-    funding_spent = Column(Float, default=0.0)
+
 
     # Location
     uia_region = Column(Enum(UIARegion), nullable=False, index=True)
@@ -83,9 +76,14 @@ class Project(Base):
 
     # Other requirement text (for custom "Other" option)
     other_requirement_text = Column(Text, nullable=True)
+    other_typology_text    = Column(Text, nullable=True)
+    other_funding_text     = Column(Text, nullable=True)
+    other_gov_text         = Column(Text, nullable=True)
 
     # External reference (UIA Guidebook project code, e.g. IFF1, LDP6)
     external_code = Column(String(16), nullable=True, index=True)
+    # Architect(s) / authors (populated from UIA Guidebook data)
+    authors = Column(Text, nullable=True)
 
     # Review/moderation
     rejection_reason = Column(Text, nullable=True)
@@ -119,8 +117,8 @@ class ProjectSDG(Base):
 
     __tablename__ = "project_sdgs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(Uuid(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     sdg_number = Column(Integer, nullable=False, index=True)  # 1-17
 
     project = relationship("Project", back_populates="sdgs")
@@ -131,8 +129,8 @@ class ProjectTypology(Base):
 
     __tablename__ = "project_typologies"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(Uuid(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     typology = Column(String(255), nullable=False, index=True)
 
     project = relationship("Project", back_populates="typologies")
@@ -143,8 +141,8 @@ class ProjectRequirement(Base):
 
     __tablename__ = "project_requirements"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(Uuid(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     requirement_type = Column(String(50), nullable=False, index=True)  # 'funding', 'government', 'other'
     requirement = Column(String(500), nullable=False, index=True)
 
@@ -156,8 +154,8 @@ class ProjectImage(Base):
 
     __tablename__ = "project_images"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    id = Column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id = Column(Uuid(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
     image_url = Column(String(1000), nullable=False)
     display_order = Column(Integer, default=0)
 

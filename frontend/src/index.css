@@ -1,3 +1,36 @@
+/* UIA Design System Token Variables — aligned with sdg-assessment canonical tokens */
+:root {
+  /* Brand colors */
+  --uia-red: #AF201C;
+  --uia-blue: #577CB3;
+  --uia-violet: #484675;
+  --uia-dark: #6C6B69;
+  --uia-gray-light: #F7F6F6;
+  --uia-black: #000000;
+
+  /* Spacing (8px base) */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 40px;
+  --spacing-3xl: 48px;
+  --spacing-4xl: 64px;
+
+  /* Typography */
+  --font-display: 'Oswald', Impact, sans-serif;
+  --font-body: 'Merriweather', Georgia, serif;
+
+  /* UI */
+  --radius-pill: 999px;
+  --transition-speed: 0.2s;
+  --header-height: 72px;
+
+  /* Featured content */
+  --uia-featured-border-width: 5px;
+}
+
 /* Leaflet CSS imports - must come before Tailwind */
 @import 'leaflet/dist/leaflet.css';
 @import 'leaflet.markercluster/dist/MarkerCluster.css';

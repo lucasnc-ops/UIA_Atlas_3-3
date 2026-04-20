@@ -1,13 +1,23 @@
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query, Request, Response
 from sqlalchemy.orm import Session
-from sqlalchemy import func, distinct, select
+from sqlalchemy import func, distinct, select, case
 from typing import Optional, List
 from ..core.database import get_db
+from ..core.limiter import limiter
 from ..models.project import Project, ProjectSDG, ProjectTypology, ProjectRequirement, WorkflowStatus, ProjectImage
 from ..schemas.project import ProjectListResponse, DashboardKPIs, ProjectResponse
 from .projects import _format_project_response
 
 router = APIRouter()
+
+REGION_DISPLAY = {
+    "SECTION_I":   "Section I - Western Europe",
+    "SECTION_II":  "Section II - Eastern Europe & Central Asia",
+    "SECTION_III": "Section III - Middle East & Africa",
+    "SECTION_IV":  "Section IV - Asia & Pacific",
+    "SECTION_V":   "Section V - Americas",
+}
+REGION_REVERSE = {v: k for k, v in REGION_DISPLAY.items()}
 
 
 @router.get("/filters")
@@ -36,13 +46,16 @@ async def get_dashboard_filters(response: Response, db: Session = Depends(get_db
 
 
 @router.get("/kpis", response_model=DashboardKPIs)
+@limiter.limit("60/minute")
 async def get_dashboard_kpis(
+    request: Request,
     response: Response,
     region: Optional[str] = Query(None),
-    sdg: Optional[int] = Query(None),
+    sdg: Optional[List[int]] = Query(None),
     city: Optional[str] = Query(None),
     funded_by: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    edition: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     response.headers["Cache-Control"] = "public, max-age=30"
@@ -53,11 +66,11 @@ async def get_dashboard_kpis(
 
     # Apply filters
     if region and region != "All Regions":
-        query = query.filter(Project.uia_region == region)
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
     if sdg:
-        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
+        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg))
     if funded_by and funded_by != "All":
         query = query.join(ProjectRequirement).filter(
             ProjectRequirement.requirement_type == 'funding',
@@ -70,22 +83,22 @@ async def get_dashboard_kpis(
             (Project.city.ilike(search_term)) |
             (Project.country.ilike(search_term))
         )
+    if edition == "2026":
+        query = query.filter(Project.external_code.like("P%"))
+    elif edition == "2023":
+        query = query.filter(~Project.external_code.like("P%"))
 
     # Calculate metrics
     stats = query.with_entities(
         func.count(Project.id).label('total_projects'),
         func.count(distinct(Project.city)).label('cities_engaged'),
         func.count(distinct(Project.country)).label('countries_represented'),
-        func.sum(Project.funding_needed).label('total_funding_needed'),
-        func.sum(Project.funding_spent).label('total_funding_spent')
     ).first()
 
     return {
         "total_projects": stats.total_projects or 0,
         "cities_engaged": stats.cities_engaged or 0,
         "countries_represented": stats.countries_represented or 0,
-        "total_funding_needed": float(stats.total_funding_needed or 0.0),
-        "total_funding_spent": float(stats.total_funding_spent or 0.0),
     }
 
 
@@ -115,11 +128,11 @@ async def get_dashboard_projects(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     region: Optional[str] = Query(None),
-    sdg: Optional[int] = Query(None),
+    sdg: Optional[List[int]] = Query(None),
     city: Optional[str] = Query(None),
     funded_by: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
-    sort_by: str = Query("created_at", pattern="^(project_name|created_at|funding_needed)$"),
+    sort_by: str = Query("created_at", pattern="^(project_name|created_at)$"),
     sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     db: Session = Depends(get_db)
 ):
@@ -130,11 +143,11 @@ async def get_dashboard_projects(
 
     # Apply filters
     if region and region != "All Regions":
-        query = query.filter(Project.uia_region == region)
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
     if sdg:
-        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
+        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg))
     if funded_by and funded_by != "All":
         query = query.join(ProjectRequirement).filter(
             ProjectRequirement.requirement_type == 'funding',
@@ -170,12 +183,15 @@ async def get_dashboard_projects(
 
 
 @router.get("/map-markers")
+@limiter.limit("60/minute")
 async def get_map_markers(
+    request: Request,
     region: Optional[str] = Query(None),
-    sdg: Optional[int] = Query(None),
+    sdg: Optional[List[int]] = Query(None),
     city: Optional[str] = Query(None),
     funded_by: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    edition: Optional[str] = Query(None),
     db: Session = Depends(get_db)
 ):
     """Get project markers for map (lightweight data)"""
@@ -189,7 +205,6 @@ async def get_map_markers(
         Project.longitude,
         Project.uia_region,
         Project.project_status,
-        Project.funding_needed,
         ProjectImage.image_url
     ).outerjoin(
         ProjectImage, (ProjectImage.project_id == Project.id) & (ProjectImage.display_order == 0)
@@ -201,11 +216,11 @@ async def get_map_markers(
 
     # Apply filters
     if region and region != "All Regions":
-        query = query.filter(Project.uia_region == region)
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
     if sdg:
-        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
+        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg))
     if funded_by and funded_by != "All":
         query = query.join(ProjectRequirement).filter(
             ProjectRequirement.requirement_type == 'funding',
@@ -218,6 +233,10 @@ async def get_map_markers(
             (Project.city.ilike(search_term)) |
             (Project.country.ilike(search_term))
         )
+    if edition == "2026":
+        query = query.filter(Project.external_code.like("P%"))
+    elif edition == "2023":
+        query = query.filter(~Project.external_code.like("P%"))
 
     # Correlated subquery: min SDG number per project (one DB round trip total)
     primary_sdg_subq = (
@@ -239,9 +258,8 @@ async def get_map_markers(
             "country": m.country,
             "latitude": m.latitude,
             "longitude": m.longitude,
-            "region": m.uia_region.value if m.uia_region else None,
+            "region": REGION_DISPLAY.get(m.uia_region.value, m.uia_region.value) if m.uia_region else None,
             "status": m.project_status.value if m.project_status else None,
-            "funding_needed": float(m.funding_needed or 0),
             "primary_sdg": m.primary_sdg,
             "image_url": m.image_url
         }
@@ -267,7 +285,7 @@ async def get_sdg_distribution(
     )
 
     if region and region != "All Regions":
-        query = query.filter(Project.uia_region == region)
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
     if funded_by and funded_by != "All":
@@ -291,7 +309,7 @@ async def get_sdg_distribution(
 
 @router.get("/analytics/regional-distribution")
 async def get_regional_distribution(
-    sdg: Optional[int] = Query(None),
+    sdg: Optional[List[int]] = Query(None),
     city: Optional[str] = Query(None),
     funded_by: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
@@ -301,14 +319,13 @@ async def get_regional_distribution(
 
     query = db.query(
         Project.uia_region,
-        func.count(Project.id).label('count'),
-        func.sum(Project.funding_needed).label('funding_needed')
+        func.count(Project.id).label('count')
     ).filter(
         Project.workflow_status == WorkflowStatus.APPROVED
     )
 
     if sdg:
-        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
+        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg))
     if city and city != "All Cities":
         query = query.filter(Project.city == city)
     if funded_by and funded_by != "All":
@@ -328,11 +345,7 @@ async def get_regional_distribution(
     results = query.group_by(Project.uia_region).all()
 
     return [
-        {
-            "region": r.uia_region.value,
-            "project_count": r.count,
-            "funding_needed": float(r.funding_needed or 0.0)
-        }
+        {"region": REGION_DISPLAY.get(r.uia_region.value, r.uia_region.value), "project_count": r.count}
         for r in results
     ]
 
@@ -340,7 +353,7 @@ async def get_regional_distribution(
 @router.get("/analytics/typology-distribution")
 async def get_typology_distribution(
     region: Optional[str] = Query(None),
-    sdg: Optional[int] = Query(None),
+    sdg: Optional[List[int]] = Query(None),
     funded_by: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
     db: Session = Depends(get_db)
@@ -355,9 +368,9 @@ async def get_typology_distribution(
     )
 
     if region and region != "All Regions":
-        query = query.filter(Project.uia_region == region)
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
     if sdg:
-        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number == sdg)
+        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg))
     if funded_by and funded_by != "All":
         query = query.join(ProjectRequirement).filter(
             ProjectRequirement.project_id == Project.id,
@@ -375,3 +388,107 @@ async def get_typology_distribution(
     results = query.group_by(ProjectTypology.typology).order_by(func.count(distinct(ProjectTypology.project_id)).desc()).all()
 
     return [{"typology": r.typology, "count": r.count} for r in results]
+
+
+@router.get("/analytics/country-distribution")
+async def get_country_distribution(
+    region: Optional[str] = Query(None),
+    sdg: Optional[List[int]] = Query(None),
+    search: Optional[str] = Query(None),
+    limit: int = Query(15, ge=1, le=50),
+    db: Session = Depends(get_db)
+):
+    """Get top countries by project count"""
+
+    query = db.query(
+        Project.country,
+        func.count(Project.id).label('count')
+    ).filter(Project.workflow_status == WorkflowStatus.APPROVED)
+
+    if region and region != "All Regions":
+        query = query.filter(Project.uia_region == REGION_REVERSE.get(region, region))
+    if sdg:
+        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg))
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (Project.project_name.ilike(search_term)) |
+            (Project.city.ilike(search_term)) |
+            (Project.country.ilike(search_term))
+        )
+
+    results = query.group_by(Project.country)\
+        .order_by(func.count(Project.id).desc())\
+        .limit(limit).all()
+
+    return [{"country": r.country, "count": r.count} for r in results]
+
+
+@router.get("/analytics/status-distribution")
+async def get_status_distribution(
+    region: Optional[str] = Query(None),
+    sdg: Optional[List[int]] = Query(None),
+    search: Optional[str] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """Get project count by project_status"""
+
+    query = db.query(
+        Project.project_status,
+        func.count(Project.id).label('count')
+    ).filter(Project.workflow_status == WorkflowStatus.APPROVED)
+
+    if region and region != "All Regions":
+        query = query.filter(Project.uia_region == region)
+    if sdg:
+        query = query.join(ProjectSDG).filter(ProjectSDG.sdg_number.in_(sdg))
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            (Project.project_name.ilike(search_term)) |
+            (Project.city.ilike(search_term)) |
+            (Project.country.ilike(search_term))
+        )
+
+    results = query.group_by(Project.project_status).all()
+
+    return [
+        {"status": r.project_status.value if r.project_status else "Unknown", "count": r.count}
+        for r in results
+    ]
+
+
+@router.get("/analytics/edition-comparison")
+async def get_edition_comparison(db: Session = Depends(get_db)):
+    """Project counts grouped by edition (2023 vs 2026)"""
+    edition_label = case(
+        (Project.external_code.like("P%"), "2026"),
+        else_="2023"
+    ).label("edition")
+
+    results = db.query(edition_label, func.count(Project.id).label("count"))\
+        .filter(Project.workflow_status == WorkflowStatus.APPROVED)\
+        .group_by(edition_label).all()
+
+    return [{"edition": r.edition, "count": r.count} for r in results]
+
+
+@router.get("/analytics/sdg-region-heatmap")
+async def get_sdg_region_heatmap(db: Session = Depends(get_db)):
+    """Project counts per (region, sdg) for heatmap visualization"""
+    results = db.query(
+        Project.uia_region,
+        ProjectSDG.sdg_number,
+        func.count(distinct(Project.id)).label("count")
+    ).join(ProjectSDG)\
+     .filter(Project.workflow_status == WorkflowStatus.APPROVED)\
+     .group_by(Project.uia_region, ProjectSDG.sdg_number).all()
+
+    return [
+        {
+            "region": REGION_DISPLAY.get(r.uia_region.value, r.uia_region.value),
+            "sdg": r.sdg_number,
+            "count": r.count,
+        }
+        for r in results if r.uia_region
+    ]

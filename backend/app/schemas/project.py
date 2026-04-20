@@ -3,6 +3,30 @@ from typing import List, Optional
 from datetime import datetime
 from uuid import UUID
 
+_STATUS_MAP = {
+    "planned": "planned",
+    "in_progress": "in_progress",
+    "implemented": "implemented",
+    "needed_but_constrained": "needed_but_constrained",
+    "Planned": "planned",
+    "In Progress": "in_progress",
+    "Implemented": "implemented",
+    "Needed but Constrained": "needed_but_constrained",
+}
+
+_REGION_MAP = {
+    "SECTION_I": "SECTION_I",
+    "SECTION_II": "SECTION_II",
+    "SECTION_III": "SECTION_III",
+    "SECTION_IV": "SECTION_IV",
+    "SECTION_V": "SECTION_V",
+    "Section I - Western Europe": "SECTION_I",
+    "Section II - Eastern Europe & Central Asia": "SECTION_II",
+    "Section III - Middle East & Africa": "SECTION_III",
+    "Section IV - Asia & Pacific": "SECTION_IV",
+    "Section V - Americas": "SECTION_V",
+}
+
 
 class ProjectBase(BaseModel):
     """Base project schema with common fields"""
@@ -10,8 +34,7 @@ class ProjectBase(BaseModel):
     organization_name: str
     contact_person: str
     contact_email: EmailStr
-    project_status: str  # Planned | In Progress | Implemented
-    funding_needed: float = 0.0
+    project_status: str
     uia_region: str
     city: str
     country: str
@@ -25,9 +48,29 @@ class ProjectBase(BaseModel):
     government_requirements: List[str]
     other_requirements: List[str]
     other_requirement_text: Optional[str] = None
+    other_typology_text: Optional[str] = None
+    other_funding_text: Optional[str] = None
+    other_gov_text: Optional[str] = None
+    authors: Optional[str] = None
     sdgs: List[int]  # 1-17
     image_urls: List[str]
     gdpr_consent: bool
+
+    @field_validator('project_status')
+    @classmethod
+    def normalize_status(cls, v):
+        normalized = _STATUS_MAP.get(v)
+        if normalized is None:
+            raise ValueError(f"Invalid project_status: '{v}'. Must be one of: Planned, In Progress, Implemented, Needed but Constrained")
+        return normalized
+
+    @field_validator('uia_region')
+    @classmethod
+    def normalize_region(cls, v):
+        normalized = _REGION_MAP.get(v)
+        if normalized is None:
+            raise ValueError(f"Invalid uia_region: '{v}'")
+        return normalized
 
     @field_validator('latitude')
     @classmethod
@@ -51,17 +94,10 @@ class ProjectBase(BaseModel):
                 raise ValueError('SDG numbers must be between 1 and 17')
         return v
 
-    @field_validator('funding_needed')
-    @classmethod
-    def validate_funding(cls, v):
-        if v < 0:
-            raise ValueError('Funding needed cannot be negative')
-        return v
-
 
 class ProjectCreate(ProjectBase):
     """Schema for creating a project"""
-    captcha_token: Optional[str] = None
+    captcha_token: str
 
     @field_validator('gdpr_consent')
     @classmethod
@@ -79,8 +115,6 @@ class ProjectUpdate(BaseModel):
     contact_email: Optional[EmailStr] = None
     project_status: Optional[str] = None
     workflow_status: Optional[str] = None
-    funding_needed: Optional[float] = None
-    funding_spent: Optional[float] = None
     uia_region: Optional[str] = None
     city: Optional[str] = None
     country: Optional[str] = None
@@ -94,17 +128,40 @@ class ProjectUpdate(BaseModel):
     government_requirements: Optional[List[str]] = None
     other_requirements: Optional[List[str]] = None
     other_requirement_text: Optional[str] = None
+    other_typology_text: Optional[str] = None
+    other_funding_text: Optional[str] = None
+    other_gov_text: Optional[str] = None
+    authors: Optional[str] = None
     sdgs: Optional[List[int]] = None
     image_urls: Optional[List[str]] = None
     rejection_reason: Optional[str] = None
     reviewer_notes: Optional[str] = None
+
+    @field_validator('project_status')
+    @classmethod
+    def normalize_status(cls, v):
+        if v is None:
+            return v
+        normalized = _STATUS_MAP.get(v)
+        if normalized is None:
+            raise ValueError(f"Invalid project_status: '{v}'")
+        return normalized
+
+    @field_validator('uia_region')
+    @classmethod
+    def normalize_region(cls, v):
+        if v is None:
+            return v
+        normalized = _REGION_MAP.get(v)
+        if normalized is None:
+            raise ValueError(f"Invalid uia_region: '{v}'")
+        return normalized
 
 
 class ProjectResponse(ProjectBase):
     """Schema for project response"""
     id: UUID
     workflow_status: str
-    funding_spent: float
     rejection_reason: Optional[str] = None
     reviewer_notes: Optional[str] = None
     created_at: datetime
@@ -126,8 +183,6 @@ class DashboardKPIs(BaseModel):
     total_projects: int
     cities_engaged: int
     countries_represented: int
-    total_funding_needed: float
-    total_funding_spent: float
 
 
 class FilterOptions(BaseModel):

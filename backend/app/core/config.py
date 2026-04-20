@@ -8,11 +8,23 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str
 
+    # Supabase (legacy — only needed when MINIO_ENDPOINT is not set)
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
+
+    # MinIO / S3-compatible image storage
+    MINIO_ENDPOINT: str = ""
+    MINIO_ACCESS_KEY: str = ""
+    MINIO_SECRET_KEY: str = ""
+    MINIO_BUCKET: str = "project-images"
+    MINIO_PUBLIC_URL: str = ""
+
     # Security
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     RECAPTCHA_SECRET_KEY: str = "placeholder-recaptcha-key"
+    ENABLE_RECAPTCHA: bool = False
 
     # Email (optional - will log errors if not configured)
     SMTP_HOST: str = "smtp.sendgrid.net"
@@ -37,7 +49,7 @@ class Settings(BaseSettings):
     # Environment
     ENVIRONMENT: str = "development"
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 
     @property
     def cors_origins_list(self) -> List[str]:

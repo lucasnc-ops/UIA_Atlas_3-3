@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { adminAPI } from '../../services/api/admin';
 import type { ProjectCreate } from '../../services/api/projects';
 import ProjectForm from '../../components/forms/ProjectForm';
+import { REGION_CODE_FROM_LABEL } from '../../data/countriesByRegion';
 
 export default function EditProject() {
   const { projectId } = useParams<{ projectId: string }>();
@@ -27,8 +28,7 @@ export default function EditProject() {
         contact_person: project.contactPerson,
         contact_email: project.contactEmail,
         project_status: project.projectStatus,
-        funding_needed: project.fundingNeeded,
-        uia_region: project.uiaRegion,
+        uia_region: REGION_CODE_FROM_LABEL[project.uiaRegion] ?? project.uiaRegion,
         city: project.city,
         country: project.country,
         latitude: project.latitude || undefined,
@@ -74,7 +74,6 @@ export default function EditProject() {
             contactPerson: data.contact_person,
             contactEmail: data.contact_email,
             projectStatus: data.project_status,
-            fundingNeeded: data.funding_needed,
             uiaRegion: data.uia_region,
             city: data.city,
             country: data.country,

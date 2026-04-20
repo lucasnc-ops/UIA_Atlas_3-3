@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status, File, UploadFile
 from sqlalchemy.orm import Session
-from typing import Optional
-from uuid import UUID
+from typing import Optional, List
+from uuid import UUID, uuid4
 import httpx
 from ..core.database import get_db
+from ..core.limiter import limiter
+from ..core.supabase import get_supabase_client
+from ..core.storage import upload_file as storage_upload_file
 from ..models.project import (
     Project, ProjectSDG, ProjectTypology,
     ProjectRequirement, ProjectImage, WorkflowStatus
@@ -13,34 +16,80 @@ from ..services.email import send_submission_notification
 from ..core.config import settings
 
 import logging
+import os
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+@router.post("/upload", response_model=dict)
+@limiter.limit("10/minute")
+async def upload_project_image(
+    request: Request,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """Upload a project image to Supabase Storage"""
+    
+    # 1. Basic Validation
+    ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+    
+    file_ext = os.path.splitext(file.filename)[1].lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid file type. Allowed: {', '.join(ALLOWED_EXTENSIONS)}"
+        )
+    
+    # 2. Check file size (FastAPI doesn't do this automatically for SpoofFile)
+    # We read a bit to check or use content-length header
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large. Maximum size is 5MB.")
+    
+    # 3. Generate unique filename
+    unique_filename = f"{uuid4()}{file_ext}"
+    file_path = f"submissions/{unique_filename}"
+    
+    # 4. Upload to storage (MinIO if configured, otherwise Supabase)
+    try:
+        public_url = storage_upload_file(content, file_path, file.content_type)
+        return {"url": public_url, "filename": unique_filename}
+    except Exception as e:
+        logger.error(f"Storage upload error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+    finally:
+        await file.close()
+
+
 @router.post("/submit", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
-async def submit_project(project_data: ProjectCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+async def submit_project(request: Request, project_data: ProjectCreate, db: Session = Depends(get_db)):
     """Submit a new project (public endpoint)"""
 
-    # Verify reCAPTCHA
-    if not project_data.captcha_token:
-        raise HTTPException(status_code=400, detail="reCAPTCHA verification required")
-        
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                "https://www.google.com/recaptcha/api/siteverify",
-                data={
-                    "secret": settings.RECAPTCHA_SECRET_KEY,
-                    "response": project_data.captcha_token
-                }
-            )
-            result = response.json()
-            if not result.get("success"):
-                raise HTTPException(status_code=400, detail="reCAPTCHA verification failed")
-        except httpx.RequestError:
-            # Allow to proceed if Google API is down? Or fail? Safe to fail for security.
-            raise HTTPException(status_code=503, detail="Unable to verify reCAPTCHA")
+    # Verify reCAPTCHA (only if enabled)
+    if settings.ENABLE_RECAPTCHA:
+        if not project_data.captcha_token:
+            raise HTTPException(status_code=400, detail="reCAPTCHA verification required")
+            
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.post(
+                    "https://www.google.com/recaptcha/api/siteverify",
+                    data={
+                        "secret": settings.RECAPTCHA_SECRET_KEY,
+                        "response": project_data.captcha_token
+                    }
+                )
+                result = response.json()
+                if not result.get("success"):
+                    logger.warning(f"reCAPTCHA failed: {result}")
+                    raise HTTPException(status_code=400, detail="reCAPTCHA verification failed")
+            except httpx.RequestError:
+                raise HTTPException(status_code=503, detail="Unable to verify reCAPTCHA service")
+    else:
+        logger.info("reCAPTCHA verification skipped (disabled in settings)")
 
     # Create main project
     new_project = Project(
@@ -50,7 +99,6 @@ async def submit_project(project_data: ProjectCreate, db: Session = Depends(get_
         project_name=project_data.project_name,
         project_status=project_data.project_status,
         workflow_status=WorkflowStatus.SUBMITTED,
-        funding_needed=project_data.funding_needed,
         uia_region=project_data.uia_region,
         city=project_data.city,
         country=project_data.country,
@@ -60,6 +108,9 @@ async def submit_project(project_data: ProjectCreate, db: Session = Depends(get_
         detailed_description=project_data.detailed_description,
         success_factors=project_data.success_factors,
         other_requirement_text=project_data.other_requirement_text,
+        other_typology_text=project_data.other_typology_text,
+        other_funding_text=project_data.other_funding_text,
+        other_gov_text=project_data.other_gov_text,
         gdpr_consent=project_data.gdpr_consent,
     )
 
@@ -118,9 +169,12 @@ async def submit_project(project_data: ProjectCreate, db: Session = Depends(get_
     db.commit()
     db.refresh(new_project)
 
-    # Send email notification to admin
-    review_link = f"{settings.FRONTEND_URL}/admin"
-    await send_submission_notification(settings.ADMIN_EMAIL, new_project.project_name, review_link)
+    # Send email notification to admin (non-blocking failure)
+    try:
+        review_link = f"{settings.FRONTEND_URL}/admin"
+        await send_submission_notification(settings.ADMIN_EMAIL, new_project.project_name, review_link)
+    except Exception as email_err:
+        logger.error(f"Email notification failed (Project created anyway): {str(email_err)}")
 
     return _format_project_response(new_project)
 
@@ -157,7 +211,6 @@ async def update_project_by_token(
     project.contact_email = project_data.contact_email
     project.project_name = project_data.project_name
     project.project_status = project_data.project_status
-    project.funding_needed = project_data.funding_needed
     project.uia_region = project_data.uia_region
     project.city = project_data.city
     project.country = project_data.country
@@ -167,6 +220,9 @@ async def update_project_by_token(
     project.detailed_description = project_data.detailed_description
     project.success_factors = project_data.success_factors
     project.other_requirement_text = project_data.other_requirement_text
+    project.other_typology_text = project_data.other_typology_text
+    project.other_funding_text = project_data.other_funding_text
+    project.other_gov_text = project_data.other_gov_text
     project.gdpr_consent = project_data.gdpr_consent
     
     # Reset status to SUBMITTED for re-review
@@ -290,9 +346,10 @@ def _format_project_response(project: Project) -> dict:
 
     # Map status codes to readable labels
     status_labels = {
-        "planned": "Planned",
-        "in_progress": "In Progress",
-        "implemented": "Implemented"
+        "PLANNED": "Planned",
+        "IN_PROGRESS": "In Progress",
+        "IMPLEMENTED": "Implemented",
+        "NEEDED_BUT_CONSTRAINED": "Needed but Constrained",
     }
     
     status_value = project.project_status.value if project.project_status else None
@@ -306,9 +363,7 @@ def _format_project_response(project: Project) -> dict:
         "contact_person": project.contact_person,
         "contact_email": project.contact_email,
         "project_status": status_value,
-        "workflow_status": project.workflow_status.value if project.workflow_status else None,
-        "funding_needed": project.funding_needed,
-        "funding_spent": project.funding_spent,
+        "workflow_status": project.workflow_status.value.lower() if project.workflow_status else None,
         "uia_region": region_value,
         "city": project.city,
         "country": project.country,
@@ -328,6 +383,10 @@ def _format_project_response(project: Project) -> dict:
             r.requirement for r in project.requirements if r.requirement_type == 'other'
         ] if project.requirements else [],
         "other_requirement_text": project.other_requirement_text,
+        "other_typology_text": project.other_typology_text,
+        "other_funding_text": project.other_funding_text,
+        "other_gov_text": project.other_gov_text,
+        "authors": project.authors,
         "gdpr_consent": project.gdpr_consent,
         "sdgs": [s.sdg_number for s in project.sdgs] if project.sdgs else [],
         "image_urls": [img.image_url for img in sorted(project.images, key=lambda x: x.display_order)] if project.images else [],
